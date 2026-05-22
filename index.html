@@ -57,6 +57,15 @@
       display: -webkit-box; -webkit-line-clamp: 2;
       -webkit-box-orient: vertical; overflow: hidden;
     }
+
+    /* Galerie */
+    #gallery { transition: opacity .3s ease; }
+    #gallery.open { opacity: 1 !important; pointer-events: auto !important; }
+    .gal-item { break-inside: avoid; margin-bottom: 10px; }
+    .gal-item img { transition: transform .4s ease; }
+    .gal-item:hover img { transform: scale(1.03); }
+    .gal-item .gal-overlay { transition: opacity .3s ease; opacity: 0; }
+    .gal-item:hover .gal-overlay { opacity: 1; }
   </style>
 </head>
 
@@ -70,16 +79,46 @@
            -translate-x-full md:translate-x-0"
     style="width:min(80vw,300px)">
 
-    <!-- Header -->
-    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-5 py-4 flex-shrink-0">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5 text-white">
-          <span class="text-lg">🌍</span>
-          <span class="font-bold text-base tracking-tight">Reisetagebuch</span>
+    <!-- Profil-Header -->
+    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-4 py-4 flex-shrink-0">
+      <div class="flex items-center gap-3">
+        <!-- Avatar -->
+        <div id="profile-avatar"
+          class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl
+                 font-extrabold flex-shrink-0 cursor-pointer hover:scale-105 transition-transform
+                 shadow-lg select-none"
+          style="background:rgba(255,255,255,0.25)" onclick="toggleProfileEdit()">
+          ?
+        </div>
+        <!-- Name + Untertitel -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span id="profile-name-display"
+              class="text-white font-bold text-sm truncate cursor-pointer"
+              onclick="toggleProfileEdit()">Reisender</span>
+            <button onclick="toggleProfileEdit()"
+              class="text-white/50 hover:text-white transition-colors flex-shrink-0">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828
+                     15.828a2 2 0 01-2.828 0L9 13zm-6 6h18"/>
+              </svg>
+            </button>
+          </div>
+          <p id="profile-subtitle" class="text-orange-100 text-xs mt-0.5 truncate">Weltenbummler</p>
         </div>
         <button id="left-panel-close"
           class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
-                 text-white flex items-center justify-center text-base transition-colors">×</button>
+                 text-white flex items-center justify-center text-base transition-colors flex-shrink-0">×</button>
+      </div>
+      <!-- Inline-Edit -->
+      <div id="profile-edit" class="hidden mt-3 flex gap-2">
+        <input id="profile-name-input" type="text" placeholder="Dein Reisename …" maxlength="24"
+          class="flex-1 bg-white/20 text-white placeholder-white/50 rounded-xl px-3 py-1.5
+                 text-sm outline-none border border-white/30 focus:border-white/70 transition-colors" />
+        <button onclick="saveProfile()"
+          class="bg-white/20 hover:bg-white/35 text-white text-xs font-bold px-3 rounded-xl
+                 transition-colors">OK</button>
       </div>
     </div>
 
@@ -144,8 +183,20 @@
                hover:text-red-500 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
     </div>
 
+    <!-- Tabs: Alle / Favoriten -->
+    <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
+      <button id="tab-all"
+        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">
+        🗺 Alle
+      </button>
+      <button id="tab-favs"
+        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-gray-400 hover:bg-gray-100">
+        ❤ Favoriten
+      </button>
+    </div>
+
     <!-- Trip-Cards (scrollbar) -->
-    <div id="trip-cards" class="flex-1 overflow-y-auto scroll-thin px-3 py-3 space-y-2">
+    <div id="trip-cards" class="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-2">
       <div id="trip-loader" class="flex items-center justify-center gap-2 py-8 text-gray-300 text-xs">
         <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -165,6 +216,55 @@
            text-gray-600 hover:bg-orange-50 transition-colors">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+
+  <!-- ════ GALERIE OVERLAY ════════════════════════════════════════════════════ -->
+  <div id="gallery"
+    class="fixed inset-0 z-[3500] bg-gray-950 opacity-0 pointer-events-none flex flex-col">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 sm:px-10 py-5 flex-shrink-0
+                border-b border-white/8">
+      <div>
+        <h2 class="text-white text-2xl font-black tracking-widest uppercase">Galerie</h2>
+        <p class="text-white/35 text-xs mt-0.5" id="gallery-subtitle">Deine Erinnerungen</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Alle / Favoriten -->
+        <div class="flex bg-white/10 rounded-2xl p-1 gap-1">
+          <button id="gal-tab-all"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-white/20 transition-colors">
+            Alle
+          </button>
+          <button id="gal-tab-favs"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors">
+            ❤ Favoriten
+          </button>
+        </div>
+        <button id="gallery-close"
+          class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-xl
+                 flex items-center justify-center transition-colors">×</button>
+      </div>
+    </div>
+
+    <!-- Masonry Grid -->
+    <div id="gallery-grid"
+      class="flex-1 overflow-y-auto scroll-thin p-4 sm:p-6"
+      style="columns:2 160px;column-gap:10px">
+    </div>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Galerie-Toggle-Button (oben rechts, unter Style-Switcher) -->
+  <button id="gallery-btn"
+    class="fixed top-16 right-4 z-[1000] w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl
+           shadow-lg flex items-center justify-center hover:bg-orange-50 transition-colors"
+    title="Galerie öffnen" onclick="openGallery('all')">
+    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
+           0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
     </svg>
   </button>
 
@@ -767,35 +867,175 @@
     document.getElementById('dash-last').textContent = last ? fmtDate(last.date) : '–';
   }
 
+  // ─── Profil ───────────────────────────────────────────────────────────────
+  let profile = JSON.parse(localStorage.getItem('reise_profile') || '{"name":"Reisender"}');
+
+  function nameToColor(name) {
+    const cols = ['#f97316','#8b5cf6','#06b6d4','#10b981','#ef4444','#f59e0b','#3b82f6','#ec4899'];
+    let h = 0;
+    for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+    return cols[Math.abs(h) % cols.length];
+  }
+
+  function applyProfile() {
+    const name = profile.name || 'Reisender';
+    document.getElementById('profile-name-display').textContent = name;
+    const av = document.getElementById('profile-avatar');
+    av.textContent  = name[0].toUpperCase();
+    av.style.background = nameToColor(name);
+  }
+
+  function toggleProfileEdit() {
+    const box = document.getElementById('profile-edit');
+    const inp = document.getElementById('profile-name-input');
+    const hidden = box.classList.toggle('hidden');
+    if (!hidden) { inp.value = profile.name || ''; inp.focus(); }
+  }
+
+  function saveProfile() {
+    const val = document.getElementById('profile-name-input').value.trim();
+    if (val) { profile.name = val; localStorage.setItem('reise_profile', JSON.stringify(profile)); applyProfile(); }
+    document.getElementById('profile-edit').classList.add('hidden');
+  }
+
+  document.getElementById('profile-name-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveProfile();
+    if (e.key === 'Escape') document.getElementById('profile-edit').classList.add('hidden');
+  });
+
+  applyProfile();
+
+  // ─── Favoriten ────────────────────────────────────────────────────────────
+  let favorites = new Set(JSON.parse(localStorage.getItem('reise_favorites') || '[]'));
+  let activeTab = 'all'; // 'all' | 'favs'
+
+  function saveFavorites() { localStorage.setItem('reise_favorites', JSON.stringify([...favorites])); }
+
+  function toggleFavorite(id, ev) {
+    ev.stopPropagation();
+    favorites.has(id) ? favorites.delete(id) : favorites.add(id);
+    saveFavorites();
+    renderTripCards();
+  }
+
+  function setTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-all').className  =
+      'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
+      (tab === 'all'  ? 'bg-orange-500 text-white' : 'text-gray-400 hover:bg-gray-100');
+    document.getElementById('tab-favs').className =
+      'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
+      (tab === 'favs' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:bg-gray-100');
+    renderTripCards();
+  }
+
+  document.getElementById('tab-all').addEventListener('click',  () => setTab('all'));
+  document.getElementById('tab-favs').addEventListener('click', () => setTab('favs'));
+
+  // ─── Trip-Cards rendern ───────────────────────────────────────────────────
   function renderTripCards() {
     const container = document.getElementById('trip-cards');
     const loader    = document.getElementById('trip-loader');
     if (loader) loader.remove();
 
-    if (!entries.length) {
-      container.innerHTML =
-        '<p class="text-center text-gray-300 text-xs py-8">Noch keine Reisen gespeichert.</p>';
+    const list = activeTab === 'favs'
+      ? entries.filter(e => favorites.has(e.id))
+      : entries;
+
+    if (!list.length) {
+      container.innerHTML = activeTab === 'favs'
+        ? '<p class="text-center text-gray-300 text-xs py-8">Noch keine Favoriten gespeichert.<br/>Klicke auf ❤ um einen Eintrag zu speichern.</p>'
+        : '<p class="text-center text-gray-300 text-xs py-8">Noch keine Reisen gespeichert.</p>';
       return;
     }
 
-    container.innerHTML = entries.map(e => {
-      const src = getPhotoSrc(e, 120);
+    container.innerHTML = list.map(e => {
+      const src  = getPhotoSrc(e, 120);
+      const isFav = favorites.has(e.id);
       return `
-        <div onclick="cardFlyTo('${e.id}')"
-          class="flex gap-3 bg-gray-50 hover:bg-orange-50 rounded-2xl p-3 cursor-pointer
-                 transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
-          ${src
-            ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
-            : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
-          <div class="min-w-0 flex-1">
-            <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
-            <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
-            ${e.notes
-              ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>`
-              : ''}
+        <div class="group flex gap-3 bg-gray-50 hover:bg-orange-50 rounded-2xl p-3
+                    transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
+          <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
+            ${src
+              ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
+              : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
+              <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
+              ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
+            </div>
           </div>
+          <!-- Favoriten-Herz -->
+          <button onclick="toggleFavorite('${e.id}', event)"
+            class="flex-shrink-0 self-start mt-0.5 text-base transition-transform hover:scale-125"
+            title="${isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}">
+            ${isFav ? '❤' : '🤍'}
+          </button>
         </div>`;
     }).join('');
+  }
+
+  // ─── Galerie ──────────────────────────────────────────────────────────────
+  const galleryEl   = document.getElementById('gallery');
+  let   galMode     = 'all'; // 'all' | 'favs'
+
+  function openGallery(mode = 'all') {
+    galMode = mode;
+    setGalTab(mode);
+    renderGallery();
+    galleryEl.classList.add('open');
+  }
+
+  function closeGallery() { galleryEl.classList.remove('open'); }
+
+  document.getElementById('gallery-close').addEventListener('click', closeGallery);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && galleryEl.classList.contains('open')) closeGallery(); });
+
+  document.getElementById('gal-tab-all').addEventListener('click',  () => { galMode = 'all';  setGalTab('all');  renderGallery(); });
+  document.getElementById('gal-tab-favs').addEventListener('click', () => { galMode = 'favs'; setGalTab('favs'); renderGallery(); });
+
+  function setGalTab(mode) {
+    document.getElementById('gal-tab-all').className  =
+      'px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
+      (mode === 'all'  ? 'text-white bg-white/20' : 'text-white/50 hover:text-white');
+    document.getElementById('gal-tab-favs').className =
+      'px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
+      (mode === 'favs' ? 'text-white bg-white/20' : 'text-white/50 hover:text-white');
+  }
+
+  function renderGallery() {
+    const grid = document.getElementById('gallery-grid');
+    const list = (galMode === 'favs' ? entries.filter(e => favorites.has(e.id)) : entries)
+      .filter(e => hasPhoto(e));
+
+    document.getElementById('gallery-subtitle').textContent =
+      `${list.length} Erinnerung${list.length !== 1 ? 'en' : ''}`;
+
+    if (!list.length) {
+      grid.innerHTML = `<p class="text-white/30 text-center py-20 col-span-full text-sm">
+        ${galMode === 'favs' ? 'Keine Favoriten mit Fotos vorhanden.' : 'Noch keine Fotos hochgeladen.'}
+      </p>`;
+      return;
+    }
+
+    grid.innerHTML = list.map(e => {
+      const photos = e.photos || [];
+      return photos.map((src, i) => {
+        const displaySrc = toDisplayUrl(src, 600);
+        return `
+          <div class="gal-item rounded-2xl overflow-hidden relative cursor-pointer shadow-lg"
+               onclick="closeGallery();openLightbox(entries.find(x=>x.id==='${e.id}'))">
+            <img src="${displaySrc}" loading="lazy"
+              class="w-full block object-cover" style="min-height:120px" />
+            <div class="gal-overlay absolute inset-0 bg-gradient-to-t from-black/80 via-transparent
+                        flex flex-col justify-end p-3">
+              <p class="text-white text-xs font-bold truncate">${esc(e.locationName)}</p>
+              <p class="text-white/60 text-xs">${fmtDate(e.date)}</p>
+              ${photos.length > 1 && i === 0 ? `<span class="absolute top-2 right-2 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded-full backdrop-blur-sm">+${photos.length - 1}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }).join('')
   }
 
   function cardFlyTo(id) {

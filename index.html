@@ -251,7 +251,7 @@
     <!-- Masonry Grid -->
     <div id="gallery-grid"
       class="flex-1 overflow-y-auto scroll-thin p-4 sm:p-6"
-      style="columns:2 160px;column-gap:10px">
+      style="columns:3 120px;column-gap:8px">
     </div>
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -583,6 +583,7 @@
   // ══════════════════════════════════════════════════════════════════════════
 
   let entries       = [];
+  let allEntries    = [];   // ungefilterte Vollmenge für Galerie & Favoriten
   let pendingLat    = null;
   let pendingLng    = null;
   let pendingPhotos = [];    // Array von Base64-Strings
@@ -1017,38 +1018,57 @@
   }
 
   function renderGallery() {
-    const grid = document.getElementById('gallery-grid');
-    const list = (galMode === 'favs' ? entries.filter(e => favorites.has(e.id)) : entries)
-      .filter(e => hasPhoto(e));
+    const grid   = document.getElementById('gallery-grid');
+    const source = galMode === 'favs'
+      ? allEntries.filter(e => favorites.has(e.id))
+      : allEntries;
+    const list = source.filter(e => hasPhoto(e));
 
     document.getElementById('gallery-subtitle').textContent =
       `${list.length} Erinnerung${list.length !== 1 ? 'en' : ''}`;
 
     if (!list.length) {
-      grid.innerHTML = `<p class="text-white/30 text-center py-20 col-span-full text-sm">
+      grid.innerHTML = `<p style="column-span:all" class="text-white/30 text-center py-20 text-sm">
         ${galMode === 'favs' ? 'Keine Favoriten mit Fotos vorhanden.' : 'Noch keine Fotos hochgeladen.'}
       </p>`;
       return;
     }
 
-    grid.innerHTML = list.map(e => {
-      const photos = e.photos || [];
-      return photos.map((src, i) => {
-        const displaySrc = toDisplayUrl(src, 600);
-        return `
-          <div class="gal-item rounded-2xl overflow-hidden relative cursor-pointer shadow-lg"
-               onclick="closeGallery();openLightbox(entries.find(x=>x.id==='${e.id}'))">
-            <img src="${displaySrc}" loading="lazy"
-              class="w-full block object-cover" style="min-height:120px" />
-            <div class="gal-overlay absolute inset-0 bg-gradient-to-t from-black/80 via-transparent
-                        flex flex-col justify-end p-3">
-              <p class="text-white text-xs font-bold truncate">${esc(e.locationName)}</p>
-              <p class="text-white/60 text-xs">${fmtDate(e.date)}</p>
-              ${photos.length > 1 && i === 0 ? `<span class="absolute top-2 right-2 bg-black/50 text-white text-xs px-1.5 py-0.5 rounded-full backdrop-blur-sm">+${photos.length - 1}</span>` : ''}
-            </div>
-          </div>`;
-      }).join('');
-    }).join('')
+    // Flache Liste aller Fotos mit Eintragsbezug
+    const items = [];
+    list.forEach(e => {
+      (e.photos || []).forEach((src, i) => {
+        items.push({ e, src, i, total: e.photos.length });
+      });
+    });
+
+    grid.innerHTML = items.map(({ e, src, i, total }) => {
+      const displaySrc = toDisplayUrl(src, 400);
+      return `
+        <div class="gal-item rounded-xl overflow-hidden relative cursor-pointer shadow-md"
+             onclick="galItemClick('${e.id}',${i})">
+          <img src="${displaySrc}" loading="lazy"
+            class="w-full block object-cover" style="max-height:160px;min-height:80px" />
+          <div class="gal-overlay absolute inset-0 bg-gradient-to-t from-black/75 via-transparent
+                      flex flex-col justify-end px-2.5 py-2">
+            <p class="text-white text-xs font-bold truncate leading-tight">${esc(e.locationName)}</p>
+            <p class="text-white/55 text-xs">${fmtDate(e.date)}</p>
+          </div>
+          ${total > 1 && i === 0
+            ? `<span class="absolute top-1.5 right-1.5 bg-black/55 text-white text-xs px-1.5 py-0.5
+                           rounded-full backdrop-blur-sm leading-tight">+${total - 1}</span>`
+            : ''}
+        </div>`;
+    }).join('');
+  }
+
+  function galItemClick(id, photoIdx) {
+    const e = allEntries.find(x => x.id === id);
+    if (!e) return;
+    closeGallery();
+    openLightbox(e);
+    // Direkt zum richtigen Foto-Index springen
+    if (photoIdx > 0) setTimeout(() => showLbSlide(photoIdx), 50);
   }
 
   function cardFlyTo(id) {
@@ -1199,7 +1219,8 @@
     if (!confirm('Diesen Eintrag wirklich löschen?')) return;
     const { error } = await sb.from(TABLE).delete().eq('id', id);
     if (error) { toast('Fehler beim Löschen: ' + error.message, 'err'); return; }
-    entries = entries.filter(e => e.id !== id);
+    entries    = entries.filter(e => e.id !== id);
+    allEntries = allEntries.filter(e => e.id !== id);
     if (markerMap[id]) { map.removeLayer(markerMap[id]); delete markerMap[id]; }
     map.closePopup();
     renderList();
@@ -1365,6 +1386,7 @@
 
     const entry = rowToEntry(data);
     entries.push(entry);
+    allEntries.push(entry);
     placeMarker(entry);
     renderList();
     closeSidebar();
@@ -1712,7 +1734,8 @@
     }
 
     populateYearFilter(data);
-    entries = data.map(rowToEntry);
+    allEntries = data.map(rowToEntry);
+    entries    = [...allEntries];
     entries.forEach(placeMarker);
     renderList();
     updateDashboard();

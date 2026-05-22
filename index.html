@@ -203,13 +203,13 @@
   const markerMap = {};
 
   // ─── Karte (einmalige Welt, keine Wiederholung) ───────────────────────────
-  const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
+  const worldBounds = L.latLngBounds(L.latLng(-85.051, -180), L.latLng(85.051, 180));
 
   const map = L.map('map', {
     zoomControl:          false,
     maxBounds:            worldBounds,
     maxBoundsViscosity:   1.0,
-    minZoom:              2,
+    minZoom:              1,
     worldCopyJump:        false,
   }).setView([20, 10], 3);
 
@@ -221,6 +221,21 @@
     noWrap:   true,
     bounds:   worldBounds,
   }).addTo(map);
+
+  // ─── MinZoom dynamisch berechnen (kein grauer Rand beim Rauszoomen) ────────
+  function updateMinZoom() {
+    const w = map.getContainer().clientWidth;
+    const h = map.getContainer().clientHeight;
+    // Bei Zoom z ist die Weltkarte 256 * 2^z Pixel breit/hoch.
+    // MinZoom so setzen, dass die Karte den Viewport immer ausfüllt.
+    const minZ = Math.ceil(Math.log2(Math.max(w, h) / 256));
+    map.setMinZoom(Math.max(1, minZ));
+    // Wenn aktueller Zoom kleiner als neues Minimum, anpassen
+    if (map.getZoom() < map.getMinZoom()) map.setZoom(map.getMinZoom());
+  }
+
+  updateMinZoom();
+  window.addEventListener('resize', () => { map.invalidateSize(); updateMinZoom(); });
 
   // ─── Marker-Icon ──────────────────────────────────────────────────────────
   function makeIcon(hasPhoto) {

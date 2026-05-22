@@ -32,6 +32,10 @@
     .spin { animation: spin .7s linear infinite; }
 
     .popup-photo { width:100%; max-height:160px; object-fit:cover; border-radius:8px; margin-bottom:10px; display:block; }
+
+    /* Animierte Reiseroute */
+    @keyframes route-dash { to { stroke-dashoffset: -22; } }
+    .route-animated { animation: route-dash 1.4s linear infinite; }
   </style>
 </head>
 
@@ -176,6 +180,22 @@
     </div>
   </aside>
 
+  <!-- Routen-Toggle (unten links) -->
+  <button id="btn-route" onclick="toggleRoute()"
+    class="fixed bottom-5 left-5 z-[1000] bg-white/90 backdrop-blur-sm
+           rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
+           hover:bg-orange-50 transition-colors whitespace-nowrap select-none">
+    <span class="text-base">✈️</span>
+    <span class="text-gray-700 text-sm font-medium">Route</span>
+    <!-- Toggle-Switch -->
+    <div id="route-switch"
+      class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-orange-500">
+      <div id="route-thumb"
+        class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 right-0.5">
+      </div>
+    </div>
+  </button>
+
   <!-- Hinweis-Chip (zentriert unten, weg vom Zoom-Button) -->
   <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur
               rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2 pointer-events-none
@@ -201,6 +221,73 @@
   let pendingLng = null;
   let pendingPhoto = null;
   const markerMap = {};
+
+  // ─── Reiseroute ───────────────────────────────────────────────────────────
+  let routeLayer = null;
+  let showRoute  = true;
+
+  function drawRoute() {
+    if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+    if (!showRoute || entries.length < 2) return;
+
+    // Chronologisch nach Datum sortieren; Einträge ohne Datum ans Ende
+    const sorted = [...entries].sort((a, b) => {
+      if (a.date && b.date) return a.date.localeCompare(b.date);
+      if (a.date)  return -1;
+      if (b.date)  return  1;
+      return 0;
+    });
+
+    const coords = sorted.map(e => [e.lat, e.lng]);
+
+    // Leuchtender Glüh-Effekt: dicke halbtransparente Basis + animierte Strich-Linie
+    const glow = L.polyline(coords, {
+      color:     '#fb923c',
+      weight:    8,
+      opacity:   0.18,
+      lineCap:   'round',
+      lineJoin:  'round',
+    });
+
+    const line = L.polyline(coords, {
+      color:     '#f97316',
+      weight:    2.5,
+      opacity:   0.9,
+      dashArray: '10, 7',
+      lineCap:   'round',
+      lineJoin:  'round',
+    });
+
+    routeLayer = L.layerGroup([glow, line]).addTo(map);
+
+    // CSS-Animation auf den SVG-Pfad der gepunkteten Linie anwenden
+    line.on('add', () => {
+      const el = line.getElement();
+      if (el) el.classList.add('route-animated');
+    });
+    // Falls bereits geaddet (LayerGroup)
+    setTimeout(() => {
+      const el = line.getElement();
+      if (el) el.classList.add('route-animated');
+    }, 50);
+  }
+
+  function toggleRoute() {
+    showRoute = !showRoute;
+    const sw    = document.getElementById('route-switch');
+    const thumb = document.getElementById('route-thumb');
+    if (showRoute) {
+      sw.classList.replace('bg-gray-300', 'bg-orange-500');
+      thumb.classList.replace('left-0.5', 'right-0.5');
+      thumb.classList.remove('left-0.5');
+      thumb.classList.add('right-0.5');
+    } else {
+      sw.classList.replace('bg-orange-500', 'bg-gray-300');
+      thumb.classList.remove('right-0.5');
+      thumb.classList.add('left-0.5');
+    }
+    drawRoute();
+  }
 
   // ─── Karte (einmalige Welt, keine Wiederholung) ───────────────────────────
   const worldBounds = L.latLngBounds(L.latLng(-85.051, -180), L.latLng(85.051, 180));
@@ -378,6 +465,7 @@
     `).join('');
 
     updateStats();
+    drawRoute();
   }
 
   // ─── Zur Position fliegen ─────────────────────────────────────────────────

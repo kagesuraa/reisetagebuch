@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mein Reisetagebuch</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    #map { height: 100dvh; width: 100%; }
+
+    #sidebar {
+      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      transform: translateX(100%);
+    }
+    #sidebar.open { transform: translateX(0); }
+
+    /* Leaflet-Zoom nach rechts unten verschieben */
+    .leaflet-bottom.leaflet-right { bottom: 24px; right: 16px; }
+
+    .leaflet-popup-content { margin: 12px 16px; }
+
+    .scroll-thin::-webkit-scrollbar { width: 4px; }
+    .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin .7s linear infinite; }
+
+    .popup-photo { width:100%; max-height:160px; object-fit:cover; border-radius:8px; margin-bottom:10px; display:block; }
+  </style>
+</head>
+
+<body class="overflow-hidden bg-gray-100">
+
+  <div id="map"></div>
+
+  <!-- Statistik-Leiste -->
+  <div class="fixed top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm
+              rounded-2xl shadow-lg px-5 py-3 flex items-center gap-4 pointer-events-none">
+    <div class="text-center">
+      <p id="stat-count" class="text-2xl font-bold text-orange-500 leading-none">0</p>
+      <p class="text-xs text-gray-400 font-medium mt-0.5">Besuchte Orte</p>
+    </div>
+    <div class="w-px h-8 bg-gray-200"></div>
+    <div class="text-center">
+      <p id="stat-photos" class="text-2xl font-bold text-amber-500 leading-none">0</p>
+      <p class="text-xs text-gray-400 font-medium mt-0.5">mit Foto</p>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast-container"
+    class="fixed top-5 left-1/2 -translate-x-1/2 z-[2000]
+           flex flex-col items-center gap-2 pointer-events-none"></div>
+
+  <!-- Seitenleiste -->
+  <aside id="sidebar"
+    class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[1001] flex flex-col select-none">
+
+    <div class="bg-gradient-to-br from-orange-500 to-amber-400 text-white px-6 py-5 flex-shrink-0">
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 opacity-90" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13.5 0C13.5 0 14 4.5 11.5 7C9 9.5 6 9 6 9C6 9 7 13 10 14.5C10 14.5 9 16 7.5 16C7.5 16 9 19.5 13 20C17 20.5 20 17 20 13C20 9 17 7 17 7C17 7 16.5 9.5 14.5 10C14.5 10 15.5 7.5 13.5 0Z"/>
+          </svg>
+          <h2 class="text-lg font-bold tracking-tight">Neuer Eintrag</h2>
+        </div>
+        <button id="btn-close"
+          class="w-8 h-8 rounded-full hover:bg-white/20 transition-colors
+                 flex items-center justify-center text-xl leading-none">×</button>
+      </div>
+      <p id="coords-display" class="text-orange-100 text-xs font-mono mt-1 truncate"></p>
+    </div>
+
+    <div class="flex-1 overflow-y-auto scroll-thin px-6 py-5 space-y-5">
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Ortsname</label>
+        <input id="inp-location" type="text" placeholder="z.B. Eiffelturm, Paris"
+          class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5
+                 text-sm text-gray-800 placeholder-gray-400
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Datum</label>
+        <input id="inp-date" type="date"
+          class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5
+                 text-sm text-gray-800
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+      </div>
+
+      <!-- Foto-Upload -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+          Foto (optional)
+        </label>
+        <div id="upload-area"
+          class="relative flex flex-col items-center justify-center w-full border-2 border-dashed
+                 border-gray-200 rounded-xl bg-gray-50
+                 hover:bg-orange-50 hover:border-orange-300 transition-colors overflow-hidden"
+          style="min-height:7rem">
+
+          <div id="upload-placeholder"
+            class="flex flex-col items-center gap-1.5 py-4 text-gray-400 cursor-pointer w-full text-center"
+            onclick="document.getElementById('inp-photo').click()">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
+                   0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <span class="text-xs font-medium">Foto auswählen oder hierher ziehen</span>
+            <span class="text-xs text-gray-300">JPG, PNG, WEBP – max. ~5 MB</span>
+          </div>
+
+          <img id="img-preview" class="hidden w-full object-cover rounded-xl cursor-pointer"
+            style="max-height:180px" alt="Vorschau"
+            onclick="document.getElementById('inp-photo').click()"
+            title="Klicken um Foto zu ändern" />
+
+          <button id="btn-remove-photo" type="button"
+            class="hidden absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white
+                   text-base font-bold flex items-center justify-center hover:bg-red-600 transition-colors z-10">×</button>
+
+          <input id="inp-photo" type="file" accept="image/*" class="hidden" />
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+          Erinnerungen &amp; Notizen
+        </label>
+        <textarea id="inp-notes" rows="5"
+          placeholder="Was hast du erlebt? Besondere Momente, Menschen, Gerüche …"
+          class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5
+                 text-sm text-gray-800 placeholder-gray-400 resize-none
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition">
+        </textarea>
+      </div>
+
+      <button id="btn-save"
+        class="w-full flex items-center justify-center gap-2
+               bg-orange-500 hover:bg-orange-600 active:bg-orange-700
+               text-white font-semibold text-sm py-3 rounded-lg
+               transition-colors duration-150 shadow-sm
+               disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg id="save-spinner" class="w-4 h-4 spin hidden" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        <span id="save-label">✈&nbsp; Eintrag speichern</span>
+      </button>
+    </div>
+
+    <!-- Eintrags-Liste -->
+    <div class="border-t border-gray-100 flex-shrink-0">
+      <div class="flex items-center justify-between px-6 pt-3 pb-1">
+        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Meine Reisen</h3>
+        <span id="entry-count" class="text-xs font-bold text-orange-500"></span>
+      </div>
+      <div id="list-loader"
+        class="flex items-center justify-center gap-2 py-4 text-gray-400 text-xs px-4">
+        <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        Verbinde mit Supabase …
+      </div>
+      <div id="entries-list"
+        class="scroll-thin overflow-y-auto max-h-48 px-4 pb-4 space-y-1.5 hidden"></div>
+    </div>
+  </aside>
+
+  <!-- Hinweis-Chip (zentriert unten, weg vom Zoom-Button) -->
+  <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur
+              rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2 pointer-events-none
+              whitespace-nowrap">
+    <span class="text-base">🗺️</span>
+    <span class="text-gray-700 text-sm font-medium hidden sm:inline">Klicke auf die Karte, um einen Eintrag hinzuzufügen.</span>
+    <span class="text-gray-700 text-sm font-medium sm:hidden">Karte antippen</span>
+  </div>
+
+  <script>
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Supabase-Konfiguration
+  // ══════════════════════════════════════════════════════════════════════════
+  const SUPABASE_URL = 'https://zjykhnebeyqmonhgvlja.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqeWtobmViZXlxbW9uaGd2bGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzQ2NDEsImV4cCI6MjA5NTA1MDY0MX0.Ou7bbpYeiHz7G9s4iJEBW9syAapw23EsgMcYd14iw1k';
+  const TABLE        = 'reise_eintraege';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  // ══════════════════════════════════════════════════════════════════════════
+
+  let entries    = [];
+  let pendingLat = null;
+  let pendingLng = null;
+  let pendingPhoto = null;
+  const markerMap = {};
+
+  // ─── Karte (einmalige Welt, keine Wiederholung) ───────────────────────────
+  const worldBounds = L.latLngBounds(L.latLng(-90, -180), L.latLng(90, 180));
+
+  const map = L.map('map', {
+    zoomControl:          false,
+    maxBounds:            worldBounds,
+    maxBoundsViscosity:   1.0,
+    minZoom:              2,
+    worldCopyJump:        false,
+  }).setView([20, 10], 3);
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom:  19,
+    noWrap:   true,
+    bounds:   worldBounds,
+  }).addTo(map);
+
+  // ─── Marker-Icon ──────────────────────────────────────────────────────────
+  function makeIcon(hasPhoto) {
+    const dot = hasPhoto
+      ? `<div style="position:absolute;top:-5px;right:-5px;width:10px;height:10px;
+                     background:#10b981;border:2px solid white;border-radius:50%"></div>`
+      : '';
+    return L.divIcon({
+      className: '',
+      html: `<div style="position:relative;width:18px;height:18px;background:#f97316;
+                         border:3px solid white;border-radius:50%;
+                         box-shadow:0 2px 8px rgba(249,115,22,.5)">${dot}</div>`,
+      iconSize:    [18, 18],
+      iconAnchor:  [9,  9],
+      popupAnchor: [0, -14],
+    });
+  }
+
+  // ─── Bild komprimieren ────────────────────────────────────────────────────
+  function compressImage(file, maxSide = 900, quality = 0.78) {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const img = new Image();
+        img.onload = () => {
+          const ratio  = Math.min(maxSide / img.width, maxSide / img.height, 1);
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.round(img.width  * ratio);
+          canvas.height = Math.round(img.height * ratio);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ─── Supabase-Zeile → JS-Objekt ───────────────────────────────────────────
+  function rowToEntry(row) {
+    return {
+      id:           row.id,
+      lat:          row.lat,
+      lng:          row.lng,
+      locationName: row.location_name,
+      date:         row.date || '',
+      notes:        row.notes || '',
+      photoBase64:  row.photo_base64 || null,
+    };
+  }
+
+  // ─── Datum formatieren ────────────────────────────────────────────────────
+  function fmtDate(iso) {
+    if (!iso) return '–';
+    const [y, m, d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
+  // ─── XSS-Schutz ───────────────────────────────────────────────────────────
+  function esc(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── Toast ────────────────────────────────────────────────────────────────
+  function toast(msg, type = 'ok') {
+    const bg = { ok: 'bg-emerald-600', err: 'bg-red-600', info: 'bg-orange-500' }[type];
+    const el = document.createElement('div');
+    el.className = `${bg} text-white text-sm font-medium px-5 py-3 rounded-xl
+                    shadow-lg opacity-0 transition-opacity duration-300 pointer-events-auto`;
+    el.textContent = msg;
+    document.getElementById('toast-container').appendChild(el);
+    requestAnimationFrame(() => el.style.opacity = '1');
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 320); }, 3200);
+  }
+
+  // ─── Statistik ────────────────────────────────────────────────────────────
+  function updateStats() {
+    document.getElementById('stat-count').textContent  = entries.length;
+    document.getElementById('stat-photos').textContent = entries.filter(e => e.photoBase64).length;
+  }
+
+  // ─── Marker setzen ────────────────────────────────────────────────────────
+  function placeMarker(entry) {
+    const marker = L.marker([entry.lat, entry.lng], { icon: makeIcon(!!entry.photoBase64) }).addTo(map);
+    const photoHtml = entry.photoBase64
+      ? `<img src="${entry.photoBase64}" class="popup-photo" alt="${esc(entry.locationName)}" />`
+      : '';
+    marker.bindPopup(`
+      <div style="min-width:220px;max-width:280px">
+        ${photoHtml}
+        <p style="font-weight:700;font-size:15px;color:#1e293b;margin:0 0 2px">${esc(entry.locationName)}</p>
+        <p style="font-size:12px;color:#f97316;margin:0 0 8px">📅 ${fmtDate(entry.date)}</p>
+        <p style="font-size:13px;color:#475569;margin:0;white-space:pre-wrap;line-height:1.5">
+          ${esc(entry.notes) || '<em style="color:#94a3b8">Keine Notizen</em>'}
+        </p>
+        <hr style="margin:10px 0 8px;border-color:#e2e8f0"/>
+        <button onclick="deleteEntry('${entry.id}')"
+          style="font-size:11px;color:#ef4444;background:none;border:none;cursor:pointer;padding:0;font-family:inherit">
+          🗑 Eintrag löschen
+        </button>
+      </div>
+    `, { maxWidth: 300, minWidth: 220 });
+    markerMap[entry.id] = marker;
+  }
+
+  // ─── Liste rendern ────────────────────────────────────────────────────────
+  function renderList() {
+    document.getElementById('list-loader').classList.add('hidden');
+    const list  = document.getElementById('entries-list');
+    const count = document.getElementById('entry-count');
+    list.classList.remove('hidden');
+
+    count.textContent = entries.length
+      ? `${entries.length} ${entries.length === 1 ? 'Eintrag' : 'Einträge'}`
+      : '';
+
+    if (entries.length === 0) {
+      list.innerHTML = '<p class="text-center text-gray-300 text-xs py-3">Noch keine Einträge gespeichert.</p>';
+      updateStats();
+      return;
+    }
+
+    list.innerHTML = entries.map(e => `
+      <div class="flex items-center gap-2 rounded-lg px-3 py-2
+                  bg-gray-50 hover:bg-orange-50 transition-colors group">
+        ${e.photoBase64
+          ? `<img src="${e.photoBase64}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" />`
+          : `<div class="w-9 h-9 rounded-md bg-orange-100 flex items-center justify-center flex-shrink-0 text-sm">📍</div>`
+        }
+        <div class="flex-1 min-w-0 cursor-pointer" onclick="flyTo('${e.id}')">
+          <p class="text-sm font-medium text-gray-700 truncate">${esc(e.locationName)}</p>
+          <p class="text-xs text-gray-400">${fmtDate(e.date)}</p>
+        </div>
+        <button onclick="deleteEntry('${e.id}')"
+          class="text-gray-300 hover:text-red-500 transition-colors
+                 opacity-0 group-hover:opacity-100 text-lg leading-none flex-shrink-0">×</button>
+      </div>
+    `).join('');
+
+    updateStats();
+  }
+
+  // ─── Zur Position fliegen ─────────────────────────────────────────────────
+  function flyTo(id) {
+    const e = entries.find(e => e.id === id);
+    if (!e) return;
+    map.flyTo([e.lat, e.lng], 12, { duration: 1.4 });
+    setTimeout(() => markerMap[id]?.openPopup(), 1500);
+  }
+
+  // ─── Löschen ──────────────────────────────────────────────────────────────
+  async function deleteEntry(id) {
+    if (!confirm('Diesen Eintrag wirklich löschen?')) return;
+    const { error } = await sb.from(TABLE).delete().eq('id', id);
+    if (error) { toast('Fehler beim Löschen: ' + error.message, 'err'); return; }
+    entries = entries.filter(e => e.id !== id);
+    if (markerMap[id]) { map.removeLayer(markerMap[id]); delete markerMap[id]; }
+    map.closePopup();
+    renderList();
+    toast('Eintrag gelöscht.');
+  }
+
+  // ─── Foto-Upload ──────────────────────────────────────────────────────────
+  const inpPhoto          = document.getElementById('inp-photo');
+  const imgPreview        = document.getElementById('img-preview');
+  const uploadPlaceholder = document.getElementById('upload-placeholder');
+  const btnRemovePhoto    = document.getElementById('btn-remove-photo');
+  const uploadArea        = document.getElementById('upload-area');
+
+  async function applyPhoto(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      toast('Bitte eine Bilddatei auswählen (JPG, PNG, WEBP).', 'err');
+      return;
+    }
+    uploadPlaceholder.innerHTML =
+      `<svg class="w-5 h-5 spin" fill="none" viewBox="0 0 24 24">
+         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+       </svg>
+       <span class="text-xs">Komprimiere …</span>`;
+    try {
+      pendingPhoto = await compressImage(file);
+    } catch {
+      toast('Fehler beim Lesen des Bildes.', 'err');
+      resetPhoto();
+      return;
+    }
+    imgPreview.src = pendingPhoto;
+    imgPreview.classList.remove('hidden');
+    uploadPlaceholder.classList.add('hidden');
+    btnRemovePhoto.classList.remove('hidden');
+  }
+
+  inpPhoto.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    await applyPhoto(file);
+    inpPhoto.value = '';
+  });
+
+  btnRemovePhoto.addEventListener('click', ev => { ev.stopPropagation(); resetPhoto(); });
+
+  function resetPhoto() {
+    pendingPhoto = null;
+    inpPhoto.value = '';
+    imgPreview.src = '';
+    imgPreview.classList.add('hidden');
+    btnRemovePhoto.classList.add('hidden');
+    uploadPlaceholder.classList.remove('hidden');
+    uploadPlaceholder.innerHTML =
+      `<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
+              0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+       </svg>
+       <span class="text-xs font-medium">Foto auswählen oder hierher ziehen</span>
+       <span class="text-xs text-gray-300">JPG, PNG, WEBP – max. ~5 MB</span>`;
+  }
+
+  uploadArea.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadArea.classList.add('border-orange-400', 'bg-orange-50');
+  });
+  uploadArea.addEventListener('dragleave', e => {
+    if (!uploadArea.contains(e.relatedTarget))
+      uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
+  });
+  uploadArea.addEventListener('drop', async e => {
+    e.preventDefault();
+    uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
+    await applyPhoto(e.dataTransfer.files[0]);
+  });
+
+  // ─── Seitenleiste ─────────────────────────────────────────────────────────
+  const sidebar = document.getElementById('sidebar');
+  function openSidebar()  { sidebar.classList.add('open'); }
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    pendingLat = pendingLng = null;
+    resetPhoto();
+  }
+
+  document.getElementById('btn-close').addEventListener('click', closeSidebar);
+
+  map.on('click', e => {
+    pendingLat = e.latlng.lat;
+    pendingLng = e.latlng.lng;
+    document.getElementById('coords-display').textContent =
+      `${pendingLat.toFixed(5)}°, ${pendingLng.toFixed(5)}°`;
+    document.getElementById('inp-location').value = '';
+    document.getElementById('inp-notes').value    = '';
+    document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
+    resetPhoto();
+    openSidebar();
+    setTimeout(() => document.getElementById('inp-location').focus(), 360);
+  });
+
+  // ─── Speichern ────────────────────────────────────────────────────────────
+  const btnSave     = document.getElementById('btn-save');
+  const saveLabel   = document.getElementById('save-label');
+  const saveSpinner = document.getElementById('save-spinner');
+
+  function setSaving(on) {
+    btnSave.disabled = on;
+    saveLabel.textContent = on ? 'Wird gespeichert …' : '✈  Eintrag speichern';
+    saveSpinner.classList.toggle('hidden', !on);
+  }
+
+  btnSave.addEventListener('click', async () => {
+    if (pendingLat === null) return;
+    setSaving(true);
+
+    const payload = {
+      lat:          pendingLat,
+      lng:          pendingLng,
+      location_name: document.getElementById('inp-location').value.trim() || 'Unbekannter Ort',
+      date:          document.getElementById('inp-date').value || null,
+      notes:         document.getElementById('inp-notes').value.trim() || null,
+      photo_base64:  pendingPhoto || null,
+    };
+
+    const { data, error } = await sb.from(TABLE).insert([payload]).select().single();
+
+    if (error) {
+      toast('Fehler beim Speichern: ' + error.message, 'err');
+      setSaving(false);
+      return;
+    }
+
+    const entry = rowToEntry(data);
+    entries.push(entry);
+    placeMarker(entry);
+    renderList();
+    closeSidebar();
+    toast(`"${entry.locationName}" gespeichert ✓`);
+    setSaving(false);
+  });
+
+  // ─── Start: Einträge laden ────────────────────────────────────────────────
+  async function init() {
+    const { data, error } = await sb
+      .from(TABLE)
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      toast('Supabase-Fehler: ' + error.message, 'err');
+      const loader = document.getElementById('list-loader');
+      loader.textContent = '⚠ Verbindungsfehler – RLS-Regeln prüfen';
+      return;
+    }
+
+    entries = data.map(rowToEntry);
+    entries.forEach(placeMarker);
+    renderList();
+    if (entries.length) toast(`${entries.length} Einträge geladen`, 'info');
+  }
+
+  init();
+  </script>
+</body>
+</html>

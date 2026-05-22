@@ -280,6 +280,7 @@
                  hover:bg-orange-50 hover:border-orange-300 transition-colors overflow-hidden"
           style="min-height:7rem">
 
+          <!-- Platzhalter -->
           <div id="upload-placeholder"
             class="flex flex-col items-center gap-1.5 py-4 text-gray-400 cursor-pointer w-full text-center"
             onclick="document.getElementById('inp-photo').click()">
@@ -288,20 +289,14 @@
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
                    0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span class="text-xs font-medium">Foto auswählen oder hierher ziehen</span>
-            <span class="text-xs text-gray-300">JPG, PNG, WEBP – max. ~5 MB</span>
+            <span class="text-xs font-medium">Fotos auswählen oder hierher ziehen</span>
+            <span class="text-xs text-gray-300">Mehrere Bilder möglich · JPG, PNG, WEBP</span>
           </div>
 
-          <img id="img-preview" class="hidden w-full object-cover rounded-xl cursor-pointer"
-            style="max-height:180px" alt="Vorschau"
-            onclick="document.getElementById('inp-photo').click()"
-            title="Klicken um Foto zu ändern" />
+          <!-- Thumbnail-Grid (sichtbar sobald Bilder gewählt) -->
+          <div id="thumb-grid" class="hidden w-full p-2 grid grid-cols-3 gap-2"></div>
 
-          <button id="btn-remove-photo" type="button"
-            class="hidden absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white
-                   text-base font-bold flex items-center justify-center hover:bg-red-600 transition-colors z-10">×</button>
-
-          <input id="inp-photo" type="file" accept="image/*" class="hidden" />
+          <input id="inp-photo" type="file" accept="image/*" multiple class="hidden" />
         </div>
       </div>
 
@@ -360,11 +355,26 @@
              flex flex-col sm:flex-row overflow-hidden opacity-0"
       style="transform:scale(.95)">
 
-      <!-- Foto-Panel -->
+      <!-- Foto-Panel + Karussell -->
       <div id="lb-photo-panel"
-        class="sm:w-[45%] flex-shrink-0 bg-gray-100 hidden">
+        class="sm:w-[45%] flex-shrink-0 bg-gray-900 hidden relative overflow-hidden">
         <img id="lb-img" alt=""
-          class="w-full h-56 sm:h-full object-cover" />
+          class="w-full h-56 sm:h-full object-cover transition-opacity duration-300" />
+        <!-- Pfeil-Buttons (nur bei > 1 Bild) -->
+        <button id="lb-prev"
+          class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10
+                 w-9 h-9 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm
+                 text-white text-xl flex items-center justify-center transition-colors">‹</button>
+        <button id="lb-next"
+          class="hidden absolute right-2 top-1/2 -translate-y-1/2 z-10
+                 w-9 h-9 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm
+                 text-white text-xl flex items-center justify-center transition-colors">›</button>
+        <!-- Zähler -->
+        <div id="lb-counter"
+          class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-10
+                 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+          1 / 1
+        </div>
       </div>
 
       <!-- Inhalt-Panel -->
@@ -444,10 +454,10 @@
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   // ══════════════════════════════════════════════════════════════════════════
 
-  let entries      = [];
-  let pendingLat   = null;
-  let pendingLng   = null;
-  let pendingPhoto = null;
+  let entries       = [];
+  let pendingLat    = null;
+  let pendingLng    = null;
+  let pendingPhotos = [];    // Array von Base64-Strings
   let previewMarker = null;
   const markerMap  = {};
 
@@ -651,6 +661,18 @@
   }
 
   // ─── Supabase-Zeile → JS-Objekt ───────────────────────────────────────────
+  function parsePhotos(row) {
+    // Priorität: image_url (neues Format) → photo_url → photo_base64
+    const raw = row.image_url || row.photo_url || null;
+    if (raw) {
+      if (raw.trimStart().startsWith('[')) {
+        try { return JSON.parse(raw); } catch { /* fall through */ }
+      }
+      return [raw];
+    }
+    return row.photo_base64 ? [row.photo_base64] : [];
+  }
+
   function rowToEntry(row) {
     return {
       id:           row.id,
@@ -659,30 +681,35 @@
       locationName: row.location_name,
       date:         row.date || '',
       notes:        row.notes || '',
-      photoUrl:     row.photo_url   || null,   // Supabase Storage URL
-      photoBase64:  row.photo_base64 || null,  // Fallback für alte Einträge
+      photos:       parsePhotos(row),   // immer ein Array
     };
   }
 
-  // Gibt die optimierte Bild-URL zurück (Storage-Transform oder Base64-Fallback)
+  // Gibt optimierte URL zurück (Transform für Storage-URLs, direkter Wert für Base64)
   function getPhotoSrc(entry, width = 400) {
-    if (entry.photoUrl)
-      return `${entry.photoUrl}?width=${width}&resize=contain`;
-    return entry.photoBase64 || null;
+    const src = entry.photos?.[0];
+    if (!src) return null;
+    return toDisplayUrl(src, width);
   }
 
-  function hasPhoto(entry) { return !!(entry.photoUrl || entry.photoBase64); }
+  function toDisplayUrl(src, width = 400) {
+    if (!src) return null;
+    if (src.startsWith('data:') || !src.includes('supabase')) return src;
+    return `${src}?width=${width}&resize=contain`;
+  }
+
+  function hasPhoto(entry) { return !!(entry.photos?.length); }
 
   // ─── Foto in Supabase Storage hochladen ───────────────────────────────────
   async function uploadPhoto(base64DataUrl) {
     const res      = await fetch(base64DataUrl);
     const blob     = await res.blob();
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error } = await sb.storage.from('photos').upload(fileName, blob, {
+    const { error } = await sb.storage.from('trip-images').upload(fileName, blob, {
       contentType: 'image/jpeg', upsert: false,
     });
     if (error) throw error;
-    return sb.storage.from('photos').getPublicUrl(fileName).data.publicUrl;
+    return sb.storage.from('trip-images').getPublicUrl(fileName).data.publicUrl;
   }
 
   // ─── Datum formatieren ────────────────────────────────────────────────────
@@ -783,30 +810,49 @@
   const lbName       = document.getElementById('lb-name');
   const lbNotes      = document.getElementById('lb-notes');
   const lbCoords     = document.getElementById('lb-coords');
+  const lbPrev       = document.getElementById('lb-prev');
+  const lbNext       = document.getElementById('lb-next');
+  const lbCounter    = document.getElementById('lb-counter');
   let   lbActiveId   = null;
+  let   lbPhotos     = [];
+  let   lbIdx        = 0;
+
+  function showLbSlide(idx) {
+    lbIdx = (idx + lbPhotos.length) % lbPhotos.length;
+    // Sanftes Ausblenden → Bild wechseln → Einblenden
+    lbImg.style.opacity = '0';
+    setTimeout(() => {
+      lbImg.src           = toDisplayUrl(lbPhotos[lbIdx], 900) || '';
+      lbImg.style.opacity = '1';
+    }, 150);
+    lbCounter.textContent = `${lbIdx + 1} / ${lbPhotos.length}`;
+  }
 
   function openLightbox(entry) {
     lbActiveId = entry.id;
+    lbPhotos   = entry.photos || [];
+    lbIdx      = 0;
 
-    // Foto
-    const src = getPhotoSrc(entry, 900);
-    if (src) {
-      lbImg.src = src;
+    if (lbPhotos.length) {
+      lbImg.src = toDisplayUrl(lbPhotos[0], 900) || '';
+      lbImg.style.opacity = '1';
       lbPhotoPanel.classList.remove('hidden');
+      const multi = lbPhotos.length > 1;
+      lbPrev.classList.toggle('hidden',    !multi);
+      lbNext.classList.toggle('hidden',    !multi);
+      lbCounter.classList.toggle('hidden', !multi);
+      if (multi) lbCounter.textContent = `1 / ${lbPhotos.length}`;
     } else {
       lbImg.src = '';
       lbPhotoPanel.classList.add('hidden');
-      // Kein Foto: Inhalt nimmt volle Breite
       lbCard.classList.remove('sm:flex-row');
     }
 
-    // Texte
     lbDate.textContent   = entry.date ? `📅  ${fmtDate(entry.date)}` : '';
     lbName.textContent   = entry.locationName;
     lbNotes.textContent  = entry.notes || 'Keine Notizen hinterlassen.';
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
-    // Einblenden
     lightbox.classList.add('open');
     document.addEventListener('keydown', onLbKey);
   }
@@ -814,16 +860,20 @@
   function closeLightbox() {
     lightbox.classList.remove('open');
     document.removeEventListener('keydown', onLbKey);
-    lbCard.classList.add('sm:flex-row'); // Reset für nächsten Aufruf
-    setTimeout(() => { lbImg.src = ''; }, 260);
+    lbCard.classList.add('sm:flex-row');
+    setTimeout(() => { lbImg.src = ''; lbPhotos = []; }, 260);
   }
 
-  function onLbKey(e) { if (e.key === 'Escape') closeLightbox(); }
+  function onLbKey(e) {
+    if (e.key === 'Escape')    closeLightbox();
+    if (e.key === 'ArrowLeft') showLbSlide(lbIdx - 1);
+    if (e.key === 'ArrowRight') showLbSlide(lbIdx + 1);
+  }
 
+  lbPrev.addEventListener('click', () => showLbSlide(lbIdx - 1));
+  lbNext.addEventListener('click', () => showLbSlide(lbIdx + 1));
   lbClose.addEventListener('click', closeLightbox);
-  // Klick auf abgedunkelten Hintergrund schließt Modal
   lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
-
   lbDelete.addEventListener('click', async () => {
     if (lbActiveId) { closeLightbox(); await deleteEntry(lbActiveId); }
   });
@@ -887,62 +937,76 @@
     toast('Eintrag gelöscht.');
   }
 
-  // ─── Foto-Upload ──────────────────────────────────────────────────────────
+  // ─── Foto-Upload (Multi) ─────────────────────────────────────────────────
   const inpPhoto          = document.getElementById('inp-photo');
-  const imgPreview        = document.getElementById('img-preview');
   const uploadPlaceholder = document.getElementById('upload-placeholder');
-  const btnRemovePhoto    = document.getElementById('btn-remove-photo');
+  const thumbGrid         = document.getElementById('thumb-grid');
   const uploadArea        = document.getElementById('upload-area');
 
-  async function applyPhoto(file) {
-    if (!file || !file.type.startsWith('image/')) {
-      toast('Bitte eine Bilddatei auswählen (JPG, PNG, WEBP).', 'err');
-      return;
-    }
+  async function addFiles(fileList) {
+    const valid = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    if (!valid.length) return;
+
+    // Lade-Indikator
     uploadPlaceholder.innerHTML =
       `<svg class="w-5 h-5 spin" fill="none" viewBox="0 0 24 24">
          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-       </svg>
-       <span class="text-xs">Komprimiere …</span>`;
+       </svg><span class="text-xs">Komprimiere ${valid.length} Bild${valid.length > 1 ? 'er' : ''} …</span>`;
+
     try {
-      pendingPhoto = await compressImage(file);
+      const compressed = await Promise.all(valid.map(f => compressImage(f)));
+      pendingPhotos = [...pendingPhotos, ...compressed];
     } catch {
-      toast('Fehler beim Lesen des Bildes.', 'err');
-      resetPhoto();
+      toast('Fehler beim Lesen eines Bildes.', 'err');
+    }
+    renderThumbGrid();
+    inpPhoto.value = '';
+  }
+
+  function renderThumbGrid() {
+    if (!pendingPhotos.length) {
+      thumbGrid.classList.add('hidden');
+      uploadPlaceholder.classList.remove('hidden');
+      uploadPlaceholder.innerHTML =
+        `<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+             d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
+                0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+         </svg>
+         <span class="text-xs font-medium">Fotos auswählen oder hierher ziehen</span>
+         <span class="text-xs text-gray-300">Mehrere Bilder möglich · JPG, PNG, WEBP</span>`;
       return;
     }
-    imgPreview.src = pendingPhoto;
-    imgPreview.classList.remove('hidden');
+
     uploadPlaceholder.classList.add('hidden');
-    btnRemovePhoto.classList.remove('hidden');
+    thumbGrid.classList.remove('hidden');
+    thumbGrid.innerHTML = pendingPhotos.map((src, i) => `
+      <div class="relative group aspect-square">
+        <img src="${src}" class="w-full h-full object-cover rounded-xl" />
+        <button type="button" onclick="removeThumb(${i})"
+          class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600
+                 text-white text-xs font-bold flex items-center justify-center
+                 opacity-0 group-hover:opacity-100 transition-all z-10">×</button>
+      </div>`).join('') +
+      `<div onclick="document.getElementById('inp-photo').click()"
+        class="aspect-square rounded-xl border-2 border-dashed border-gray-200
+               flex items-center justify-center cursor-pointer
+               hover:border-orange-300 hover:bg-orange-50 transition-colors text-gray-300 text-2xl">+</div>`;
   }
 
-  inpPhoto.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    await applyPhoto(file);
-    inpPhoto.value = '';
-  });
-
-  btnRemovePhoto.addEventListener('click', ev => { ev.stopPropagation(); resetPhoto(); });
+  function removeThumb(i) {
+    pendingPhotos.splice(i, 1);
+    renderThumbGrid();
+  }
 
   function resetPhoto() {
-    pendingPhoto = null;
+    pendingPhotos = [];
     inpPhoto.value = '';
-    imgPreview.src = '';
-    imgPreview.classList.add('hidden');
-    btnRemovePhoto.classList.add('hidden');
-    uploadPlaceholder.classList.remove('hidden');
-    uploadPlaceholder.innerHTML =
-      `<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
-              0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-       </svg>
-       <span class="text-xs font-medium">Foto auswählen oder hierher ziehen</span>
-       <span class="text-xs text-gray-300">JPG, PNG, WEBP – max. ~5 MB</span>`;
+    renderThumbGrid();
   }
+
+  inpPhoto.addEventListener('change', e => addFiles(e.target.files));
 
   uploadArea.addEventListener('dragover', e => {
     e.preventDefault();
@@ -955,7 +1019,7 @@
   uploadArea.addEventListener('drop', async e => {
     e.preventDefault();
     uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
-    await applyPhoto(e.dataTransfer.files[0]);
+    await addFiles(e.dataTransfer.files);
   });
 
   // ─── Seitenleiste ─────────────────────────────────────────────────────────
@@ -999,11 +1063,13 @@
     if (pendingLat === null) return;
     setSaving(true);
 
-    // Foto: in Storage hochladen, URL speichern (kein Base64 mehr in DB)
-    let photoUrl = null;
-    if (pendingPhoto) {
+    // Alle Bilder in trip-images hochladen → URLs als JSON-Array in image_url
+    let imageUrl = null;
+    if (pendingPhotos.length) {
       try {
-        photoUrl = await uploadPhoto(pendingPhoto);
+        setSaving(true);
+        const urls = await Promise.all(pendingPhotos.map(b64 => uploadPhoto(b64)));
+        imageUrl = JSON.stringify(urls);
       } catch (e) {
         toast('Foto-Upload fehlgeschlagen: ' + e.message, 'err');
         setSaving(false);
@@ -1017,8 +1083,7 @@
       location_name: document.getElementById('inp-location').value.trim() || 'Unbekannter Ort',
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
-      photo_url:     photoUrl,
-      photo_base64:  null,
+      image_url:     imageUrl,
     };
 
     const { data, error } = await sb.from(TABLE).insert([payload]).select().single();

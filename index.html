@@ -786,14 +786,11 @@
   function cardFlyTo(id) {
     const e = entries.find(e => e.id === id);
     if (!e) return;
-    if (lightbox.classList.contains('open')) {
-      // Lightbox bereits offen → Eintrag direkt wechseln, kein Schließen nötig
-      openLightbox(e);
-    } else {
-      map.flyTo([e.lat, e.lng], 13, { duration: 1.5 });
-      setTimeout(() => openLightbox(e), 1650);
-      leftPanel.classList.add('-translate-x-full');
-    }
+    // Sofort zur Position springen + Lightbox direkt öffnen
+    map.flyTo([e.lat, e.lng], 13, { duration: 1.2 });
+    openLightbox(e);
+    // Mobil: Panel schließen damit die Karte sichtbar wird
+    if (window.innerWidth < 768) leftPanel.classList.add('-translate-x-full');
   }
 
   // ─── Marker setzen ────────────────────────────────────────────────────────

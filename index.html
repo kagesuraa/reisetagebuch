@@ -52,18 +52,48 @@
 
   <div id="map"></div>
 
-  <!-- Statistik-Leiste -->
-  <div class="fixed top-4 left-4 z-[1000] bg-white/90 backdrop-blur-sm
-              rounded-2xl shadow-lg px-5 py-3 flex items-center gap-4 pointer-events-none">
-    <div class="text-center">
-      <p id="stat-count" class="text-2xl font-bold text-orange-500 leading-none">0</p>
-      <p class="text-xs text-gray-400 font-medium mt-0.5">Besuchte Orte</p>
+  <!-- Statistik + Filter (oben links, gestapelt) -->
+  <div class="fixed top-4 left-4 z-[1000] flex flex-col gap-2 max-w-xs">
+
+    <!-- Statistik-Leiste -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-5 py-3
+                flex items-center gap-4 pointer-events-none">
+      <div class="text-center">
+        <p id="stat-count" class="text-2xl font-bold text-orange-500 leading-none">0</p>
+        <p class="text-xs text-gray-400 font-medium mt-0.5">Besuchte Orte</p>
+      </div>
+      <div class="w-px h-8 bg-gray-200"></div>
+      <div class="text-center">
+        <p id="stat-photos" class="text-2xl font-bold text-amber-500 leading-none">0</p>
+        <p class="text-xs text-gray-400 font-medium mt-0.5">mit Foto</p>
+      </div>
     </div>
-    <div class="w-px h-8 bg-gray-200"></div>
-    <div class="text-center">
-      <p id="stat-photos" class="text-2xl font-bold text-amber-500 leading-none">0</p>
-      <p class="text-xs text-gray-400 font-medium mt-0.5">mit Foto</p>
+
+    <!-- Filterleiste -->
+    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-3 py-2
+                flex items-center gap-2">
+      <!-- Textsuche -->
+      <div class="flex items-center flex-1 bg-gray-50 rounded-xl px-2.5 py-1.5 gap-1.5
+                  border border-gray-200 focus-within:border-orange-400 transition-colors">
+        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+        <input id="filter-text" type="text" placeholder="Orte filtern …" autocomplete="off"
+          class="bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none w-full" />
+      </div>
+      <!-- Jahres-Dropdown -->
+      <select id="filter-year"
+        class="bg-gray-50 border border-gray-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
+               outline-none focus:border-orange-400 transition-colors cursor-pointer">
+        <option value="">Alle</option>
+      </select>
+      <!-- Reset-Button -->
+      <button id="filter-reset"
+        class="hidden w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 text-gray-400
+               hover:text-red-500 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
     </div>
+
   </div>
 
   <!-- Toast -->
@@ -432,8 +462,30 @@
       locationName: row.location_name,
       date:         row.date || '',
       notes:        row.notes || '',
-      photoBase64:  row.photo_base64 || null,
+      photoUrl:     row.photo_url   || null,   // Supabase Storage URL
+      photoBase64:  row.photo_base64 || null,  // Fallback für alte Einträge
     };
+  }
+
+  // Gibt die optimierte Bild-URL zurück (Storage-Transform oder Base64-Fallback)
+  function getPhotoSrc(entry, width = 400) {
+    if (entry.photoUrl)
+      return `${entry.photoUrl}?width=${width}&resize=contain`;
+    return entry.photoBase64 || null;
+  }
+
+  function hasPhoto(entry) { return !!(entry.photoUrl || entry.photoBase64); }
+
+  // ─── Foto in Supabase Storage hochladen ───────────────────────────────────
+  async function uploadPhoto(base64DataUrl) {
+    const res      = await fetch(base64DataUrl);
+    const blob     = await res.blob();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const { error } = await sb.storage.from('photos').upload(fileName, blob, {
+      contentType: 'image/jpeg', upsert: false,
+    });
+    if (error) throw error;
+    return sb.storage.from('photos').getPublicUrl(fileName).data.publicUrl;
   }
 
   // ─── Datum formatieren ────────────────────────────────────────────────────
@@ -465,14 +517,15 @@
   // ─── Statistik ────────────────────────────────────────────────────────────
   function updateStats() {
     document.getElementById('stat-count').textContent  = entries.length;
-    document.getElementById('stat-photos').textContent = entries.filter(e => e.photoBase64).length;
+    document.getElementById('stat-photos').textContent = entries.filter(hasPhoto).length;
   }
 
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
-    const marker = L.marker([entry.lat, entry.lng], { icon: makeIcon(!!entry.photoBase64) }).addTo(map);
-    const photoHtml = entry.photoBase64
-      ? `<img src="${entry.photoBase64}" class="popup-photo" alt="${esc(entry.locationName)}" />`
+    const marker = L.marker([entry.lat, entry.lng], { icon: makeIcon(hasPhoto(entry)) }).addTo(map);
+    const src = getPhotoSrc(entry, 400);
+    const photoHtml = src
+      ? `<img src="${src}" class="popup-photo" alt="${esc(entry.locationName)}" loading="lazy" />`
       : '';
     marker.bindPopup(`
       <div style="min-width:220px;max-width:280px">
@@ -512,8 +565,8 @@
     list.innerHTML = entries.map(e => `
       <div class="flex items-center gap-2 rounded-lg px-3 py-2
                   bg-gray-50 hover:bg-orange-50 transition-colors group">
-        ${e.photoBase64
-          ? `<img src="${e.photoBase64}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" />`
+        ${hasPhoto(e)
+          ? `<img src="${getPhotoSrc(e, 80)}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" loading="lazy" />`
           : `<div class="w-9 h-9 rounded-md bg-orange-100 flex items-center justify-center flex-shrink-0 text-sm">📍</div>`
         }
         <div class="flex-1 min-w-0 cursor-pointer" onclick="flyTo('${e.id}')">
@@ -662,13 +715,26 @@
     if (pendingLat === null) return;
     setSaving(true);
 
+    // Foto: in Storage hochladen, URL speichern (kein Base64 mehr in DB)
+    let photoUrl = null;
+    if (pendingPhoto) {
+      try {
+        photoUrl = await uploadPhoto(pendingPhoto);
+      } catch (e) {
+        toast('Foto-Upload fehlgeschlagen: ' + e.message, 'err');
+        setSaving(false);
+        return;
+      }
+    }
+
     const payload = {
-      lat:          pendingLat,
-      lng:          pendingLng,
+      lat:           pendingLat,
+      lng:           pendingLng,
       location_name: document.getElementById('inp-location').value.trim() || 'Unbekannter Ort',
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
-      photo_base64:  pendingPhoto || null,
+      photo_url:     photoUrl,
+      photo_base64:  null,
     };
 
     const { data, error } = await sb.from(TABLE).insert([payload]).select().single();
@@ -790,6 +856,65 @@
     hideResults();
   }
 
+  // ─── Filter ───────────────────────────────────────────────────────────────
+  let filterTimer = null;
+
+  const filterTextEl  = document.getElementById('filter-text');
+  const filterYearEl  = document.getElementById('filter-year');
+  const filterResetEl = document.getElementById('filter-reset');
+
+  function isFilterActive() {
+    return filterTextEl.value.trim() !== '' || filterYearEl.value !== '';
+  }
+
+  async function applyFilters() {
+    filterResetEl.classList.toggle('hidden', !isFilterActive());
+
+    let q = sb.from(TABLE).select('*').order('created_at', { ascending: true });
+    const txt  = filterTextEl.value.trim();
+    const year = filterYearEl.value;
+    if (txt)  q = q.ilike('location_name', `%${txt}%`);
+    if (year) q = q.like('date', `${year}-%`);
+
+    const { data, error } = await q;
+    if (error) { toast('Filterfehler: ' + error.message, 'err'); return; }
+
+    // Alle Marker entfernen und neu zeichnen
+    Object.keys(markerMap).forEach(id => { map.removeLayer(markerMap[id]); delete markerMap[id]; });
+    entries = data.map(rowToEntry);
+    entries.forEach(placeMarker);
+    renderList();
+  }
+
+  filterTextEl.addEventListener('input', () => {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(applyFilters, 350);
+  });
+
+  filterYearEl.addEventListener('change', applyFilters);
+
+  filterResetEl.addEventListener('click', () => {
+    filterTextEl.value = '';
+    filterYearEl.value = '';
+    applyFilters();
+  });
+
+  function populateYearFilter(rows) {
+    const years = [...new Set(
+      rows.map(r => r.date?.slice(0, 4)).filter(Boolean)
+    )].sort((a, b) => b - a);
+
+    const sel = filterYearEl;
+    // Vorhandene dynamische Optionen entfernen
+    [...sel.options].forEach(o => { if (o.value) o.remove(); });
+    years.forEach(y => {
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      sel.appendChild(o);
+    });
+  }
+
+  // ─── Start: Einträge laden ────────────────────────────────────────────────
   async function init() {
     const { data, error } = await sb
       .from(TABLE)
@@ -803,6 +928,7 @@
       return;
     }
 
+    populateYearFilter(data);
     entries = data.map(rowToEntry);
     entries.forEach(placeMarker);
     renderList();

@@ -66,7 +66,7 @@
 
   <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
   <div id="left-panel"
-    class="fixed left-0 top-0 h-dvh z-[700] flex flex-col bg-white shadow-2xl
+    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-white shadow-2xl
            -translate-x-full md:translate-x-0"
     style="width:min(80vw,300px)">
 
@@ -160,7 +160,7 @@
 
   <!-- Mobiler Panel-Toggle (nur sichtbar wenn Panel geschlossen) -->
   <button id="left-panel-open"
-    class="fixed top-4 left-4 z-[699] md:hidden w-10 h-10 rounded-2xl
+    class="fixed top-4 left-4 z-[4501] md:hidden w-10 h-10 rounded-2xl
            bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center
            text-gray-600 hover:bg-orange-50 transition-colors">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,10 +193,10 @@
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
                  flex items-center gap-3 transition-colors border-t border-gray-50">
           🌑 Dark Mode</button></li>
-        <li><button onclick="setTileStyle('topo')" data-style="topo"
+        <li><button onclick="setTileStyle('satellite')" data-style="satellite"
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
                  flex items-center gap-3 transition-colors border-t border-gray-50">
-          🗻 Topografie</button></li>
+          🛰️ Satellit</button></li>
       </ul>
     </div>
   </div>
@@ -575,9 +575,9 @@
     dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
               attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
-    topo: { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-      opts: { maxZoom: 17, noWrap: true, bounds: worldBounds,
-              attribution: '© OpenStreetMap, <a href="https://opentopomap.org">OpenTopoMap</a>' } },
+    satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
+              attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
   };
 
   let activeStyle = 'standard';
@@ -786,10 +786,14 @@
   function cardFlyTo(id) {
     const e = entries.find(e => e.id === id);
     if (!e) return;
-    map.flyTo([e.lat, e.lng], 13, { duration: 1.5 });
-    setTimeout(() => openLightbox(e), 1650);
-    // Mobil: Panel schließen nach Klick
-    leftPanel.classList.add('-translate-x-full');
+    if (lightbox.classList.contains('open')) {
+      // Lightbox bereits offen → Eintrag direkt wechseln, kein Schließen nötig
+      openLightbox(e);
+    } else {
+      map.flyTo([e.lat, e.lng], 13, { duration: 1.5 });
+      setTimeout(() => openLightbox(e), 1650);
+      leftPanel.classList.add('-translate-x-full');
+    }
   }
 
   // ─── Marker setzen ────────────────────────────────────────────────────────

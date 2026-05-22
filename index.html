@@ -62,6 +62,32 @@
     class="fixed top-5 left-1/2 -translate-x-1/2 z-[2000]
            flex flex-col items-center gap-2 pointer-events-none"></div>
 
+  <!-- Ortssuche -->
+  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-sm px-4">
+    <div class="relative">
+      <!-- Eingabefeld -->
+      <div class="flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden
+                  border-2 border-transparent focus-within:border-orange-400 transition-colors">
+        <svg class="w-4 h-4 text-gray-400 ml-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+        </svg>
+        <input id="search-input" type="text" autocomplete="off"
+          placeholder="Stadt oder Ort suchen …"
+          class="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400
+                 outline-none" />
+        <button id="search-clear"
+          class="hidden mr-3 text-gray-300 hover:text-gray-500 transition-colors text-lg leading-none">×</button>
+      </div>
+
+      <!-- Ergebnisse-Dropdown -->
+      <ul id="search-results"
+        class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl shadow-xl
+               overflow-hidden border border-gray-100 z-10">
+      </ul>
+    </div>
+  </div>
+
   <!-- Seitenleiste -->
   <aside id="sidebar"
     class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[1001] flex flex-col select-none">
@@ -625,6 +651,106 @@
   });
 
   // ─── Start: Einträge laden ────────────────────────────────────────────────
+  // ─── Ortssuche (Nominatim) ────────────────────────────────────────────────
+  const searchInput   = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  const searchClear   = document.getElementById('search-clear');
+  let searchTimer     = null;
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim();
+    searchClear.classList.toggle('hidden', !q);
+    clearTimeout(searchTimer);
+    if (q.length < 2) { hideResults(); return; }
+    searchTimer = setTimeout(() => fetchPlaces(q), 380);
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Escape') clearSearch();
+  });
+
+  searchClear.addEventListener('click', clearSearch);
+
+  // Dropdown schließen bei Klick außerhalb
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#search-input') && !e.target.closest('#search-results'))
+      hideResults();
+  });
+
+  async function fetchPlaces(q) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
+      const res  = await fetch(url, { headers: { 'Accept-Language': 'de' } });
+      const data = await res.json();
+      showResults(data);
+    } catch {
+      hideResults();
+    }
+  }
+
+  function showResults(places) {
+    if (!places.length) {
+      searchResults.innerHTML =
+        `<li class="px-4 py-3 text-sm text-gray-400 text-center">Kein Ergebnis gefunden</li>`;
+      searchResults.classList.remove('hidden');
+      return;
+    }
+
+    searchResults.innerHTML = places.map((p, i) => {
+      const name    = p.display_name.split(',')[0];
+      const sub     = p.display_name.split(',').slice(1, 3).join(',').trim();
+      return `
+        <li data-i="${i}" data-lat="${p.lat}" data-lng="${p.lon}" data-name="${esc(p.display_name)}"
+          class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-orange-50
+                 transition-colors border-b border-gray-50 last:border-0">
+          <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0
+                     9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-gray-800 truncate">${esc(name)}</p>
+            <p class="text-xs text-gray-400 truncate">${esc(sub)}</p>
+          </div>
+        </li>`;
+    }).join('');
+
+    searchResults.classList.remove('hidden');
+
+    // Klick auf Ergebnis
+    searchResults.querySelectorAll('li[data-lat]').forEach(li => {
+      li.addEventListener('click', () => {
+        const lat  = parseFloat(li.dataset.lat);
+        const lng  = parseFloat(li.dataset.lng);
+        const name = li.dataset.name.split(',')[0];
+
+        // Karte dorthin fliegen
+        map.flyTo([lat, lng], 13, { duration: 1.2 });
+
+        // Koordinaten & Ortsname direkt in den neuen Eintrag übernehmen
+        pendingLat = lat;
+        pendingLng = lng;
+        document.getElementById('coords-display').textContent =
+          `${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
+        document.getElementById('inp-location').value = name;
+        document.getElementById('inp-notes').value    = '';
+        document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
+        resetPhoto();
+        openSidebar();
+
+        clearSearch();
+        setTimeout(() => document.getElementById('inp-notes').focus(), 400);
+      });
+    });
+  }
+
+  function hideResults() { searchResults.classList.add('hidden'); }
+
+  function clearSearch() {
+    searchInput.value = '';
+    searchClear.classList.add('hidden');
+    hideResults();
+  }
+
   async function init() {
     const { data, error } = await sb
       .from(TABLE)

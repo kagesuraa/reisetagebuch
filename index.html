@@ -19,6 +19,10 @@
     }
     #sidebar.open { transform: translateX(0); }
 
+    #left-panel {
+      transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+    }
+
     /* Leaflet-Zoom nach rechts unten verschieben */
     .leaflet-bottom.leaflet-right { bottom: 24px; right: 16px; }
 
@@ -46,8 +50,12 @@
       0%   { transform: scale(1);   opacity: 0.55; }
       100% { transform: scale(3.2); opacity: 0; }
     }
-    .preview-ring {
-      animation: ripple 1.4s ease-out infinite;
+    .preview-ring { animation: ripple 1.4s ease-out infinite; }
+
+    /* Trip-Card Notizen: max 2 Zeilen */
+    .line-clamp-2 {
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
     }
   </style>
 </head>
@@ -56,27 +64,67 @@
 
   <div id="map"></div>
 
-  <!-- Statistik + Filter (oben links, gestapelt) -->
-  <div class="fixed top-4 left-4 z-[1000] flex flex-col gap-2 max-w-xs">
+  <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
+  <div id="left-panel"
+    class="fixed left-0 top-0 h-dvh z-[700] flex flex-col bg-white shadow-2xl
+           -translate-x-full md:translate-x-0"
+    style="width:min(80vw,300px)">
 
-    <!-- Statistik-Leiste -->
-    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-5 py-3
-                flex items-center gap-4 pointer-events-none">
-      <div class="text-center">
-        <p id="stat-count" class="text-2xl font-bold text-orange-500 leading-none">0</p>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">Besuchte Orte</p>
+    <!-- Header -->
+    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-5 py-4 flex-shrink-0">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5 text-white">
+          <span class="text-lg">🌍</span>
+          <span class="font-bold text-base tracking-tight">Reisetagebuch</span>
+        </div>
+        <button id="left-panel-close"
+          class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
+                 text-white flex items-center justify-center text-base transition-colors">×</button>
       </div>
-      <div class="w-px h-8 bg-gray-200"></div>
-      <div class="text-center">
-        <p id="stat-photos" class="text-2xl font-bold text-amber-500 leading-none">0</p>
-        <p class="text-xs text-gray-400 font-medium mt-0.5">mit Foto</p>
+    </div>
+
+    <!-- Dashboard: 3 Metrik-Karten -->
+    <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-gray-100">
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Statistiken</p>
+      <div class="grid grid-cols-3 gap-2">
+
+        <div class="bg-orange-50 rounded-2xl px-2 py-3 text-center shadow-sm">
+          <svg class="w-4 h-4 text-orange-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5
+                 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2
+                 2 0 012-2h3.064"/>
+          </svg>
+          <p id="dash-total" class="text-xl font-extrabold text-orange-500 leading-none">0</p>
+          <p class="text-xs text-gray-400 mt-0.5">Reisen</p>
+        </div>
+
+        <div class="bg-sky-50 rounded-2xl px-2 py-3 text-center shadow-sm">
+          <svg class="w-4 h-4 text-sky-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9
+                 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1
+                 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+          </svg>
+          <p id="dash-north" class="text-xs font-extrabold text-sky-500 leading-tight truncate px-1">–</p>
+          <p class="text-xs text-gray-400 mt-0.5">Nördlichst</p>
+        </div>
+
+        <div class="bg-emerald-50 rounded-2xl px-2 py-3 text-center shadow-sm">
+          <svg class="w-4 h-4 text-emerald-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2
+                 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <p id="dash-last" class="text-xs font-extrabold text-emerald-500 leading-tight">–</p>
+          <p class="text-xs text-gray-400 mt-0.5">Letztes</p>
+        </div>
+
       </div>
     </div>
 
     <!-- Filterleiste -->
-    <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg px-3 py-2
-                flex items-center gap-2">
-      <!-- Textsuche -->
+    <div class="px-4 py-3 flex-shrink-0 border-b border-gray-100 flex gap-2">
       <div class="flex items-center flex-1 bg-gray-50 rounded-xl px-2.5 py-1.5 gap-1.5
                   border border-gray-200 focus-within:border-orange-400 transition-colors">
         <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,18 +134,71 @@
         <input id="filter-text" type="text" placeholder="Orte filtern …" autocomplete="off"
           class="bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none w-full" />
       </div>
-      <!-- Jahres-Dropdown -->
       <select id="filter-year"
         class="bg-gray-50 border border-gray-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
                outline-none focus:border-orange-400 transition-colors cursor-pointer">
         <option value="">Alle</option>
       </select>
-      <!-- Reset-Button -->
       <button id="filter-reset"
         class="hidden w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 text-gray-400
                hover:text-red-500 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
     </div>
 
+    <!-- Trip-Cards (scrollbar) -->
+    <div id="trip-cards" class="flex-1 overflow-y-auto scroll-thin px-3 py-3 space-y-2">
+      <div id="trip-loader" class="flex items-center justify-center gap-2 py-8 text-gray-300 text-xs">
+        <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        Lädt …
+      </div>
+    </div>
+
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Mobiler Panel-Toggle (nur sichtbar wenn Panel geschlossen) -->
+  <button id="left-panel-open"
+    class="fixed top-4 left-4 z-[699] md:hidden w-10 h-10 rounded-2xl
+           bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center
+           text-gray-600 hover:bg-orange-50 transition-colors">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+
+  <!-- Style-Switcher (oben rechts) -->
+  <div class="fixed top-4 right-4 z-[1000]">
+    <div class="relative">
+      <button id="style-btn"
+        class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
+               flex items-center justify-center hover:bg-orange-50 transition-colors"
+        title="Kartenstil wechseln">
+        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0
+               13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0
+               00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+        </svg>
+      </button>
+      <ul id="style-dropdown"
+        class="hidden absolute top-full right-0 mt-1.5 bg-white rounded-2xl shadow-xl
+               border border-gray-100 overflow-hidden min-w-[170px] z-10">
+        <li><button onclick="setTileStyle('standard')" data-style="standard"
+          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
+                 flex items-center gap-3 transition-colors font-semibold text-orange-600 bg-orange-50">
+          🌍 Standard</button></li>
+        <li><button onclick="setTileStyle('dark')" data-style="dark"
+          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
+                 flex items-center gap-3 transition-colors border-t border-gray-50">
+          🌑 Dark Mode</button></li>
+        <li><button onclick="setTileStyle('topo')" data-style="topo"
+          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
+                 flex items-center gap-3 transition-colors border-t border-gray-50">
+          🗻 Topografie</button></li>
+      </ul>
+    </div>
   </div>
 
   <!-- Toast -->
@@ -456,12 +557,46 @@
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-  L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom:  18,
-    noWrap:   true,
-    bounds:   worldBounds,
-  }).addTo(map);
+  // ─── Tile-Layer-System ────────────────────────────────────────────────────
+  const tileDefs = {
+    standard: { url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
+      opts: { maxZoom: 18, noWrap: true, bounds: worldBounds,
+              attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' } },
+    dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
+              attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
+    topo: { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      opts: { maxZoom: 17, noWrap: true, bounds: worldBounds,
+              attribution: '© OpenStreetMap, <a href="https://opentopomap.org">OpenTopoMap</a>' } },
+  };
+
+  let activeStyle = 'standard';
+  let activeTile  = L.tileLayer(tileDefs.standard.url, tileDefs.standard.opts).addTo(map);
+
+  function setTileStyle(name) {
+    if (name === activeStyle) { closeStyleDrop(); return; }
+    map.removeLayer(activeTile);
+    activeTile  = L.tileLayer(tileDefs[name].url, tileDefs[name].opts).addTo(map);
+    activeStyle = name;
+    document.querySelectorAll('.style-opt').forEach(b => {
+      const on = b.dataset.style === name;
+      b.classList.toggle('bg-orange-50',     on);
+      b.classList.toggle('font-semibold',    on);
+      b.classList.toggle('text-orange-600',  on);
+    });
+    closeStyleDrop();
+  }
+
+  const styleBtn  = document.getElementById('style-btn');
+  const styleDrop = document.getElementById('style-dropdown');
+  function closeStyleDrop() { styleDrop.classList.add('hidden'); }
+  styleBtn.addEventListener('click', e => { e.stopPropagation(); styleDrop.classList.toggle('hidden'); });
+  document.addEventListener('click', e => { if (!e.target.closest('#style-btn') && !e.target.closest('#style-dropdown')) closeStyleDrop(); });
+
+  // ─── Linkes Panel Toggle (mobil) ──────────────────────────────────────────
+  const leftPanel = document.getElementById('left-panel');
+  document.getElementById('left-panel-open').addEventListener('click',  () => leftPanel.classList.remove('-translate-x-full'));
+  document.getElementById('left-panel-close').addEventListener('click', () => leftPanel.classList.add('-translate-x-full'));
 
   // ─── MinZoom dynamisch berechnen (kein grauer Rand beim Rauszoomen) ────────
   function updateMinZoom() {
@@ -576,10 +711,58 @@
     setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 320); }, 3200);
   }
 
-  // ─── Statistik ────────────────────────────────────────────────────────────
-  function updateStats() {
-    document.getElementById('stat-count').textContent  = entries.length;
-    document.getElementById('stat-photos').textContent = entries.filter(hasPhoto).length;
+  // ─── Dashboard + Trip-Cards ───────────────────────────────────────────────
+  function updateStats() { updateDashboard(); }   // Alias für ältere Aufrufe
+
+  function updateDashboard() {
+    document.getElementById('dash-total').textContent = entries.length;
+
+    const north = entries.reduce((b, e) => (!b || e.lat > b.lat) ? e : b, null);
+    document.getElementById('dash-north').textContent =
+      north ? north.locationName.split(',')[0] : '–';
+
+    const last = [...entries].filter(e => e.date).sort((a,b) => b.date.localeCompare(a.date))[0];
+    document.getElementById('dash-last').textContent = last ? fmtDate(last.date) : '–';
+  }
+
+  function renderTripCards() {
+    const container = document.getElementById('trip-cards');
+    const loader    = document.getElementById('trip-loader');
+    if (loader) loader.remove();
+
+    if (!entries.length) {
+      container.innerHTML =
+        '<p class="text-center text-gray-300 text-xs py-8">Noch keine Reisen gespeichert.</p>';
+      return;
+    }
+
+    container.innerHTML = entries.map(e => {
+      const src = getPhotoSrc(e, 120);
+      return `
+        <div onclick="cardFlyTo('${e.id}')"
+          class="flex gap-3 bg-gray-50 hover:bg-orange-50 rounded-2xl p-3 cursor-pointer
+                 transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
+          ${src
+            ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
+            : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
+            <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
+            ${e.notes
+              ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>`
+              : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function cardFlyTo(id) {
+    const e = entries.find(e => e.id === id);
+    if (!e) return;
+    map.flyTo([e.lat, e.lng], 13, { duration: 1.5 });
+    setTimeout(() => openLightbox(e), 1650);
+    // Mobil: Panel schließen nach Klick
+    leftPanel.classList.add('-translate-x-full');
   }
 
   // ─── Marker setzen ────────────────────────────────────────────────────────
@@ -679,7 +862,8 @@
       </div>
     `).join('');
 
-    updateStats();
+    updateDashboard();
+    renderTripCards();
     drawRoute();
   }
 
@@ -1032,6 +1216,8 @@
     entries = data.map(rowToEntry);
     entries.forEach(placeMarker);
     renderList();
+    updateDashboard();
+    renderTripCards();
     if (entries.length) toast(`${entries.length} Einträge geladen`, 'info');
   }
 

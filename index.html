@@ -75,8 +75,7 @@
 
   <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
   <div id="left-panel"
-    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-white shadow-2xl
-           -translate-x-full md:translate-x-0"
+    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-white shadow-2xl -translate-x-full"
     style="width:min(80vw,300px)">
 
     <!-- Profil-Header -->
@@ -208,6 +207,21 @@
 
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- Hover-Trigger-Strip (Desktop, unsichtbar, linke Kante) -->
+  <div id="panel-trigger"
+    class="fixed left-0 top-0 h-dvh z-[4499] hidden md:block"
+    style="width:12px"></div>
+
+  <!-- Kleiner sichtbarer Tab als Hinweis (Desktop) -->
+  <div id="panel-tab"
+    class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden md:flex
+           flex-col items-center gap-1 py-3 px-1
+           bg-white rounded-r-xl shadow-md cursor-pointer transition-opacity duration-300">
+    <div class="w-0.5 h-3 bg-orange-400 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-orange-400 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-orange-400 rounded-full"></div>
+  </div>
 
   <!-- Mobiler Panel-Toggle (nur sichtbar wenn Panel geschlossen) -->
   <button id="left-panel-open"
@@ -734,8 +748,40 @@
 
   // ─── Linkes Panel Toggle (mobil) ──────────────────────────────────────────
   const leftPanel = document.getElementById('left-panel');
-  document.getElementById('left-panel-open').addEventListener('click',  () => leftPanel.classList.remove('-translate-x-full'));
-  document.getElementById('left-panel-close').addEventListener('click', () => leftPanel.classList.add('-translate-x-full'));
+  // Mobil: Klick-Toggle
+  document.getElementById('left-panel-open').addEventListener('click',  () => showPanel());
+  document.getElementById('left-panel-close').addEventListener('click', () => hidePanel());
+
+  // Desktop: Hover-Verhalten
+  const panelTrigger = document.getElementById('panel-trigger');
+  const panelTab     = document.getElementById('panel-tab');
+  let   hideTimer    = null;
+
+  function showPanel() {
+    clearTimeout(hideTimer);
+    leftPanel.classList.remove('-translate-x-full');
+    if (panelTab) panelTab.style.opacity = '0';
+  }
+
+  function hidePanel() {
+    leftPanel.classList.add('-translate-x-full');
+    if (panelTab) panelTab.style.opacity = '1';
+  }
+
+  function scheduleHide() {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(hidePanel, 280);
+  }
+
+  // Trigger-Strip und Tab zeigen Panel
+  [panelTrigger, panelTab].forEach(el => {
+    el?.addEventListener('mouseenter', showPanel);
+  });
+
+  // Panel offenhalten solange Maus drauf ist
+  leftPanel.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+  leftPanel.addEventListener('mouseleave', scheduleHide);
+  panelTrigger?.addEventListener('mouseleave', scheduleHide);
 
   // ─── MinZoom dynamisch berechnen (kein grauer Rand beim Rauszoomen) ────────
   function updateMinZoom() {

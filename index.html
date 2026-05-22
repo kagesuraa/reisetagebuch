@@ -253,12 +253,27 @@
 
     <div class="flex-1 overflow-y-auto scroll-thin px-6 py-5 space-y-5">
 
-      <div>
+      <div class="relative">
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Ortsname</label>
-        <input id="inp-location" type="text" placeholder="z.B. Eiffelturm, Paris"
-          class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5
-                 text-sm text-gray-800 placeholder-gray-400
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+        <div class="flex items-center rounded-lg border border-gray-200 bg-gray-50
+                    focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent transition">
+          <svg class="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <input id="inp-location" type="text" placeholder="Ort suchen oder eingeben …"
+            autocomplete="off"
+            class="flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400
+                   outline-none" />
+          <button id="inp-location-clear"
+            class="hidden mr-3 text-gray-300 hover:text-gray-500 transition-colors text-lg leading-none">×</button>
+        </div>
+        <!-- Autocomplete-Dropdown -->
+        <ul id="loc-results"
+          class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl
+                 border border-gray-100 overflow-hidden z-[9999] max-h-52 overflow-y-auto">
+        </ul>
       </div>
 
       <div>
@@ -1265,6 +1280,104 @@
   }
 
   // ─── Start: Einträge laden ────────────────────────────────────────────────
+  // ─── Ortsname-Autocomplete im Formular ───────────────────────────────────
+  const inpLoc      = document.getElementById('inp-location');
+  const locResults  = document.getElementById('loc-results');
+  const locClear    = document.getElementById('inp-location-clear');
+  let   locTimer    = null;
+
+  inpLoc.addEventListener('input', () => {
+    const q = inpLoc.value.trim();
+    locClear.classList.toggle('hidden', !q);
+    clearTimeout(locTimer);
+    if (q.length < 2) { hideLocResults(); return; }
+    locTimer = setTimeout(() => fetchLocSuggestions(q), 380);
+  });
+
+  inpLoc.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { hideLocResults(); }
+  });
+
+  locClear.addEventListener('click', () => {
+    inpLoc.value = '';
+    locClear.classList.add('hidden');
+    hideLocResults();
+    inpLoc.focus();
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#inp-location') && !e.target.closest('#loc-results'))
+      hideLocResults();
+  });
+
+  async function fetchLocSuggestions(q) {
+    try {
+      const url  = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
+      const data = await (await fetch(url, { headers: { 'Accept-Language': 'de' } })).json();
+      renderLocResults(data);
+    } catch { hideLocResults(); }
+  }
+
+  function renderLocResults(places) {
+    if (!places.length) {
+      locResults.innerHTML =
+        `<li class="px-4 py-3 text-xs text-gray-400 text-center">Kein Ergebnis gefunden</li>`;
+      locResults.classList.remove('hidden');
+      return;
+    }
+
+    locResults.innerHTML = places.map(p => {
+      const name = p.display_name.split(',')[0];
+      const sub  = p.display_name.split(',').slice(1, 3).join(',').trim();
+      return `
+        <li data-lat="${p.lat}" data-lng="${p.lon}" data-name="${esc(p.display_name)}"
+          class="flex items-center gap-3 px-4 py-3 cursor-pointer text-sm
+                 hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-0">
+          <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z
+                     m0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          <div class="min-w-0">
+            <p class="font-medium text-gray-800 truncate">${esc(name)}</p>
+            <p class="text-xs text-gray-400 truncate">${esc(sub)}</p>
+          </div>
+        </li>`;
+    }).join('');
+
+    locResults.classList.remove('hidden');
+
+    locResults.querySelectorAll('li[data-lat]').forEach(li => {
+      li.addEventListener('click', () => {
+        const lat  = parseFloat(li.dataset.lat);
+        const lng  = parseFloat(li.dataset.lng);
+        const name = li.dataset.name.split(',')[0].trim();
+
+        // Formularfeld befüllen
+        inpLoc.value = name;
+        locClear.classList.remove('hidden');
+        hideLocResults();
+
+        // Koordinaten für Supabase-Insert setzen
+        pendingLat = lat;
+        pendingLng = lng;
+        document.getElementById('coords-display').textContent =
+          `${lat.toFixed(5)}°, ${lng.toFixed(5)}°`;
+
+        // Karte springt sofort zur Position
+        map.setView([lat, lng], 13);
+        showPreviewPin(lat, lng);
+
+        // Datum vorausfüllen falls leer
+        if (!document.getElementById('inp-date').value)
+          document.getElementById('inp-date').value = new Date().toISOString().slice(0, 10);
+
+        inpLoc.focus();
+      });
+    });
+  }
+
+  function hideLocResults() { locResults.classList.add('hidden'); }
+
   async function init() {
     const { data, error } = await sb
       .from(TABLE)

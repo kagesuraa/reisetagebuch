@@ -107,34 +107,32 @@
     #mobile-nav button.nav-active svg { color: #f97316; }
     #mobile-nav button.nav-active span { color: #f97316; }
 
-    /* ── Safe area für Map auf Mobile ───────────────────────────────────────*/
-    @media (max-width: 767px) {
-      /* Map bekommt Abstand nach unten für die Bottom Nav */
+    /* ── Tablet + Mobile (< 1024px) ──────────────────────────────────────── */
+    @media (max-width: 1023px) {
+      /* Map-Abstand für Bottom Nav */
       .leaflet-container { padding-bottom: 56px !important; }
-      /* Floating Bottom-Buttons → durch Bottom Nav ersetzt */
+      /* Floating Route-Button → Bottom Nav */
       #btn-route { display: none !important; }
-    }
 
-    /* Sidebar als Bottom-Sheet auf sehr kleinen Screens */
-    @media (max-width: 480px) {
+      /* Sidebar als zentrierter Bottom-Sheet */
       #sidebar {
         top: auto !important;
         bottom: 56px;
-        height: 85dvh;
+        left: 50% !important;
+        right: auto !important;
+        width: min(560px, 100%) !important;
+        height: min(85dvh, 720px);
         border-radius: 1.25rem 1.25rem 0 0;
-        transform: translateY(100%);
-        width: 100% !important;
+        transform: translate(-50%, 110%) !important;
       }
-      #sidebar.open { transform: translateY(0); }
-    }
+      #sidebar.open { transform: translate(-50%, 0) !important; }
 
-    /* Swipe-Handle für Bottom-Sheet */
-    #sidebar-handle {
-      display: none;
-    }
-    @media (max-width: 480px) {
+      /* Swipe-Handle sichtbar */
       #sidebar-handle { display: flex; }
     }
+
+    /* Swipe-Handle: Standardmäßig versteckt */
+    #sidebar-handle { display: none; }
   </style>
 </head>
 
@@ -304,7 +302,7 @@
           <p class="text-orange-100 text-xs mt-0.5">Melde dich an</p>
         </div>
         <button id="left-panel-close"
-          class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
+          class="lg:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
                  text-white flex items-center justify-center text-base transition-colors flex-shrink-0">×</button>
       </div>
 
@@ -339,7 +337,7 @@
             </svg>
           </button>
           <button id="left-panel-close-logged"
-            class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
+            class="lg:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
                    text-white flex items-center justify-center text-base transition-colors">×</button>
         </div>
       </div>
@@ -500,12 +498,12 @@
 
   <!-- Hover-Trigger-Strip (Desktop, unsichtbar, linke Kante) -->
   <div id="panel-trigger"
-    class="fixed left-0 top-0 h-dvh z-[4499] hidden md:block"
+    class="fixed left-0 top-0 h-dvh z-[4499] hidden lg:block"
     style="width:12px"></div>
 
   <!-- Kleiner sichtbarer Tab als Hinweis (Desktop) -->
   <div id="panel-tab"
-    class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden md:flex
+    class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden lg:flex
            flex-col items-center gap-1 py-3 px-1
            bg-white rounded-r-xl shadow-md cursor-pointer transition-opacity duration-300">
     <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
@@ -562,7 +560,7 @@
 
   <!-- Galerie-Toggle-Button (oben rechts, unter Style-Switcher) — Desktop only -->
   <button id="gallery-btn"
-    class="hidden md:flex fixed top-16 right-4 z-[1000] w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl
+    class="hidden lg:flex fixed top-16 right-4 z-[1000] w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl
            shadow-lg items-center justify-center hover:bg-white transition-colors"
     title="Galerie öffnen" onclick="openGallery('all')">
     <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -881,7 +879,7 @@
   <!-- Hinweis-Chip (zentriert unten, nur Desktop) -->
   <div id="hint-chip"
     class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur
-              rounded-2xl shadow-lg px-4 py-2.5 hidden md:flex items-center gap-2 pointer-events-none
+              rounded-2xl shadow-lg px-4 py-2.5 hidden lg:flex items-center gap-2 pointer-events-none
               whitespace-nowrap">
     <span class="text-base">🗺️</span>
     <span id="hint-desktop" class="text-gray-700 text-sm font-medium hidden sm:inline">Klicke auf die Karte, um einen Eintrag hinzuzufügen.</span>
@@ -890,7 +888,7 @@
 
   <!-- ════ MOBILE BOTTOM NAV ══════════════════════════════════════════════════ -->
   <nav id="mobile-nav"
-    class="fixed bottom-0 inset-x-0 z-[5000] md:hidden
+    class="fixed bottom-0 inset-x-0 z-[5000] lg:hidden
            bg-white/95 backdrop-blur-md border-t border-gray-100
            flex items-stretch">
 
@@ -1481,8 +1479,8 @@
     // Sofort zur Position springen + Lightbox direkt öffnen
     map.flyTo([e.lat, e.lng], 13, { duration: 1.2 });
     openLightbox(e);
-    // Mobil: Panel schließen damit die Karte sichtbar wird
-    if (window.innerWidth < 768) leftPanel.classList.add('-translate-x-full');
+    // Mobil + Tablet: Panel schließen damit die Karte sichtbar wird
+    if (window.innerWidth < 1024) hidePanel();
   }
 
   // ─── Marker setzen ────────────────────────────────────────────────────────
@@ -1718,7 +1716,11 @@
 
   // ─── Seitenleiste ─────────────────────────────────────────────────────────
   const sidebar = document.getElementById('sidebar');
-  function openSidebar()  { sidebar.classList.add('open'); }
+  function openSidebar() {
+    sidebar.classList.add('open');
+    // Panel schließen auf Mobile/Tablet damit das Formular frei zugänglich ist
+    if (window.innerWidth < 1024) hidePanel();
+  }
   function closeSidebar() {
     sidebar.classList.remove('open');
     pendingLat = pendingLng = null;
@@ -2544,7 +2546,7 @@
   }
 
   function mobileNavPanel() {
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 1024) {
       const isOpen = !leftPanel.classList.contains('-translate-x-full');
       isOpen ? hidePanel() : showPanel();
       // reflect panel state in nav icon
@@ -2554,7 +2556,7 @@
 
   function mobileNavMap() {
     // Schließt alle Overlays → Nutzer kann Karte antippen
-    if (window.innerWidth < 768) {
+    if (window.innerWidth < 1024) {
       hidePanel();
       closeSidebar();
       closeGallery();
@@ -2616,7 +2618,7 @@
     sidebarEl.addEventListener('touchend', e => {
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
-      const isBs = window.innerWidth <= 480;
+      const isBs = window.innerWidth < 1024;
       if (isBs) {
         // Bottom-Sheet: Wisch nach unten schließt
         if (dy > 80 && Math.abs(dx) < Math.abs(dy)) closeSidebar();

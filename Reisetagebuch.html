@@ -2536,17 +2536,19 @@
   let mobileRouteOn = true;
 
   function setMobileNavActive(id) {
-    ['nav-trips','nav-gallery','nav-route'].forEach(navId => {
+    // nav-route is an independent toggle — never cleared here
+    ['nav-trips','nav-gallery'].forEach(navId => {
       document.getElementById(navId)?.classList.remove('nav-active');
     });
     if (id) document.getElementById(id)?.classList.add('nav-active');
   }
 
   function mobileNavPanel() {
-    setMobileNavActive('nav-trips');
     if (window.innerWidth < 768) {
       const isOpen = !leftPanel.classList.contains('-translate-x-full');
       isOpen ? hidePanel() : showPanel();
+      // reflect panel state in nav icon
+      document.getElementById('nav-trips')?.classList.toggle('nav-active', !isOpen);
     }
   }
 

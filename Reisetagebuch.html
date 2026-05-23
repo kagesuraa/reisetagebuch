@@ -2608,12 +2608,29 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  KI-Formatierer (Claude Haiku via Supabase Edge Function)
+  //  KI-Formatierer (Google Gemini Flash – kostenlos, direkt im Browser)
   // ══════════════════════════════════════════════════════════════════════════
+  const GEMINI_KEY_LS = 'reise_gemini_key';
+
+  function getGeminiApiKey() {
+    let key = localStorage.getItem(GEMINI_KEY_LS);
+    if (!key) {
+      key = window.prompt(
+        'Google Gemini API-Key eingeben (kostenlos unter aistudio.google.com → "Get API key"):\n' +
+        'Wird nur lokal in deinem Browser gespeichert.'
+      );
+      if (key?.trim()) localStorage.setItem(GEMINI_KEY_LS, key.trim());
+    }
+    return key?.trim() || null;
+  }
+
   async function formatNotesWithAI() {
     const textarea = document.getElementById('inp-notes');
     const text     = textarea.value.trim();
     if (!text) { toast('Bitte zuerst Notizen schreiben.', 'info'); return; }
+
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) { toast('Kein API-Key angegeben.', 'err'); return; }
 
     const btn   = document.getElementById('btn-ai-format');
     const icon  = document.getElementById('ai-fmt-icon');
@@ -2633,14 +2650,26 @@
       'Original:\n' + text;
 
     try {
-      const { data, error } = await sb.functions.invoke('ai-format', {
-        body: { prompt },
-      });
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        }
+      );
 
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 400 || res.status === 403) {
+          localStorage.removeItem(GEMINI_KEY_LS);
+          throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
+        }
+        throw new Error(err.error?.message || `HTTP ${res.status}`);
+      }
 
-      const formatted = data?.text?.trim();
+      const data = await res.json();
+      const formatted = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
       if (formatted) {
         textarea.value = formatted;
         toast('Notiz formatiert ✓', 'ok');

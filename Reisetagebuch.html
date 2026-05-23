@@ -2650,25 +2650,37 @@
       'Original:\n' + text;
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key':                         apiKey,
-          'anthropic-version':                 '2023-06-01',
-          'anthropic-dangerous-allow-browser': 'true',
-          'content-type':                      'application/json',
-        },
-        body: JSON.stringify({
-          model:      'claude-haiku-4-5-20251001',
-          max_tokens: 1024,
-          messages:   [{ role: 'user', content: prompt }],
-        }),
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+
+      let res;
+      try {
+        res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'x-api-key':                         apiKey,
+            'anthropic-version':                 '2023-06-01',
+            'anthropic-dangerous-allow-browser': 'true',
+            'content-type':                      'application/json',
+          },
+          body: JSON.stringify({
+            model:      'claude-haiku-4-5-20251001',
+            max_tokens: 1024,
+            messages:   [{ role: 'user', content: prompt }],
+          }),
+        });
+      } finally {
+        clearTimeout(timer);
+      }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        // API-Key zurücksetzen bei Authentifizierungsfehler
-        if (res.status === 401) localStorage.removeItem(CLAUDE_KEY_LS);
+        if (res.status === 401) {
+          localStorage.removeItem(CLAUDE_KEY_LS);
+          throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
+        }
+        if (res.status === 529 || res.status === 503) throw new Error('Anthropic überlastet – bitte kurz warten.');
         throw new Error(err.error?.message || `HTTP ${res.status}`);
       }
 
@@ -2679,7 +2691,20 @@
         toast('Notiz formatiert ✓', 'ok');
       }
     } catch (err) {
-      toast('KI-Fehler: ' + err.message, 'err');
+      console.error('[KI-Formatierer]', err);
+      if (err.name === 'AbortError') {
+        toast('KI-Timeout – Anthropic antwortet nicht. Bitte erneut versuchen.', 'err');
+      } else if (err.message === 'Failed to fetch') {
+        const isFile = location.protocol === 'file:';
+        toast(
+          isFile
+            ? 'CORS-Fehler: Bitte die App auf GitHub Pages öffnen, nicht als lokale Datei.'
+            : 'Verbindung zu Anthropic fehlgeschlagen. Adblocker aktiv? VPN? Konsole prüfen.',
+          'err'
+        );
+      } else {
+        toast('KI-Fehler: ' + err.message, 'err');
+      }
     } finally {
       btn.disabled     = false;
       icon.textContent = '✨';

@@ -1965,9 +1965,16 @@
     if (result.error) {
       // Benutzerfreundliche Fehlertexte
       const msg = result.error.message;
-      if (msg.includes('Invalid login'))       showAuthError('E-Mail oder Passwort falsch.');
-      else if (msg.includes('already registered')) showAuthError('Diese E-Mail ist bereits registriert.');
-      else if (msg.includes('Email not confirmed')) showAuthError('Bitte bestätige zuerst deine E-Mail.');
+      if (msg.includes('Invalid login') || msg.includes('invalid_credentials'))
+        showAuthError('E-Mail oder Passwort falsch.');
+      else if (msg.includes('already registered') || msg.includes('User already registered'))
+        showAuthError('Diese E-Mail ist bereits registriert. Bitte melde dich an.');
+      else if (msg.includes('Email not confirmed'))
+        showAuthError('Bitte deaktiviere in Supabase die Email-Bestätigung (Authentication → Email → Confirm email OFF).');
+      else if (msg.includes('email rate limit') || msg.includes('rate limit'))
+        showAuthError('Zu viele Registrierungsversuche. Bitte deaktiviere in Supabase die Email-Bestätigung.');
+      else if (msg.includes('over_email_send_rate_limit'))
+        showAuthError('Email-Limit erreicht. Deaktiviere die Email-Bestätigung in Supabase → Authentication → Email.');
       else showAuthError(msg);
       return;
     }

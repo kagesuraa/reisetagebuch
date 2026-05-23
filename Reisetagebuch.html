@@ -168,60 +168,77 @@
     html.dark .tag-chip:not(.active) { background:rgba(255,255,255,.08); color:#94a3b8; }
     html.dark .tag-chip.active { background:#1a2235; color:#fb923c; border-color:#fb923c; }
 
-    /* ── Dark Mode ─────────────────────────────────────────────────────────── */
-    html.dark { color-scheme: dark; }
-    html.dark body { background:#0f172a; }
-    html.dark #left-panel { background:#1e293b !important; border-color:#334155 !important; }
-    html.dark #left-panel [class*="bg-white"] { background:#0f172a !important; }
-    html.dark #left-panel [class*="bg-orange-50"] { background:#1a2235 !important; }
-    html.dark #left-panel input, html.dark #left-panel select
-      { background:#0f172a !important; color:#e2e8f0 !important; border-color:#334155 !important; }
-    html.dark #left-panel [class*="text-gray-8"],
-    html.dark #left-panel [class*="text-gray-7"],
-    html.dark #left-panel [class*="text-stone-9"],
-    html.dark #left-panel [class*="text-stone-8"],
-    html.dark #left-panel [class*="text-stone-7"] { color:#e2e8f0 !important; }
-    html.dark #left-panel [class*="text-gray-4"],
-    html.dark #left-panel [class*="text-gray-3"],
-    html.dark #left-panel [class*="text-stone-4"],
-    html.dark #left-panel [class*="text-stone-3"] { color:#94a3b8 !important; }
-    html.dark #left-panel [class*="border-orange-"] { border-color:#334155 !important; }
-    html.dark #left-panel [class*="hover:bg-orange-"],
-    html.dark #left-panel [class*="hover:bg-white"] { --tw-bg-opacity:1; }
-    html.dark #sidebar { background:#1e293b !important; }
-    html.dark #sidebar [class*="bg-white"] { background:#0f172a !important; }
-    html.dark #sidebar [class*="bg-orange-50"] { background:#1a2235 !important; }
-    html.dark #sidebar input, html.dark #sidebar textarea, html.dark #sidebar select
-      { background:#0f172a !important; color:#e2e8f0 !important; border-color:#334155 !important; }
-    html.dark #sidebar label,
-    html.dark #sidebar [class*="text-gray-8"],
-    html.dark #sidebar [class*="text-gray-7"],
-    html.dark #sidebar [class*="text-stone-9"],
-    html.dark #sidebar [class*="text-stone-8"],
-    html.dark #sidebar [class*="text-stone-7"] { color:#e2e8f0 !important; }
-    html.dark #sidebar [class*="text-gray-4"],
-    html.dark #sidebar [class*="text-stone-4"],
-    html.dark #sidebar [class*="text-gray-5"],
-    html.dark #sidebar [class*="text-stone-5"] { color:#94a3b8 !important; }
-    html.dark #sidebar [class*="border-orange-"] { border-color:#334155 !important; }
-    html.dark #lightbox-card { background:#1e293b !important; }
-    html.dark #lb-name { color:#f1f5f9 !important; }
-    html.dark #lb-notes { color:#94a3b8 !important; }
-    html.dark #lightbox-card [class*="border-gray-100"] { border-color:#334155 !important; }
-    html.dark #lightbox-card [class*="text-gray-9"],
-    html.dark #lightbox-card [class*="text-gray-8"],
-    html.dark #lightbox-card [class*="text-gray-7"] { color:#e2e8f0 !important; }
-    html.dark #lightbox-card [class*="text-gray-4"],
-    html.dark #lightbox-card [class*="text-gray-3"] { color:#94a3b8 !important; }
-    html.dark #btn-route, html.dark #hint-chip
-      { background:rgba(30,41,59,.95) !important; border-color:#334155 !important; }
-    html.dark #btn-route [class*="text-gray-"], html.dark #hint-chip [class*="text-gray-"]
-      { color:#e2e8f0 !important; }
+    /* ══ Dark Mode — vollständig ═══════════════════════════════════════════ */
+    :root {
+      --dk-bg:    #0f172a;
+      --dk-card:  #1e293b;
+      --dk-deep:  #0d1526;
+      --dk-brd:   #334155;
+      --dk-txt:   #e2e8f0;
+      --dk-muted: #94a3b8;
+    }
+    html.dark { color-scheme:dark; }
+    html.dark body { background:var(--dk-bg); color:var(--dk-txt); }
+
+    /* ─ Alle weißen / orange-50 Hintergründe ─ */
+    html.dark #left-panel,
+    html.dark #sidebar,
+    html.dark #lightbox-card,
+    html.dark #pinnwand,
+    html.dark #stats-section,
+    html.dark .bg-white,
+    html.dark [class~="bg-white"]           { background:var(--dk-card) !important; }
+    html.dark #left-panel                   { border-color:var(--dk-brd) !important; }
+    html.dark [class~="bg-orange-50"],
+    html.dark [class~="bg-orange-100"]      { background:var(--dk-deep) !important; }
+    html.dark [class~="bg-gray-950"]        { background:#060d1a !important; }
+
+    /* ─ Inputs / Textareas / Selects ─ */
+    html.dark input:not([type="range"]):not([type="checkbox"]),
+    html.dark textarea,
+    html.dark select {
+      background:var(--dk-deep) !important;
+      color:var(--dk-txt) !important;
+      border-color:var(--dk-brd) !important;
+    }
+    html.dark input::placeholder,
+    html.dark textarea::placeholder { color:var(--dk-muted) !important; }
+
+    /* ─ Texte ─ */
+    html.dark [class~="text-gray-900"], html.dark [class~="text-gray-800"],
+    html.dark [class~="text-gray-700"], html.dark [class~="text-stone-900"],
+    html.dark [class~="text-stone-800"], html.dark [class~="text-stone-700"],
+    html.dark [class~="text-stone-600"] { color:var(--dk-txt) !important; }
+    html.dark [class~="text-gray-500"], html.dark [class~="text-gray-400"],
+    html.dark [class~="text-gray-300"], html.dark [class~="text-stone-500"],
+    html.dark [class~="text-stone-400"], html.dark [class~="text-stone-300"] { color:var(--dk-muted) !important; }
+    html.dark #lb-name  { color:#f1f5f9 !important; }
+    html.dark #lb-notes { color:var(--dk-muted) !important; }
+
+    /* ─ Ränder ─ */
+    html.dark [class~="border-orange-100"], html.dark [class~="border-orange-200"],
+    html.dark [class~="border-gray-100"],   html.dark [class~="border-gray-200"]
+      { border-color:var(--dk-brd) !important; }
+
+    /* ─ Hover-Effekte ─ */
+    html.dark [class~="hover:bg-orange-100"]:hover { background:#1e3a5f !important; }
+    html.dark [class~="hover:bg-white"]:hover       { background:#334155 !important; }
+
+    /* ─ Karte: weiße schwebende Buttons ─ */
     html.dark #style-btn, html.dark #lang-btn, html.dark #btn-darkmode, html.dark #btn-gps
-      { background:rgba(30,41,59,.92) !important; border-color:#334155 !important; color:#e2e8f0 !important; }
-    html.dark #style-dropdown { background:#1e293b !important; border-color:#334155 !important; }
-    html.dark #style-dropdown button { color:#e2e8f0 !important; }
+      { background:rgba(30,41,59,.92) !important; border-color:var(--dk-brd) !important; color:var(--dk-txt) !important; }
+    html.dark #btn-route, html.dark #hint-chip
+      { background:rgba(30,41,59,.95) !important; color:var(--dk-txt) !important; }
+    html.dark #style-dropdown
+      { background:var(--dk-card) !important; border-color:var(--dk-brd) !important; }
+    html.dark #style-dropdown button { color:var(--dk-txt) !important; }
     html.dark #style-dropdown button:hover { background:#334155 !important; }
+
+    /* ─ Auth-Form im linken Panel ─ */
+    html.dark #panel-auth-section [class~="bg-orange-100"] { background:#1a2235 !important; }
+
+    /* ─ Toast ─ */
+    html.dark #toast { background:#1e293b !important; color:var(--dk-txt) !important; border-color:var(--dk-brd) !important; }
 
     /* ── PDF / Print ─────────────────────────────────────────────────────── */
     @media print {
@@ -324,96 +341,7 @@
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-  <!-- ════ AUTH OVERLAY ═══════════════════════════════════════════════════════ -->
-  <div id="auth-overlay" class="hidden">
-
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
-
-      <!-- Header -->
-      <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-8 py-8 text-center">
-        <div class="w-16 h-16 rounded-2xl bg-white/20 mx-auto mb-4
-                    flex items-center justify-center text-3xl shadow-inner">🌍</div>
-        <h1 class="text-2xl font-bold text-white tracking-tight">Reisetagebuch</h1>
-        <p class="text-orange-100 text-sm mt-1">Deine Abenteuer auf einer Karte</p>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex border-b border-orange-100">
-        <button id="auth-tab-login"
-          class="flex-1 py-3.5 text-sm font-bold text-orange-500 border-b-2 border-orange-500 transition-colors">
-          <span id="lbl-auth-login">Anmelden</span>
-        </button>
-        <button id="auth-tab-register"
-          class="flex-1 py-3.5 text-sm font-bold text-stone-400 border-b-2 border-transparent transition-colors hover:text-orange-400">
-          <span id="lbl-auth-register">Registrieren</span>
-        </button>
-      </div>
-
-      <!-- Form -->
-      <div class="px-8 py-7 space-y-4">
-
-        <!-- Fehlermeldung -->
-        <div id="auth-error"
-          class="hidden text-xs px-4 py-3 rounded-xl bg-red-50 text-red-600"></div>
-
-        <!-- Name (nur bei Registrierung) -->
-        <div id="auth-name-field" class="hidden">
-          <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
-            <span id="lbl-auth-name">Name</span>
-          </label>
-          <input id="auth-name" type="text" autocomplete="name"
-            placeholder="Dein Reisename"
-            class="w-full rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
-        </div>
-
-        <!-- E-Mail -->
-        <div>
-          <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
-            E-Mail
-          </label>
-          <input id="auth-email" type="email" autocomplete="email"
-            placeholder="name@example.com"
-            class="w-full rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
-        </div>
-
-        <!-- Passwort -->
-        <div>
-          <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
-            <span id="lbl-auth-password">Passwort</span>
-          </label>
-          <input id="auth-password" type="password" autocomplete="current-password"
-            placeholder="••••••••"
-            class="w-full rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
-        </div>
-
-        <!-- Submit -->
-        <button id="auth-submit"
-          class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white
-                 font-bold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2
-                 disabled:opacity-50 disabled:cursor-not-allowed mt-2">
-          <svg id="auth-spinner" class="w-4 h-4 spin hidden" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-          </svg>
-          <span id="auth-btn-label">Anmelden</span>
-        </button>
-
-        <!-- Info-Text -->
-        <p id="auth-info" class="text-center text-xs text-stone-400">
-          <span id="lbl-auth-info">Noch kein Konto?</span>
-          <button id="auth-switch-link" class="text-orange-500 font-semibold ml-1 hover:underline">
-            <span id="lbl-auth-switch">Jetzt registrieren</span>
-          </button>
-        </p>
-
-      </div>
-    </div>
-  </div>
-  <!-- ════════════════════════════════════════════════════════════════════════ -->
-
+  <!-- auth-overlay removed — the left panel's panel-auth-section is the real form -->
   <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
   <div id="left-panel"
     class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-orange-50 border-r border-orange-200 -translate-x-full"
@@ -2596,6 +2524,24 @@
 
   btnSave.addEventListener('click', async () => {
     if (pendingLat === null) return;
+
+    // ── Pflichtfeld-Validierung ────────────────────────────────────────────
+    const locVal = document.getElementById('inp-location').value.trim();
+    if (!locVal) {
+      document.getElementById('inp-location').focus();
+      document.getElementById('inp-location').classList.add('ring-2','ring-red-400','border-red-300');
+      toast('Ortsname ist Pflicht.', 'err');
+      setTimeout(() => document.getElementById('inp-location').classList.remove('ring-2','ring-red-400','border-red-300'), 2000);
+      return;
+    }
+    const hasMedia = existingPhotos.length > 0 || pendingPhotos.length > 0 || pendingVideos.length > 0;
+    if (!hasMedia) {
+      document.getElementById('upload-area').classList.add('ring-2','ring-red-400');
+      toast('Mindestens ein Bild oder Video ist Pflicht.', 'err');
+      setTimeout(() => document.getElementById('upload-area').classList.remove('ring-2','ring-red-400'), 2000);
+      return;
+    }
+
     setSaving(true);
 
     // Bilder + Videos hochladen → URLs als JSON-Array in image_url
@@ -2995,7 +2941,6 @@
   let currentUser = null;
   let authMode    = 'login'; // 'login' | 'register'
 
-  const authOverlay  = document.getElementById('auth-overlay');
   const authEmail    = document.getElementById('auth-email');
   const authPassword = document.getElementById('auth-password');
   const authNameInp  = document.getElementById('auth-name');
@@ -3008,11 +2953,11 @@
     authMode = mode;
     const isReg = mode === 'register';
     document.getElementById('auth-tab-login').className =
-      `flex-1 py-3.5 text-sm font-bold transition-colors border-b-2 ${
-        !isReg ? 'text-orange-500 border-orange-500' : 'text-stone-400 border-transparent hover:text-orange-400'}`;
+      `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+        !isReg ? 'bg-white text-orange-500 shadow-sm' : 'text-stone-400 hover:text-orange-400'}`;
     document.getElementById('auth-tab-register').className =
-      `flex-1 py-3.5 text-sm font-bold transition-colors border-b-2 ${
-        isReg ? 'text-orange-500 border-orange-500' : 'text-stone-400 border-transparent hover:text-orange-400'}`;
+      `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+        isReg ? 'bg-white text-orange-500 shadow-sm' : 'text-stone-400 hover:text-orange-400'}`;
     document.getElementById('auth-name-field').classList.toggle('hidden', !isReg);
     authBtnLbl.textContent   = isReg ? 'Registrieren' : 'Anmelden';
     document.getElementById('lbl-auth-info').textContent   = isReg ? 'Schon ein Konto?' : 'Noch kein Konto?';

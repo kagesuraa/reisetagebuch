@@ -2608,29 +2608,12 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  KI-Formatierer (Claude Haiku via Anthropic API)
+  //  KI-Formatierer (Claude Haiku via Supabase Edge Function)
   // ══════════════════════════════════════════════════════════════════════════
-  const CLAUDE_KEY_LS = 'reise_claude_key';
-
-  function getClaudeApiKey() {
-    let key = localStorage.getItem(CLAUDE_KEY_LS);
-    if (!key) {
-      key = window.prompt(
-        'Anthropic API-Key eingeben (wird nur lokal in deinem Browser gespeichert):\n' +
-        'Erhältlich unter console.anthropic.com → API Keys'
-      );
-      if (key?.trim()) localStorage.setItem(CLAUDE_KEY_LS, key.trim());
-    }
-    return key?.trim() || null;
-  }
-
   async function formatNotesWithAI() {
     const textarea = document.getElementById('inp-notes');
     const text     = textarea.value.trim();
     if (!text) { toast('Bitte zuerst Notizen schreiben.', 'info'); return; }
-
-    const apiKey = getClaudeApiKey();
-    if (!apiKey) { toast('Kein API-Key angegeben.', 'err'); return; }
 
     const btn   = document.getElementById('btn-ai-format');
     const icon  = document.getElementById('ai-fmt-icon');
@@ -2650,61 +2633,21 @@
       'Original:\n' + text;
 
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
+      const { data, error } = await sb.functions.invoke('ai-format', {
+        body: { prompt },
+      });
 
-      let res;
-      try {
-        res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          signal: controller.signal,
-          headers: {
-            'x-api-key':                         apiKey,
-            'anthropic-version':                 '2023-06-01',
-            'anthropic-dangerous-allow-browser': 'true',
-            'content-type':                      'application/json',
-          },
-          body: JSON.stringify({
-            model:      'claude-haiku-4-5-20251001',
-            max_tokens: 1024,
-            messages:   [{ role: 'user', content: prompt }],
-          }),
-        });
-      } finally {
-        clearTimeout(timer);
-      }
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        if (res.status === 401) {
-          localStorage.removeItem(CLAUDE_KEY_LS);
-          throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
-        }
-        if (res.status === 529 || res.status === 503) throw new Error('Anthropic überlastet – bitte kurz warten.');
-        throw new Error(err.error?.message || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const formatted = data.content?.[0]?.text?.trim();
+      const formatted = data?.text?.trim();
       if (formatted) {
         textarea.value = formatted;
         toast('Notiz formatiert ✓', 'ok');
       }
     } catch (err) {
       console.error('[KI-Formatierer]', err);
-      if (err.name === 'AbortError') {
-        toast('KI-Timeout – Anthropic antwortet nicht. Bitte erneut versuchen.', 'err');
-      } else if (err.message === 'Failed to fetch') {
-        const isFile = location.protocol === 'file:';
-        toast(
-          isFile
-            ? 'CORS-Fehler: Bitte die App auf GitHub Pages öffnen, nicht als lokale Datei.'
-            : 'Verbindung zu Anthropic fehlgeschlagen. Adblocker aktiv? VPN? Konsole prüfen.',
-          'err'
-        );
-      } else {
-        toast('KI-Fehler: ' + err.message, 'err');
-      }
+      toast('KI-Fehler: ' + err.message, 'err');
     } finally {
       btn.disabled     = false;
       icon.textContent = '✨';

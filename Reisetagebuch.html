@@ -1120,7 +1120,11 @@
 
         <!-- Ortsname -->
         <h2 id="lb-name"
-          class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-5"></h2>
+          class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-1"></h2>
+
+        <!-- Koordinaten -->
+        <p id="lb-coords"
+          class="text-gray-400 text-xs font-mono mb-5"></p>
 
         <!-- Sprachnotiz-Player -->
         <div id="lb-audio-wrap" class="hidden mb-4 p-3 bg-orange-50 rounded-xl border border-orange-100">
@@ -1489,17 +1493,13 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
-  const TILE_STD_LANG = {
-    de: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          opts: { maxZoom: 19, noWrap: true, bounds: worldBounds, subdomains: 'abc',
-                  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' } },
-    en: { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-          opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
-                  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } },
-  };
+  const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                     opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
+                             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
+  const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };
 
   const tileDefs = {
-    standard: TILE_STD_LANG.de,
+    standard: TILE_STD,
     dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
               attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },

@@ -487,14 +487,26 @@
       <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-orange-100">
         <div class="flex items-center justify-between mb-3">
           <p id="lbl-stats" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Statistiken</p>
-          <button onclick="exportPDF()"
-            class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-            </svg>
-            PDF
-          </button>
+          <div class="flex items-center gap-3">
+            <button onclick="openSlideshow()"
+              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Memories
+            </button>
+            <button onclick="exportPDF()"
+              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+              </svg>
+              PDF
+            </button>
+          </div>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div class="bg-white rounded-xl px-2 py-3 text-center">
@@ -965,6 +977,63 @@
         class="scroll-thin overflow-y-auto max-h-48 px-4 pb-4 space-y-1.5 hidden"></div>
     </div>
   </aside>
+
+  <!-- ════ MEMORIES SLIDESHOW ════════════════════════════════════════════════ -->
+  <div id="slideshow-overlay"
+    class="fixed inset-0 z-[9000] flex flex-col items-center justify-center
+           opacity-0 pointer-events-none"
+    style="transition:opacity .4s ease">
+
+    <!-- Background layers (two alternating divs for crossfade) -->
+    <div id="ss-bg-a" class="absolute inset-0 bg-cover bg-center"
+      style="transition:opacity .8s ease;background-color:#111"></div>
+    <div id="ss-bg-b" class="absolute inset-0 bg-cover bg-center opacity-0"
+      style="transition:opacity .8s ease;background-color:#111"></div>
+    <!-- dark gradient overlay -->
+    <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70 pointer-events-none"></div>
+
+    <!-- Video layer (used when slide is a video) -->
+    <video id="ss-vid"
+      class="absolute inset-0 w-full h-full object-cover opacity-0"
+      style="transition:opacity .8s ease" muted loop playsinline></video>
+
+    <!-- Top bar -->
+    <div class="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pt-5 z-10">
+      <span id="ss-counter" class="text-white/60 text-sm font-medium select-none"></span>
+      <button onclick="closeSlideshow()"
+        class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center
+               text-white text-xl transition-colors backdrop-blur-sm">×</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="absolute top-0 left-0 right-0 h-[3px] bg-white/20 z-10">
+      <div id="ss-progress" class="h-full bg-orange-400"
+        style="width:0%;transition:width linear"></div>
+    </div>
+
+    <!-- Center text -->
+    <div class="relative z-10 text-center px-8 max-w-2xl w-full select-none pointer-events-none">
+      <p id="ss-date" class="text-white/60 text-sm font-medium mb-3 tracking-widest uppercase"></p>
+      <h2 id="ss-location" class="text-white font-extrabold leading-tight mb-4"
+        style="font-size:clamp(2rem,6vw,4rem);text-shadow:0 2px 24px rgba(0,0,0,.7)"></h2>
+      <p id="ss-notes"
+        class="text-white/80 text-base leading-relaxed max-h-28 overflow-hidden"
+        style="text-shadow:0 1px 8px rgba(0,0,0,.8);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden"></p>
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="absolute bottom-8 left-0 right-0 flex items-center justify-center gap-6 z-10">
+      <button onclick="ssStep(-1)"
+        class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center
+               text-white text-lg transition-colors backdrop-blur-sm">‹</button>
+      <button id="ss-playpause" onclick="ssTogglePlay()"
+        class="w-14 h-14 rounded-full bg-orange-500 hover:bg-orange-400 flex items-center justify-center
+               text-white text-xl transition-colors shadow-xl">▶</button>
+      <button onclick="ssStep(1)"
+        class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center
+               text-white text-lg transition-colors backdrop-blur-sm">›</button>
+    </div>
+  </div>
 
   <!-- ════ VIDEO PREVIEW MODAL (pending upload) ══════════════════════════════ -->
   <div id="vid-preview-modal"
@@ -3749,6 +3818,145 @@
       localStorage.setItem(KEY, JSON.stringify(dismissed));
     }, { once: true });
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Memories Slideshow
+  // ══════════════════════════════════════════════════════════════════════════
+  (function () {
+    const overlay    = document.getElementById('slideshow-overlay');
+    const bgA        = document.getElementById('ss-bg-a');
+    const bgB        = document.getElementById('ss-bg-b');
+    const ssVid      = document.getElementById('ss-vid');
+    const counter    = document.getElementById('ss-counter');
+    const progress   = document.getElementById('ss-progress');
+    const playBtn    = document.getElementById('ss-playpause');
+    const locEl      = document.getElementById('ss-location');
+    const dateEl     = document.getElementById('ss-date');
+    const notesEl    = document.getElementById('ss-notes');
+
+    let ssSlides  = [];   // entries with at least one photo/video
+    let ssIdx     = 0;
+    let ssPlaying = false;
+    let ssTimer   = null;
+    let bgActive  = 'a';  // which bg div is currently visible
+    const DURATION = 5000; // ms per slide
+
+    function openSlideshow() {
+      const src = allEntries.length ? allEntries : entries;
+      ssSlides = src.filter(e => e.photos && e.photos.length > 0);
+      if (!ssSlides.length) {
+        toast('Keine Einträge mit Fotos für die Slideshow vorhanden.');
+        return;
+      }
+      ssIdx = 0;
+      ssShowSlide(0);
+      overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
+      ssSetPlaying(true);
+    }
+
+    function closeSlideshow() {
+      ssSetPlaying(false);
+      overlay.style.opacity = '0';
+      overlay.style.pointerEvents = 'none';
+      ssVid.pause();
+      ssVid.src = '';
+      ssVid.style.opacity = '0';
+    }
+
+    function ssShowSlide(idx) {
+      const e   = ssSlides[idx];
+      const src = e.photos[0];
+      counter.textContent = `${idx + 1} / ${ssSlides.length}`;
+      locEl.textContent   = e.locationName || '';
+      dateEl.textContent  = e.date
+        ? new Date(e.date + 'T00:00:00').toLocaleDateString('de-DE', { day:'numeric', month:'long', year:'numeric' })
+        : '';
+      notesEl.textContent = e.notes || '';
+
+      // Reset progress
+      progress.style.transition = 'none';
+      progress.style.width = '0%';
+      void progress.offsetWidth; // reflow
+      if (ssPlaying) {
+        progress.style.transition = `width ${DURATION}ms linear`;
+        progress.style.width = '100%';
+      }
+
+      if (isVideoUrl(src)) {
+        ssVid.src = src;
+        ssVid.style.opacity = '1';
+        ssVid.play().catch(() => {});
+        // Keep background blurred still from previous slide
+      } else {
+        ssVid.pause();
+        ssVid.src = '';
+        ssVid.style.opacity = '0';
+
+        // Crossfade backgrounds
+        const incoming = bgActive === 'a' ? bgB : bgA;
+        const outgoing = bgActive === 'a' ? bgA : bgB;
+        incoming.style.backgroundImage = `url('${toDisplayUrl(src, 1200)}')`;
+        incoming.style.opacity = '1';
+        outgoing.style.opacity = '0';
+        bgActive = bgActive === 'a' ? 'b' : 'a';
+      }
+    }
+
+    function ssStep(dir) {
+      ssIdx = (ssIdx + dir + ssSlides.length) % ssSlides.length;
+      ssShowSlide(ssIdx);
+      // Restart auto-advance if playing
+      if (ssPlaying) {
+        clearTimeout(ssTimer);
+        ssTimer = setTimeout(ssAdvance, DURATION);
+      }
+    }
+
+    function ssAdvance() {
+      ssIdx = (ssIdx + 1) % ssSlides.length;
+      ssShowSlide(ssIdx);
+      if (ssPlaying) ssTimer = setTimeout(ssAdvance, DURATION);
+    }
+
+    function ssSetPlaying(val) {
+      ssPlaying = val;
+      playBtn.textContent = val ? '⏸' : '▶';
+      if (val) {
+        progress.style.transition = `width ${DURATION}ms linear`;
+        progress.style.width = '100%';
+        ssTimer = setTimeout(ssAdvance, DURATION);
+      } else {
+        clearTimeout(ssTimer);
+        const computed = getComputedStyle(progress).width;
+        const totalW   = progress.parentElement.getBoundingClientRect().width;
+        progress.style.transition = 'none';
+        progress.style.width = computed;
+      }
+    }
+
+    function ssTogglePlay() { ssSetPlaying(!ssPlaying); }
+
+    // Keyboard
+    document.addEventListener('keydown', e => {
+      if (overlay.style.pointerEvents !== 'auto') return;
+      if (e.key === 'Escape')       closeSlideshow();
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') ssStep(1);
+      else if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   ssStep(-1);
+      else if (e.key === ' ') { e.preventDefault(); ssTogglePlay(); }
+    });
+
+    // Click on overlay background closes
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) closeSlideshow();
+    });
+
+    // Expose to global scope
+    window.openSlideshow  = openSlideshow;
+    window.closeSlideshow = closeSlideshow;
+    window.ssStep         = ssStep;
+    window.ssTogglePlay   = ssTogglePlay;
+  })();
 
   // ─── PWA Service Worker registrieren ──────────────────────────────────────
   if ('serviceWorker' in navigator) {

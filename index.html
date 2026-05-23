@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mein Reisetagebuch</title>
 
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
     #map { height: 100dvh; width: 100%; }
 
     #sidebar {
@@ -21,6 +23,7 @@
 
     #left-panel {
       transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      border-right: 1px solid #e7e5e4;
     }
 
     /* Leaflet-Zoom nach rechts unten verschieben */
@@ -30,7 +33,7 @@
 
     .scroll-thin::-webkit-scrollbar { width: 4px; }
     .scroll-thin::-webkit-scrollbar-track { background: transparent; }
-    .scroll-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
 
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin .7s linear infinite; }
@@ -61,7 +64,7 @@
     /* Galerie */
     #gallery { transition: opacity .3s ease; }
     #gallery.open { opacity: 1 !important; pointer-events: auto !important; }
-    .gal-item { break-inside: avoid; margin-bottom: 10px; }
+    .gal-item { break-inside: avoid; margin-bottom: 8px; }
     .gal-item img { transition: transform .4s ease; }
     .gal-item:hover img { transform: scale(1.03); }
     .gal-item .gal-overlay { transition: opacity .3s ease; opacity: 0; }
@@ -69,31 +72,31 @@
   </style>
 </head>
 
-<body class="overflow-hidden bg-gray-100">
+<body class="overflow-hidden bg-stone-50">
 
   <div id="map"></div>
 
   <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
   <div id="left-panel"
-    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-white shadow-2xl -translate-x-full"
+    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-white border-r border-stone-200 -translate-x-full"
     style="width:min(80vw,300px)">
 
     <!-- Profil-Header -->
-    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-4 py-4 flex-shrink-0">
+    <div class="bg-stone-900 px-5 py-5 flex-shrink-0">
       <div class="flex items-center gap-3">
         <!-- Avatar -->
         <div id="profile-avatar"
           class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl
                  font-extrabold flex-shrink-0 cursor-pointer hover:scale-105 transition-transform
                  shadow-lg select-none"
-          style="background:rgba(255,255,255,0.25)" onclick="toggleProfileEdit()">
+          style="background:rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2)" onclick="toggleProfileEdit()">
           ?
         </div>
         <!-- Name + Untertitel -->
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
             <span id="profile-name-display"
-              class="text-white font-bold text-sm truncate cursor-pointer"
+              class="text-white font-semibold text-sm truncate cursor-pointer"
               onclick="toggleProfileEdit()">Reisender</span>
             <button onclick="toggleProfileEdit()"
               class="text-white/50 hover:text-white transition-colors flex-shrink-0">
@@ -104,7 +107,7 @@
               </svg>
             </button>
           </div>
-          <p id="profile-subtitle" class="text-orange-100 text-xs mt-0.5 truncate">Weltenbummler</p>
+          <p id="profile-subtitle" class="text-stone-400 text-xs mt-0.5 truncate">Weltenbummler</p>
         </div>
         <button id="left-panel-close"
           class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
@@ -113,58 +116,58 @@
       <!-- Inline-Edit -->
       <div id="profile-edit" class="hidden mt-3 flex gap-2">
         <input id="profile-name-input" type="text" placeholder="Dein Reisename …" maxlength="24"
-          class="flex-1 bg-white/20 text-white placeholder-white/50 rounded-xl px-3 py-1.5
-                 text-sm outline-none border border-white/30 focus:border-white/70 transition-colors" />
+          class="flex-1 bg-white/10 text-white placeholder-white/50 rounded-xl px-3 py-1.5
+                 text-sm outline-none border border-white/20 focus:border-white/50 transition-colors" />
         <button onclick="saveProfile()"
-          class="bg-white/20 hover:bg-white/35 text-white text-xs font-bold px-3 rounded-xl
+          class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 rounded-xl
                  transition-colors">OK</button>
       </div>
     </div>
 
     <!-- Dashboard: 3 Metrik-Karten -->
-    <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-gray-100">
-      <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Statistiken</p>
+    <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-stone-100">
+      <p class="text-xs font-medium text-stone-400 uppercase tracking-widest mb-3">Statistiken</p>
       <div class="grid grid-cols-3 gap-2">
 
-        <div class="bg-orange-50 rounded-2xl px-2 py-3 text-center shadow-sm">
-          <svg class="w-4 h-4 text-orange-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-stone-50 rounded-xl px-2 py-3 text-center">
+          <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5
                  2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2
                  2 0 012-2h3.064"/>
           </svg>
-          <p id="dash-total" class="text-xl font-extrabold text-orange-500 leading-none">0</p>
-          <p class="text-xs text-gray-400 mt-0.5">Reisen</p>
+          <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
+          <p class="text-xs text-stone-400 mt-0.5">Reisen</p>
         </div>
 
-        <div class="bg-sky-50 rounded-2xl px-2 py-3 text-center shadow-sm">
-          <svg class="w-4 h-4 text-sky-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-stone-50 rounded-xl px-2 py-3 text-center">
+          <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9
                  7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1
                  0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
           </svg>
-          <p id="dash-north" class="text-xs font-extrabold text-sky-500 leading-tight truncate px-1">–</p>
-          <p class="text-xs text-gray-400 mt-0.5">Nördlichst</p>
+          <p id="dash-north" class="text-xs font-extrabold text-stone-900 leading-tight truncate px-1">–</p>
+          <p class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
         </div>
 
-        <div class="bg-emerald-50 rounded-2xl px-2 py-3 text-center shadow-sm">
-          <svg class="w-4 h-4 text-emerald-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-stone-50 rounded-xl px-2 py-3 text-center">
+          <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2
                  0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
-          <p id="dash-last" class="text-xs font-extrabold text-emerald-500 leading-tight">–</p>
-          <p class="text-xs text-gray-400 mt-0.5">Letztes</p>
+          <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
+          <p class="text-xs text-stone-400 mt-0.5">Letztes</p>
         </div>
 
       </div>
     </div>
 
     <!-- Filterleiste -->
-    <div class="px-4 py-3 flex-shrink-0 border-b border-gray-100 flex gap-2">
-      <div class="flex items-center flex-1 bg-gray-50 rounded-xl px-2.5 py-1.5 gap-1.5
-                  border border-gray-200 focus-within:border-orange-400 transition-colors">
+    <div class="px-4 py-3 flex-shrink-0 border-b border-stone-100 flex gap-2">
+      <div class="flex items-center flex-1 bg-stone-50 rounded-xl px-2.5 py-1.5 gap-1.5
+                  border border-stone-200 focus-within:border-amber-500 transition-colors">
         <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -173,30 +176,30 @@
           class="bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none w-full" />
       </div>
       <select id="filter-year"
-        class="bg-gray-50 border border-gray-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
-               outline-none focus:border-orange-400 transition-colors cursor-pointer">
+        class="bg-stone-50 border border-stone-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
+               outline-none focus:border-amber-500 transition-colors cursor-pointer">
         <option value="">Alle</option>
       </select>
       <button id="filter-reset"
-        class="hidden w-6 h-6 rounded-full bg-gray-100 hover:bg-red-100 text-gray-400
-               hover:text-red-500 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
+        class="hidden w-6 h-6 rounded-full bg-stone-100 hover:bg-red-50 text-stone-400
+               hover:text-red-400 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
     </div>
 
     <!-- Tabs: Alle / Favoriten -->
     <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
       <button id="tab-all"
-        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">
+        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-stone-900 text-white">
         🗺 Alle
       </button>
       <button id="tab-favs"
-        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-gray-400 hover:bg-gray-100">
+        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-stone-50">
         ❤ Favoriten
       </button>
     </div>
 
     <!-- Trip-Cards (scrollbar) -->
     <div id="trip-cards" class="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-2">
-      <div id="trip-loader" class="flex items-center justify-center gap-2 py-8 text-gray-300 text-xs">
+      <div id="trip-loader" class="flex items-center justify-center gap-2 py-8 text-stone-300 text-xs">
         <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -218,16 +221,16 @@
     class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden md:flex
            flex-col items-center gap-1 py-3 px-1
            bg-white rounded-r-xl shadow-md cursor-pointer transition-opacity duration-300">
-    <div class="w-0.5 h-3 bg-orange-400 rounded-full"></div>
-    <div class="w-0.5 h-3 bg-orange-400 rounded-full"></div>
-    <div class="w-0.5 h-3 bg-orange-400 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-amber-500 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-amber-500 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-amber-500 rounded-full"></div>
   </div>
 
   <!-- Mobiler Panel-Toggle (nur sichtbar wenn Panel geschlossen) -->
   <button id="left-panel-open"
     class="fixed top-4 left-4 z-[4501] md:hidden w-10 h-10 rounded-2xl
            bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center
-           text-gray-600 hover:bg-orange-50 transition-colors">
+           text-stone-600 hover:bg-stone-50 transition-colors">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
     </svg>
@@ -241,14 +244,14 @@
     <div class="flex items-center justify-between px-6 sm:px-10 py-5 flex-shrink-0
                 border-b border-white/8">
       <div>
-        <h2 class="text-white text-2xl font-black tracking-widest uppercase">Galerie</h2>
+        <h2 class="text-white text-2xl font-bold tracking-tight">Galerie</h2>
         <p class="text-white/35 text-xs mt-0.5" id="gallery-subtitle">Deine Erinnerungen</p>
       </div>
       <div class="flex items-center gap-3">
         <!-- Alle / Favoriten -->
         <div class="flex bg-white/10 rounded-2xl p-1 gap-1">
           <button id="gal-tab-all"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-white/20 transition-colors">
+            class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-white/15 transition-colors">
             Alle
           </button>
           <button id="gal-tab-favs"
@@ -273,9 +276,9 @@
   <!-- Galerie-Toggle-Button (oben rechts, unter Style-Switcher) -->
   <button id="gallery-btn"
     class="fixed top-16 right-4 z-[1000] w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl
-           shadow-lg flex items-center justify-center hover:bg-orange-50 transition-colors"
+           shadow-lg flex items-center justify-center hover:bg-stone-50 transition-colors"
     title="Galerie öffnen" onclick="openGallery('all')">
-    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
            0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -287,7 +290,7 @@
     <div class="relative">
       <button id="style-btn"
         class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
-               flex items-center justify-center hover:bg-orange-50 transition-colors"
+               flex items-center justify-center hover:bg-stone-50 transition-colors"
         title="Kartenstil wechseln">
         <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -298,17 +301,17 @@
       </button>
       <ul id="style-dropdown"
         class="hidden absolute top-full right-0 mt-1.5 bg-white rounded-2xl shadow-xl
-               border border-gray-100 overflow-hidden min-w-[170px] z-10">
+               border border-stone-100 overflow-hidden min-w-[170px] z-10">
         <li><button onclick="setTileStyle('standard')" data-style="standard"
-          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
-                 flex items-center gap-3 transition-colors font-semibold text-orange-600 bg-orange-50">
+          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
+                 flex items-center gap-3 transition-colors font-semibold text-amber-700 bg-amber-50">
           🌍 Standard</button></li>
         <li><button onclick="setTileStyle('dark')" data-style="dark"
-          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
+          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
                  flex items-center gap-3 transition-colors border-t border-gray-50">
           🌑 Dark Mode</button></li>
         <li><button onclick="setTileStyle('satellite')" data-style="satellite"
-          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-orange-50
+          class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
                  flex items-center gap-3 transition-colors border-t border-gray-50">
           🛰️ Satellit</button></li>
       </ul>
@@ -325,7 +328,7 @@
     <div class="relative">
       <!-- Eingabefeld -->
       <div class="flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden
-                  border-2 border-transparent focus-within:border-orange-400 transition-colors">
+                  border-2 border-transparent focus-within:border-amber-500 transition-colors">
         <svg class="w-4 h-4 text-gray-400 ml-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -341,7 +344,7 @@
       <!-- Ergebnisse-Dropdown -->
       <ul id="search-results"
         class="hidden absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl shadow-xl
-               overflow-hidden border border-gray-100 z-10">
+               overflow-hidden border border-stone-100 z-10">
       </ul>
     </div>
   </div>
@@ -350,7 +353,7 @@
   <aside id="sidebar"
     class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[1001] flex flex-col select-none">
 
-    <div class="bg-gradient-to-br from-orange-500 to-amber-400 text-white px-6 py-5 flex-shrink-0">
+    <div class="bg-stone-900 text-white px-6 py-5 flex-shrink-0">
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-2">
           <svg class="w-5 h-5 opacity-90" viewBox="0 0 24 24" fill="currentColor">
@@ -362,16 +365,16 @@
           class="w-8 h-8 rounded-full hover:bg-white/20 transition-colors
                  flex items-center justify-center text-xl leading-none">×</button>
       </div>
-      <p id="coords-display" class="text-orange-100 text-xs font-mono mt-1 truncate"></p>
+      <p id="coords-display" class="text-stone-400 text-xs font-mono mt-1 truncate"></p>
     </div>
 
     <div class="flex-1 overflow-y-auto scroll-thin px-6 py-5 space-y-5">
 
       <div class="relative">
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Ortsname</label>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Ortsname</label>
         <div class="flex items-center gap-2">
-          <div class="flex-1 flex items-center rounded-lg border border-gray-200 bg-gray-50
-                      focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent transition">
+          <div class="flex-1 flex items-center rounded-lg border border-stone-200 bg-stone-50
+                      focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-transparent transition">
             <svg class="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -386,9 +389,9 @@
           </div>
           <!-- GPS-Standort-Button -->
           <button id="btn-gps" type="button" title="Meinen Standort verwenden"
-            class="w-10 h-10 flex-shrink-0 rounded-lg border border-gray-200 bg-gray-50
-                   flex items-center justify-center text-gray-400 hover:text-orange-500
-                   hover:border-orange-300 hover:bg-orange-50 transition-colors">
+            class="w-10 h-10 flex-shrink-0 rounded-lg border border-stone-200 bg-stone-50
+                   flex items-center justify-center text-gray-400 hover:text-amber-600
+                   hover:border-amber-300 hover:bg-amber-50 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7z"/>
@@ -399,27 +402,27 @@
         <!-- Autocomplete-Dropdown -->
         <ul id="loc-results"
           class="hidden absolute left-0 right-0 top-full mt-1 bg-white rounded-xl shadow-xl
-                 border border-gray-100 overflow-hidden z-[9999] max-h-52 overflow-y-auto">
+                 border border-stone-100 overflow-hidden z-[9999] max-h-52 overflow-y-auto">
         </ul>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Datum</label>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Datum</label>
         <input id="inp-date" type="date"
-          class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5
+          class="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5
                  text-sm text-gray-800
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+                 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition" />
       </div>
 
       <!-- Foto-Upload -->
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
           Foto (optional)
         </label>
         <div id="upload-area"
           class="relative flex flex-col items-center justify-center w-full border-2 border-dashed
-                 border-gray-200 rounded-xl bg-gray-50
-                 hover:bg-orange-50 hover:border-orange-300 transition-colors overflow-hidden"
+                 border-stone-200 rounded-xl bg-stone-50
+                 hover:bg-amber-50 hover:border-amber-300 transition-colors overflow-hidden"
           style="min-height:7rem">
 
           <!-- Platzhalter -->
@@ -443,20 +446,20 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
           Erinnerungen &amp; Notizen
         </label>
         <textarea id="inp-notes" rows="5"
           placeholder="Was hast du erlebt? Besondere Momente, Menschen, Gerüche …"
-          class="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5
+          class="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5
                  text-sm text-gray-800 placeholder-gray-400 resize-none
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition">
+                 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
         </textarea>
       </div>
 
       <button id="btn-save"
         class="w-full flex items-center justify-center gap-2
-               bg-orange-500 hover:bg-orange-600 active:bg-orange-700
+               bg-stone-900 hover:bg-stone-800 active:bg-stone-700
                text-white font-semibold text-sm py-3 rounded-lg
                transition-colors duration-150 shadow-sm
                disabled:opacity-50 disabled:cursor-not-allowed">
@@ -464,18 +467,18 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
-        <span id="save-label">✈&nbsp; Eintrag speichern</span>
+        <span id="save-label">Eintrag speichern</span>
       </button>
     </div>
 
     <!-- Eintrags-Liste -->
-    <div class="border-t border-gray-100 flex-shrink-0">
+    <div class="border-t border-stone-100 flex-shrink-0">
       <div class="flex items-center justify-between px-6 pt-3 pb-1">
-        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Meine Reisen</h3>
-        <span id="entry-count" class="text-xs font-bold text-orange-500"></span>
+        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider">Meine Reisen</h3>
+        <span id="entry-count" class="text-xs font-bold text-amber-600"></span>
       </div>
       <div id="list-loader"
-        class="flex items-center justify-center gap-2 py-4 text-gray-400 text-xs px-4">
+        class="flex items-center justify-center gap-2 py-4 text-stone-400 text-xs px-4">
         <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
@@ -493,7 +496,7 @@
            bg-black/65 backdrop-blur-sm opacity-0 pointer-events-none">
 
     <div id="lightbox-card"
-      class="relative bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[92dvh]
+      class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[92dvh]
              flex flex-col sm:flex-row overflow-hidden opacity-0"
       style="transform:scale(.95)">
 
@@ -524,7 +527,7 @@
 
         <!-- Datum + Koordinaten -->
         <p id="lb-date"
-          class="text-orange-500 text-xs font-bold uppercase tracking-widest mb-3"></p>
+          class="text-amber-600 text-xs font-bold uppercase tracking-widest mb-3"></p>
 
         <!-- Ortsname -->
         <h2 id="lb-name"
@@ -537,7 +540,7 @@
         <!-- Footer -->
         <div class="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between">
           <button id="lb-delete"
-            class="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1.5">
+            class="text-xs text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5
@@ -562,14 +565,14 @@
 
   <!-- Routen-Toggle (unten links) -->
   <button id="btn-route" onclick="toggleRoute()"
-    class="fixed bottom-5 left-5 z-[1000] bg-white/90 backdrop-blur-sm
+    class="fixed bottom-5 left-5 z-[1000] bg-white/95 backdrop-blur-sm
            rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
-           hover:bg-orange-50 transition-colors whitespace-nowrap select-none">
+           hover:bg-stone-50 transition-colors whitespace-nowrap select-none">
     <span class="text-base">✈️</span>
     <span class="text-gray-700 text-sm font-medium">Route</span>
     <!-- Toggle-Switch -->
     <div id="route-switch"
-      class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-orange-500">
+      class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-amber-600">
       <div id="route-thumb"
         class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 right-0.5">
       </div>
@@ -577,7 +580,7 @@
   </button>
 
   <!-- Hinweis-Chip (zentriert unten, weg vom Zoom-Button) -->
-  <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur
+  <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur
               rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2 pointer-events-none
               whitespace-nowrap">
     <span class="text-base">🗺️</span>
@@ -685,12 +688,12 @@
     const sw    = document.getElementById('route-switch');
     const thumb = document.getElementById('route-thumb');
     if (showRoute) {
-      sw.classList.replace('bg-gray-300', 'bg-orange-500');
+      sw.classList.replace('bg-gray-300', 'bg-amber-600');
       thumb.classList.replace('left-0.5', 'right-0.5');
       thumb.classList.remove('left-0.5');
       thumb.classList.add('right-0.5');
     } else {
-      sw.classList.replace('bg-orange-500', 'bg-gray-300');
+      sw.classList.replace('bg-amber-600', 'bg-gray-300');
       thumb.classList.remove('right-0.5');
       thumb.classList.add('left-0.5');
     }
@@ -733,9 +736,9 @@
     activeStyle = name;
     document.querySelectorAll('.style-opt').forEach(b => {
       const on = b.dataset.style === name;
-      b.classList.toggle('bg-orange-50',     on);
+      b.classList.toggle('bg-amber-50',      on);
       b.classList.toggle('font-semibold',    on);
-      b.classList.toggle('text-orange-600',  on);
+      b.classList.toggle('text-amber-700',   on);
     });
     closeStyleDrop();
   }
@@ -982,10 +985,10 @@
     activeTab = tab;
     document.getElementById('tab-all').className  =
       'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (tab === 'all'  ? 'bg-orange-500 text-white' : 'text-gray-400 hover:bg-gray-100');
+      (tab === 'all'  ? 'bg-stone-900 text-white' : 'text-stone-400 hover:bg-stone-50');
     document.getElementById('tab-favs').className =
       'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (tab === 'favs' ? 'bg-orange-500 text-white' : 'text-gray-400 hover:bg-gray-100');
+      (tab === 'favs' ? 'bg-stone-900 text-white' : 'text-stone-400 hover:bg-stone-50');
     renderTripCards();
   }
 
@@ -1013,15 +1016,15 @@
       const src  = getPhotoSrc(e, 120);
       const isFav = favorites.has(e.id);
       return `
-        <div class="group flex gap-3 bg-gray-50 hover:bg-orange-50 rounded-2xl p-3
-                    transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
+        <div class="group flex gap-3 bg-gray-50 hover:bg-stone-50 rounded-2xl p-3
+                    transition-all border border-transparent hover:border-stone-200 hover:shadow-sm">
           <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
             ${src
               ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
-              : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
+              : `<div class="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
             <div class="min-w-0 flex-1">
               <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
-              <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
+              <p class="text-xs text-amber-600 font-medium mt-0.5">${fmtDate(e.date)}</p>
               ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
             </div>
           </div>
@@ -1057,10 +1060,10 @@
   function setGalTab(mode) {
     document.getElementById('gal-tab-all').className  =
       'px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (mode === 'all'  ? 'text-white bg-white/20' : 'text-white/50 hover:text-white');
+      (mode === 'all'  ? 'text-white bg-white/15' : 'text-white/50 hover:text-white');
     document.getElementById('gal-tab-favs').className =
       'px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (mode === 'favs' ? 'text-white bg-white/20' : 'text-white/50 hover:text-white');
+      (mode === 'favs' ? 'text-white bg-white/15' : 'text-white/50 hover:text-white');
   }
 
   function renderGallery() {
@@ -1232,10 +1235,10 @@
 
     list.innerHTML = entries.map(e => `
       <div class="flex items-center gap-2 rounded-lg px-3 py-2
-                  bg-gray-50 hover:bg-orange-50 transition-colors group">
+                  bg-gray-50 hover:bg-stone-50 transition-colors group">
         ${hasPhoto(e)
           ? `<img src="${getPhotoSrc(e, 80)}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" loading="lazy" />`
-          : `<div class="w-9 h-9 rounded-md bg-orange-100 flex items-center justify-center flex-shrink-0 text-sm">📍</div>`
+          : `<div class="w-9 h-9 rounded-md bg-stone-100 flex items-center justify-center flex-shrink-0 text-sm">📍</div>`
         }
         <div class="flex-1 min-w-0 cursor-pointer" onclick="flyTo('${e.id}')">
           <p class="text-sm font-medium text-gray-700 truncate">${esc(e.locationName)}</p>
@@ -1328,7 +1331,7 @@
       `<div onclick="document.getElementById('inp-photo').click()"
         class="aspect-square rounded-xl border-2 border-dashed border-gray-200
                flex items-center justify-center cursor-pointer
-               hover:border-orange-300 hover:bg-orange-50 transition-colors text-gray-300 text-2xl">+</div>`;
+               hover:border-amber-300 hover:bg-amber-50 transition-colors text-gray-300 text-2xl">+</div>`;
   }
 
   function removeThumb(i) {
@@ -1346,15 +1349,15 @@
 
   uploadArea.addEventListener('dragover', e => {
     e.preventDefault();
-    uploadArea.classList.add('border-orange-400', 'bg-orange-50');
+    uploadArea.classList.add('border-amber-400', 'bg-amber-50');
   });
   uploadArea.addEventListener('dragleave', e => {
     if (!uploadArea.contains(e.relatedTarget))
-      uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
+      uploadArea.classList.remove('border-amber-400', 'bg-amber-50');
   });
   uploadArea.addEventListener('drop', async e => {
     e.preventDefault();
-    uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
+    uploadArea.classList.remove('border-amber-400', 'bg-amber-50');
     await addFiles(e.dataTransfer.files);
   });
 
@@ -1391,7 +1394,7 @@
 
   function setSaving(on) {
     btnSave.disabled = on;
-    saveLabel.textContent = on ? 'Wird gespeichert …' : '✈  Eintrag speichern';
+    saveLabel.textContent = on ? 'Wird gespeichert …' : 'Eintrag speichern';
     saveSpinner.classList.toggle('hidden', !on);
   }
 
@@ -1491,9 +1494,9 @@
       const sub     = p.display_name.split(',').slice(1, 3).join(',').trim();
       return `
         <li data-i="${i}" data-lat="${p.lat}" data-lng="${p.lon}" data-name="${esc(p.display_name)}"
-          class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-orange-50
+          class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-stone-50
                  transition-colors border-b border-gray-50 last:border-0">
-          <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0
                      9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>
@@ -1720,8 +1723,8 @@
       return `
         <li data-lat="${p.lat}" data-lng="${p.lon}" data-name="${esc(p.display_name)}"
           class="flex items-center gap-3 px-4 py-3 cursor-pointer text-sm
-                 hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-0">
-          <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                 hover:bg-stone-50 transition-colors border-b border-gray-50 last:border-0">
+          <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z
                      m0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>

@@ -156,6 +156,10 @@
       animation: float-up .5s ease both;
     }
 
+    /* ── Like Button ─────────────────────────────────────────────────────── */
+    @keyframes like-pop { 0%,100%{transform:scale(1)} 40%{transform:scale(1.45)} 70%{transform:scale(.88)} }
+    .like-pop { animation: like-pop .35s ease; }
+
     /* ── Tag-Chips ───────────────────────────────────────────────────────── */
     .tag-chip { cursor:pointer; user-select:none; border-radius:999px; padding:2px 8px;
                 font-size:11px; font-weight:600; transition:all .15s; border:1.5px solid transparent; }
@@ -647,6 +651,7 @@
       <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
         <button id="tab-all" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">🗺 Alle</button>
         <button id="tab-favs" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">❤ Favoriten</button>
+        <button id="tab-top" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">🔥 Top</button>
       </div>
 
       <!-- Trip-Cards -->
@@ -1219,7 +1224,13 @@
               Bearbeiten
             </button>
           </div>
-          <span class="text-xs text-gray-300" id="lb-coords"></span>
+          <div class="flex items-center gap-2">
+            <button id="lb-like" onclick="lbToggleLike()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-sm font-semibold select-none">
+              <span id="lb-like-icon">👍</span>
+              <span id="lb-like-count" class="text-xs tabular-nums"></span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1913,12 +1924,12 @@
 
   function setTab(tab) {
     activeTab = tab;
-    document.getElementById('tab-all').className  =
-      'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (tab === 'all'  ? 'bg-orange-500 text-white' : 'text-stone-400 hover:bg-white');
-    document.getElementById('tab-favs').className =
-      'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (tab === 'favs' ? 'bg-orange-500 text-white' : 'text-stone-400 hover:bg-white');
+    const inactive = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white';
+    const active   = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white';
+    document.getElementById('tab-all').className  = tab === 'all'  ? active : inactive;
+    document.getElementById('tab-favs').className = tab === 'favs' ? active : inactive;
+    const topBtn = document.getElementById('tab-top');
+    if (topBtn) topBtn.className = inactive;
     renderTripCards();
   }
 
@@ -1958,12 +1969,20 @@
               ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
             </div>
           </div>
-          <!-- Favoriten-Herz -->
-          <button onclick="toggleFavorite('${e.id}', event)"
-            class="flex-shrink-0 self-start mt-0.5 text-base transition-transform hover:scale-125"
-            title="${isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}">
-            ${isFav ? '❤' : '🤍'}
-          </button>
+          <!-- Like + Favoriten -->
+          <div class="flex flex-col items-center gap-1.5 flex-shrink-0">
+            <button onclick="toggleFavorite('${e.id}', event)"
+              class="text-base transition-transform hover:scale-125"
+              title="${isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}">
+              ${isFav ? '❤' : '🤍'}
+            </button>
+            <button onclick="quickLike('${e.id}', event)"
+              class="text-base transition-transform hover:scale-125 select-none"
+              title="Upvote">
+              ${hasLiked(e.id) ? '👍' : '👍'}
+            </button>
+            ${getLikes(e.id) ? `<span class="text-[10px] font-bold text-orange-400 leading-none">${getLikes(e.id)}</span>` : ''}
+          </div>
         </div>`;
     }).join('');
   }
@@ -2219,6 +2238,9 @@
     lbNotes.innerHTML    = mdBold(entry.notes || t('noNotes'));
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
+    // Likes
+    refreshLbLikeBtn(entry.id);
+
     // Tags + Wetter
     showLbTags(entry.id);
     showLbWeather(entry.id);
@@ -2326,6 +2348,7 @@
           <p class="text-sm font-medium text-gray-700 truncate">${esc(e.locationName)}</p>
           <p class="text-xs text-gray-400">${fmtDate(e.date)}</p>
         </div>
+        ${getLikes(e.id) ? `<span class="text-xs font-bold text-orange-400 flex-shrink-0">👍${getLikes(e.id)}</span>` : ''}
         <button onclick="deleteEntry('${e.id}')"
           class="text-gray-300 hover:text-red-500 transition-colors
                  opacity-0 group-hover:opacity-100 text-lg leading-none flex-shrink-0">×</button>
@@ -3925,6 +3948,106 @@
       dismissed[key] = true;
       localStorage.setItem(KEY, JSON.stringify(dismissed));
     }, { once: true });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Likes / Upvotes
+  // ══════════════════════════════════════════════════════════════════════════
+  let likeCounts = JSON.parse(localStorage.getItem('reise_likes')  || '{}');
+  let likedSet   = JSON.parse(localStorage.getItem('reise_liked')  || '{}');
+
+  function saveLikes() {
+    localStorage.setItem('reise_likes', JSON.stringify(likeCounts));
+    localStorage.setItem('reise_liked', JSON.stringify(likedSet));
+  }
+
+  function getLikes(id)   { return likeCounts[id] || 0; }
+  function hasLiked(id)   { return !!likedSet[id]; }
+
+  function toggleLike(id) {
+    if (hasLiked(id)) {
+      likeCounts[id] = Math.max(0, (likeCounts[id] || 1) - 1);
+      if (!likeCounts[id]) delete likeCounts[id];
+      delete likedSet[id];
+    } else {
+      likeCounts[id] = (likeCounts[id] || 0) + 1;
+      likedSet[id]   = true;
+    }
+    saveLikes();
+  }
+
+  // Called from Lightbox
+  function lbToggleLike() {
+    if (!lbActiveId) return;
+    toggleLike(lbActiveId);
+    refreshLbLikeBtn(lbActiveId);
+    renderList();
+  }
+
+  function refreshLbLikeBtn(id) {
+    const btn   = document.getElementById('lb-like');
+    const icon  = document.getElementById('lb-like-icon');
+    const cnt   = document.getElementById('lb-like-count');
+    if (!btn) return;
+    const liked = hasLiked(id);
+    const n     = getLikes(id);
+    icon.textContent = liked ? '👍' : '👍';
+    cnt.textContent  = n > 0 ? n : '';
+    btn.className = liked
+      ? 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-sm font-semibold select-none border-orange-400 text-orange-500 bg-orange-50'
+      : 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all text-sm font-semibold select-none border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-400';
+    // Pop animation
+    icon.classList.remove('like-pop');
+    void icon.offsetWidth;
+    icon.classList.add('like-pop');
+  }
+
+  // Called from Trip-Card quick-like button
+  function quickLike(id, event) {
+    event.stopPropagation();
+    toggleLike(id);
+    renderList();
+  }
+
+  // Tab "Top": entries sorted by likes desc
+  const tabTopBtn = document.getElementById('tab-top');
+  if (tabTopBtn) {
+    tabTopBtn.addEventListener('click', () => {
+      // deactivate other tabs
+      document.getElementById('tab-all').className  = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white';
+      document.getElementById('tab-favs').className = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white';
+      tabTopBtn.className = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white';
+      // render trip cards sorted by likes
+      const container = document.getElementById('trip-cards');
+      const sorted = [...entries].sort((a, b) => getLikes(b.id) - getLikes(a.id));
+      if (!sorted.length) { container.innerHTML = `<p class="text-center text-gray-300 text-xs py-8">${t('noTrips')}</p>`; return; }
+      container.innerHTML = sorted.map(e => {
+        const src   = getPhotoSrc(e, 120);
+        const isFav = favorites.has(e.id);
+        const n     = getLikes(e.id);
+        return `
+          <div class="group flex gap-3 bg-white hover:bg-orange-100 rounded-2xl p-3
+                      transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
+            <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
+              ${src
+                ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
+                : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
+              <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
+                <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
+                ${n ? `<p class="text-xs text-orange-400 font-semibold mt-1">👍 ${n} Like${n > 1 ? 's' : ''}</p>` : `<p class="text-xs text-gray-300 mt-1">Noch keine Likes</p>`}
+              </div>
+            </div>
+            <div class="flex flex-col items-center gap-1.5 flex-shrink-0">
+              <button onclick="toggleFavorite('${e.id}', event)"
+                class="text-base transition-transform hover:scale-125">${isFav ? '❤' : '🤍'}</button>
+              <button onclick="quickLike('${e.id}', event)"
+                class="text-base transition-transform hover:scale-125 select-none">👍</button>
+              ${n ? `<span class="text-[10px] font-bold text-orange-400 leading-none">${n}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════════════

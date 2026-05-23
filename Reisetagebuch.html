@@ -2029,7 +2029,12 @@
       <div class="flex items-center gap-2 rounded-lg px-3 py-2
                   bg-white hover:bg-orange-100 transition-colors group">
         ${hasPhoto(e)
-          ? `<img src="${getPhotoSrc(e, 80)}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" loading="lazy" />`
+          ? isVideoUrl(e.photos[0])
+            ? `<div class="w-9 h-9 rounded-md bg-gray-800 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                 <video src="${getPhotoSrc(e, 80)}" muted preload="metadata" class="absolute inset-0 w-full h-full object-cover opacity-70"></video>
+                 <span class="relative text-white text-xs z-10">▶</span>
+               </div>`
+            : `<img src="${getPhotoSrc(e, 80)}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" loading="lazy" />`
           : `<div class="w-9 h-9 rounded-md bg-orange-100 flex items-center justify-center flex-shrink-0 text-sm">📍</div>`
         }
         <div class="flex-1 min-w-0 cursor-pointer" onclick="flyTo('${e.id}')">

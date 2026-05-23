@@ -156,6 +156,69 @@
       animation: float-up .5s ease both;
     }
 
+    /* ── Tag-Chips ───────────────────────────────────────────────────────── */
+    .tag-chip { cursor:pointer; user-select:none; border-radius:999px; padding:2px 8px;
+                font-size:11px; font-weight:600; transition:all .15s; border:1.5px solid transparent; }
+    .tag-chip:not(.active) { background:rgba(0,0,0,.05); color:#78716c; border-color:transparent; }
+    .tag-chip.active { background:#fff7ed; color:#f97316; border-color:#f97316; }
+    html.dark .tag-chip:not(.active) { background:rgba(255,255,255,.08); color:#94a3b8; }
+    html.dark .tag-chip.active { background:#1a2235; color:#fb923c; border-color:#fb923c; }
+
+    /* ── Dark Mode ─────────────────────────────────────────────────────────── */
+    html.dark { color-scheme: dark; }
+    html.dark body { background:#0f172a; }
+    html.dark #left-panel { background:#1e293b !important; border-color:#334155 !important; }
+    html.dark #left-panel [class*="bg-white"] { background:#0f172a !important; }
+    html.dark #left-panel [class*="bg-orange-50"] { background:#1a2235 !important; }
+    html.dark #left-panel input, html.dark #left-panel select
+      { background:#0f172a !important; color:#e2e8f0 !important; border-color:#334155 !important; }
+    html.dark #left-panel [class*="text-gray-8"],
+    html.dark #left-panel [class*="text-gray-7"],
+    html.dark #left-panel [class*="text-stone-9"],
+    html.dark #left-panel [class*="text-stone-8"],
+    html.dark #left-panel [class*="text-stone-7"] { color:#e2e8f0 !important; }
+    html.dark #left-panel [class*="text-gray-4"],
+    html.dark #left-panel [class*="text-gray-3"],
+    html.dark #left-panel [class*="text-stone-4"],
+    html.dark #left-panel [class*="text-stone-3"] { color:#94a3b8 !important; }
+    html.dark #left-panel [class*="border-orange-"] { border-color:#334155 !important; }
+    html.dark #left-panel [class*="hover:bg-orange-"],
+    html.dark #left-panel [class*="hover:bg-white"] { --tw-bg-opacity:1; }
+    html.dark #sidebar { background:#1e293b !important; }
+    html.dark #sidebar [class*="bg-white"] { background:#0f172a !important; }
+    html.dark #sidebar [class*="bg-orange-50"] { background:#1a2235 !important; }
+    html.dark #sidebar input, html.dark #sidebar textarea, html.dark #sidebar select
+      { background:#0f172a !important; color:#e2e8f0 !important; border-color:#334155 !important; }
+    html.dark #sidebar label,
+    html.dark #sidebar [class*="text-gray-8"],
+    html.dark #sidebar [class*="text-gray-7"],
+    html.dark #sidebar [class*="text-stone-9"],
+    html.dark #sidebar [class*="text-stone-8"],
+    html.dark #sidebar [class*="text-stone-7"] { color:#e2e8f0 !important; }
+    html.dark #sidebar [class*="text-gray-4"],
+    html.dark #sidebar [class*="text-stone-4"],
+    html.dark #sidebar [class*="text-gray-5"],
+    html.dark #sidebar [class*="text-stone-5"] { color:#94a3b8 !important; }
+    html.dark #sidebar [class*="border-orange-"] { border-color:#334155 !important; }
+    html.dark #lightbox-card { background:#1e293b !important; }
+    html.dark #lb-name { color:#f1f5f9 !important; }
+    html.dark #lb-notes { color:#94a3b8 !important; }
+    html.dark #lightbox-card [class*="border-gray-100"] { border-color:#334155 !important; }
+    html.dark #lightbox-card [class*="text-gray-9"],
+    html.dark #lightbox-card [class*="text-gray-8"],
+    html.dark #lightbox-card [class*="text-gray-7"] { color:#e2e8f0 !important; }
+    html.dark #lightbox-card [class*="text-gray-4"],
+    html.dark #lightbox-card [class*="text-gray-3"] { color:#94a3b8 !important; }
+    html.dark #btn-route, html.dark #hint-chip
+      { background:rgba(30,41,59,.95) !important; border-color:#334155 !important; }
+    html.dark #btn-route [class*="text-gray-"], html.dark #hint-chip [class*="text-gray-"]
+      { color:#e2e8f0 !important; }
+    html.dark #style-btn, html.dark #lang-btn, html.dark #btn-darkmode, html.dark #btn-gps
+      { background:rgba(30,41,59,.92) !important; border-color:#334155 !important; color:#e2e8f0 !important; }
+    html.dark #style-dropdown { background:#1e293b !important; border-color:#334155 !important; }
+    html.dark #style-dropdown button { color:#e2e8f0 !important; }
+    html.dark #style-dropdown button:hover { background:#334155 !important; }
+
     /* ── PDF / Print ─────────────────────────────────────────────────────── */
     @media print {
       body * { visibility: hidden; }
@@ -564,7 +627,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
           </svg>
-          <input id="filter-text" type="text" placeholder="Orte filtern …" autocomplete="off"
+          <input id="filter-text" type="text" placeholder="Orte & Notizen suchen …" autocomplete="off"
             class="bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none w-full" />
         </div>
         <select id="filter-year"
@@ -576,6 +639,9 @@
           class="hidden w-6 h-6 rounded-full bg-orange-100 hover:bg-red-50 text-stone-400
                  hover:text-red-400 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
       </div>
+
+      <!-- Tag-Filter -->
+      <div id="tag-filter-row" class="px-4 pt-2 pb-1 flex-shrink-0 flex flex-wrap gap-1.5 hidden"></div>
 
       <!-- Tabs: Alle / Favoriten -->
       <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
@@ -717,6 +783,16 @@
            flex items-center gap-1.5">
     <span id="lang-flag">🇩🇪</span>
     <span id="lang-code">DE</span>
+  </button>
+
+  <!-- Dark Mode Toggle -->
+  <button id="btn-darkmode" onclick="toggleDarkMode()"
+    class="fixed top-[14.5rem] right-4 z-[1000] h-10 px-3.5
+           bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-orange-200
+           text-xs font-semibold text-stone-600 hover:bg-white transition-colors
+           flex items-center gap-1.5">
+    <span id="dark-icon">🌙</span>
+    <span id="dark-label">Dark</span>
   </button>
 
   <!-- Style-Switcher (oben rechts) -->
@@ -914,6 +990,12 @@
                  focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition">
         </textarea>
 
+        <!-- Tags -->
+        <div class="mt-3">
+          <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Tags</p>
+          <div id="tag-picker" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
         <!-- Sprachnotiz-Recorder -->
         <div class="mt-2 flex flex-col gap-2">
           <div class="flex items-center gap-2">
@@ -1106,6 +1188,15 @@
         <!-- Notizen -->
         <p id="lb-notes"
           class="text-gray-500 text-sm sm:text-base leading-relaxed whitespace-pre-wrap flex-1"></p>
+
+        <!-- Tags im Lightbox -->
+        <div id="lb-tags" class="flex flex-wrap gap-1.5 mt-4 empty:hidden"></div>
+
+        <!-- Wetter im Lightbox -->
+        <div id="lb-weather" class="hidden mt-3 flex items-center gap-2 text-sm text-gray-500">
+          <span id="lb-weather-icon" class="text-xl"></span>
+          <span id="lb-weather-text"></span>
+        </div>
 
         <!-- Footer -->
         <div class="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between">
@@ -2128,6 +2219,11 @@
     lbNotes.innerHTML    = mdBold(entry.notes || t('noNotes'));
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
+    // Tags + Wetter
+    showLbTags(entry.id);
+    showLbWeather(entry.id);
+    fetchAndStoreWeather(entry).then(() => showLbWeather(entry.id));
+
     // Sprachnotiz laden
     const lbAudioWrap   = document.getElementById('lb-audio-wrap');
     const lbAudioPlayer = document.getElementById('lb-audio-player');
@@ -2192,6 +2288,7 @@
     document.getElementById('save-label').textContent    = 'Änderungen speichern';
 
     showPreviewPin(entry.lat, entry.lng);
+    loadTagsForEntry(entry.id);
     renderThumbGrid();
     openSidebar();
   }
@@ -2214,7 +2311,7 @@
     }
 
     list.innerHTML = entries.map(e => `
-      <div class="flex items-center gap-2 rounded-lg px-3 py-2
+      <div data-entry-id="${e.id}" class="flex items-center gap-2 rounded-lg px-3 py-2
                   bg-white hover:bg-orange-100 transition-colors group">
         ${hasPhoto(e)
           ? isVideoUrl(e.photos[0])
@@ -2431,6 +2528,8 @@
     sidebar.classList.remove('open');
     pendingLat = pendingLng = null;
     editingId  = null;
+    pendingTags = [];
+    renderTagPicker();
     resetPhoto();
     clearPendingAudio();
     removePreviewPin();
@@ -2455,6 +2554,7 @@
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
     document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
+    pendingTags = []; renderTagPicker();
     resetPhoto();
     openSidebar();
     setTimeout(() => document.getElementById('inp-location').focus(), 360);
@@ -2513,6 +2613,8 @@
         delete markerMap[editingId];
       }
       placeMarker(updated);
+      saveTagsForEntry(editingId);
+      renderTagFilterRow();
       renderList();
       closeSidebar();
       toast(`"${updated.locationName}" aktualisiert ✓`);
@@ -2524,6 +2626,9 @@
       entries.push(entry);
       allEntries.push(entry);
       placeMarker(entry);
+      saveTagsForEntry(entry.id);
+      renderTagFilterRow();
+      fetchAndStoreWeather(entry).catch(() => {});
       renderList();
       if (pendingAudioBlob) {
         audioDB.save(entry.id, pendingAudioBlob).catch(() => {});
@@ -2654,7 +2759,7 @@
     let q = sb.from(TABLE).select('*').order('created_at', { ascending: true });
     const txt  = filterTextEl.value.trim();
     const year = filterYearEl.value;
-    if (txt)  q = q.ilike('location_name', `%${txt}%`);
+    if (txt)  q = q.or(`location_name.ilike.%${txt}%,notes.ilike.%${txt}%`);
     if (year) q = q.like('date', `${year}-%`);
 
     const { data, error } = await q;
@@ -3261,6 +3366,9 @@
     renderList();
     updateDashboard();
     renderTripCards();
+    renderTagFilterRow();
+    // Wetter für alle vorhandenen Einträge nachladen (im Hintergrund)
+    allEntries.forEach(e => fetchAndStoreWeather(e).catch(() => {}));
     if (entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
     applyLang(currentLang);
     checkAnniversaries();
@@ -3817,6 +3925,178 @@
       dismissed[key] = true;
       localStorage.setItem(KEY, JSON.stringify(dismissed));
     }, { once: true });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Dark Mode
+  // ══════════════════════════════════════════════════════════════════════════
+  function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    document.getElementById('dark-icon').textContent  = isDark ? '☀️' : '🌙';
+    document.getElementById('dark-label').textContent = isDark ? 'Hell' : 'Dark';
+    localStorage.setItem('reise_dark', isDark ? '1' : '0');
+  }
+  (function initDark() {
+    if (localStorage.getItem('reise_dark') === '1') {
+      document.documentElement.classList.add('dark');
+      const icon  = document.getElementById('dark-icon');
+      const label = document.getElementById('dark-label');
+      if (icon)  icon.textContent  = '☀️';
+      if (label) label.textContent = 'Hell';
+    }
+  })();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Tags
+  // ══════════════════════════════════════════════════════════════════════════
+  const TAGS = [
+    { id:'strand',   label:'🏖 Strand'  },
+    { id:'berg',     label:'🏔 Berg'    },
+    { id:'stadt',    label:'🏙 Stadt'   },
+    { id:'essen',    label:'🍜 Essen'   },
+    { id:'kultur',   label:'🏛 Kultur'  },
+    { id:'event',    label:'🎉 Event'   },
+    { id:'roadtrip', label:'🚗 Road'    },
+    { id:'wasser',   label:'🌊 Wasser'  },
+  ];
+
+  let tagStore      = JSON.parse(localStorage.getItem('reise_tags') || '{}');
+  let pendingTags   = [];   // currently selected tags in the form
+  let filterTag     = null; // active tag filter
+
+  function saveTagStore() {
+    localStorage.setItem('reise_tags', JSON.stringify(tagStore));
+  }
+
+  function renderTagPicker() {
+    const picker = document.getElementById('tag-picker');
+    if (!picker) return;
+    picker.innerHTML = TAGS.map(t => `
+      <span class="tag-chip${pendingTags.includes(t.id) ? ' active' : ''}"
+            onclick="togglePendingTag('${t.id}')">${t.label}</span>
+    `).join('');
+  }
+
+  function togglePendingTag(id) {
+    const i = pendingTags.indexOf(id);
+    if (i >= 0) pendingTags.splice(i, 1);
+    else pendingTags.push(id);
+    renderTagPicker();
+  }
+
+  function loadTagsForEntry(id) {
+    pendingTags = [...(tagStore[id] || [])];
+    renderTagPicker();
+  }
+
+  function saveTagsForEntry(id) {
+    if (pendingTags.length) tagStore[id] = [...pendingTags];
+    else delete tagStore[id];
+    saveTagStore();
+  }
+
+  function renderTagFilterRow() {
+    const row = document.getElementById('tag-filter-row');
+    if (!row) return;
+    const usedIds = [...new Set(Object.values(tagStore).flat())];
+    if (!usedIds.length) { row.classList.add('hidden'); return; }
+    row.classList.remove('hidden');
+    row.innerHTML = `<span class="text-xs text-stone-400 self-center mr-0.5">🏷</span>` +
+      usedIds.map(id => {
+        const t = TAGS.find(x => x.id === id);
+        if (!t) return '';
+        return `<span class="tag-chip${filterTag === id ? ' active' : ''}"
+                     onclick="setTagFilter('${id}')">${t.label}</span>`;
+      }).join('') +
+      (filterTag ? `<span class="tag-chip ml-1" onclick="setTagFilter(null)">✕ Reset</span>` : '');
+  }
+
+  function setTagFilter(id) {
+    filterTag = id;
+    renderTagFilterRow();
+    renderList();
+    renderTripCards();
+  }
+
+  // Intercept renderList to apply tag filter
+  const _origRenderList = renderList;
+  renderList = function() {
+    _origRenderList();
+    if (filterTag) {
+      const list = document.getElementById('entries-list');
+      const items = list.querySelectorAll('[data-entry-id]');
+      items.forEach(el => {
+        const tags = tagStore[el.dataset.entryId] || [];
+        el.style.display = tags.includes(filterTag) ? '' : 'none';
+      });
+    }
+  };
+
+  // Tags in lightbox
+  function showLbTags(id) {
+    const container = document.getElementById('lb-tags');
+    if (!container) return;
+    const tags = tagStore[id] || [];
+    container.innerHTML = tags.map(tid => {
+      const t = TAGS.find(x => x.id === tid);
+      return t ? `<span class="tag-chip active">${t.label}</span>` : '';
+    }).join('');
+  }
+
+  // Initialize tag picker on page load
+  renderTagPicker();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Wetter-Daten (open-meteo)
+  // ══════════════════════════════════════════════════════════════════════════
+  let weatherStore = JSON.parse(localStorage.getItem('reise_weather') || '{}');
+
+  const WMO = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',
+    61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',77:'🌨',
+    80:'🌦',81:'🌦',82:'🌦',85:'🌨',86:'🌨',95:'⛈',96:'⛈',99:'⛈' };
+
+  function wmoIcon(code) {
+    return WMO[code] || '🌡';
+  }
+
+  async function fetchAndStoreWeather(entry) {
+    if (!entry.lat || !entry.lng || !entry.date) return;
+    if (weatherStore[entry.id]) return; // already cached
+    // open-meteo archive only has data up to ~5 days before today
+    const d = new Date(entry.date + 'T00:00:00');
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 5);
+    if (d > cutoff) return;
+    try {
+      const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${entry.lat.toFixed(4)}&longitude=${entry.lng.toFixed(4)}&start_date=${entry.date}&end_date=${entry.date}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`;
+      const res  = await fetch(url);
+      if (!res.ok) return;
+      const json = await res.json();
+      const d2   = json.daily;
+      if (!d2) return;
+      const w = {
+        icon:    wmoIcon(d2.weathercode?.[0]),
+        tempMin: Math.round(d2.temperature_2m_min?.[0] ?? 999),
+        tempMax: Math.round(d2.temperature_2m_max?.[0] ?? 999),
+      };
+      if (w.tempMin === 999) return;
+      weatherStore[entry.id] = w;
+      localStorage.setItem('reise_weather', JSON.stringify(weatherStore));
+    } catch (_) {}
+  }
+
+  function showLbWeather(id) {
+    const wrap = document.getElementById('lb-weather');
+    const icon = document.getElementById('lb-weather-icon');
+    const text = document.getElementById('lb-weather-text');
+    if (!wrap) return;
+    const w = weatherStore[id];
+    if (w) {
+      icon.textContent = w.icon;
+      text.textContent = `${w.tempMin}° – ${w.tempMax}°C`;
+      wrap.classList.remove('hidden');
+    } else {
+      wrap.classList.add('hidden');
+    }
   }
 
   // ══════════════════════════════════════════════════════════════════════════

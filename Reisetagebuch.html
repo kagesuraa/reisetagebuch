@@ -903,6 +903,18 @@
     </div>
   </aside>
 
+  <!-- ════ VIDEO PREVIEW MODAL (pending upload) ══════════════════════════════ -->
+  <div id="vid-preview-modal"
+    class="fixed inset-0 z-[6000] flex items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="relative w-full max-w-lg mx-4">
+      <video id="vid-preview-player" controls playsinline
+        class="w-full rounded-2xl shadow-2xl bg-black max-h-[80dvh]"></video>
+      <button onclick="closeVidPreview()"
+        class="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-white shadow-lg text-gray-700
+               hover:bg-gray-100 flex items-center justify-center text-xl font-bold transition-colors">×</button>
+    </div>
+  </div>
+
   <!-- ════ LIGHTBOX MODAL ════════════════════════════════════════════════════ -->
   <div id="lightbox"
     class="fixed inset-0 z-[4000] flex items-center justify-center p-4 sm:p-8
@@ -2112,17 +2124,19 @@
       </div>`);
 
     const vidItems = pendingVideos.map((v, i) => `
-      <div class="relative group aspect-square bg-black rounded-xl overflow-hidden">
+      <div class="relative group aspect-square bg-black rounded-xl overflow-hidden cursor-pointer"
+           onclick="previewPendingVideo(${i})">
         <video src="${v.previewUrl}" muted preload="metadata"
-          class="w-full h-full object-cover"></video>
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div class="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+          class="w-full h-full object-cover pointer-events-none"></video>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center
+                      group-hover:scale-110 transition-transform">
             <svg class="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
           </div>
         </div>
-        <button type="button" onclick="removeThumb('vid',${i})"
+        <button type="button" onclick="event.stopPropagation();removeThumb('vid',${i})"
           class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600
                  text-white text-xs font-bold flex items-center justify-center
                  opacity-0 group-hover:opacity-100 transition-all z-10">×</button>
@@ -2134,6 +2148,26 @@
                flex items-center justify-center cursor-pointer
                hover:border-orange-300 hover:bg-orange-50 transition-colors text-gray-300 text-2xl">+</div>`;
   }
+
+  const vidPreviewModal  = document.getElementById('vid-preview-modal');
+  const vidPreviewPlayer = document.getElementById('vid-preview-player');
+
+  function previewPendingVideo(i) {
+    vidPreviewPlayer.src = pendingVideos[i].previewUrl;
+    vidPreviewModal.classList.add('open');
+    vidPreviewModal.style.opacity = '1';
+    vidPreviewModal.style.pointerEvents = 'auto';
+    vidPreviewPlayer.play().catch(() => {});
+  }
+
+  function closeVidPreview() {
+    vidPreviewPlayer.pause();
+    vidPreviewPlayer.src = '';
+    vidPreviewModal.style.opacity = '0';
+    vidPreviewModal.style.pointerEvents = 'none';
+  }
+
+  vidPreviewModal.addEventListener('click', e => { if (e.target === vidPreviewModal) closeVidPreview(); });
 
   function removeThumb(kind, i) {
     if (kind === 'img') {

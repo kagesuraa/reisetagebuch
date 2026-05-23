@@ -107,7 +107,7 @@
   <div id="map"></div>
 
   <!-- ════ HOMEPAGE ══════════════════════════════════════════════════════════ -->
-  <div id="homepage" class="fixed inset-0 z-[7000] overflow-y-auto bg-black">
+  <div id="homepage" class="fixed inset-0 z-[7000] overflow-hidden bg-black">
 
     <!-- ── 1. HERO ─────────────────────────────────────────────────────────── -->
     <section class="relative h-screen flex items-center justify-center overflow-hidden">
@@ -159,155 +159,11 @@
       <div id="hero-dots" class="absolute bottom-8 right-8 flex gap-2"></div>
     </section>
 
-    <!-- ── 2. QUOTE ────────────────────────────────────────────────────────── -->
-    <section class="bg-stone-950 text-white py-24 px-6">
-      <div class="max-w-3xl mx-auto text-center">
-        <svg class="w-10 h-10 text-orange-500/40 mx-auto mb-8" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-        </svg>
-        <blockquote class="text-2xl sm:text-4xl font-light italic text-white/90 leading-relaxed mb-8">
-          Die Welt ist ein Buch, und wer nicht reist,<br class="hidden sm:block"/> liest nur eine Seite.
-        </blockquote>
-        <p class="text-orange-400 font-semibold tracking-widest uppercase text-sm">
-          — Augustinus von Hippo
-        </p>
-      </div>
-    </section>
-
-    <!-- ── 3. FEATURES ────────────────────────────────────────────────────── -->
-    <section class="bg-white py-24 px-6">
-      <div class="max-w-5xl mx-auto">
-        <p class="text-orange-500 font-semibold text-center tracking-widest uppercase text-xs mb-3">Was dich erwartet</p>
-        <h2 class="text-3xl sm:text-5xl font-black text-center text-stone-900 mb-4 leading-tight">
-          Alles für deine Abenteuer
-        </h2>
-        <p class="text-stone-400 text-center mb-16 max-w-lg mx-auto">
-          Einfach. Schön. Dein eigenes digitales Reisetagebuch.
-        </p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-
-          <div class="group rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-            <div class="relative overflow-hidden h-52">
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Karte"/>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
-              <div class="absolute bottom-4 left-4">
-                <span class="text-2xl">🗺️</span>
-                <p class="text-white font-bold mt-1">Interaktive Karte</p>
-              </div>
-            </div>
-            <div class="p-5 bg-orange-50">
-              <p class="text-stone-500 text-sm leading-relaxed">Markiere jeden Ort, den du besucht hast. Fliege zu deinen Erinnerungen mit einem Klick.</p>
-            </div>
-          </div>
-
-          <div class="group rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-            <div class="relative overflow-hidden h-52">
-              <img src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=800&q=80"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Fotos"/>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
-              <div class="absolute bottom-4 left-4">
-                <span class="text-2xl">📸</span>
-                <p class="text-white font-bold mt-1">Foto-Galerie</p>
-              </div>
-            </div>
-            <div class="p-5 bg-orange-50">
-              <p class="text-stone-500 text-sm leading-relaxed">Lade mehrere Fotos pro Eintrag hoch. Blättere durch deine Bilder in der eleganten Lightbox.</p>
-            </div>
-          </div>
-
-          <div class="group rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-            <div class="relative overflow-hidden h-52">
-              <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80"
-                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Route"/>
-              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
-              <div class="absolute bottom-4 left-4">
-                <span class="text-2xl">✈️</span>
-                <p class="text-white font-bold mt-1">Reise-Route</p>
-              </div>
-            </div>
-            <div class="p-5 bg-orange-50">
-              <p class="text-stone-500 text-sm leading-relaxed">Verbinde deine Orte zu einer animierten Route auf der Karte — chronologisch sortiert.</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 4. MEMORIES CAROUSEL ───────────────────────────────────────────── -->
-    <section class="bg-stone-950 py-24 px-6 overflow-hidden">
-      <p class="text-orange-500 font-semibold text-center tracking-widest uppercase text-xs mb-3">Erinnerungen</p>
-      <h2 class="text-3xl sm:text-4xl font-black text-white text-center mb-12">
-        Jede Reise. Unvergesslich.
-      </h2>
-      <div class="flex gap-5 overflow-x-auto pb-4 px-4 snap-x snap-mandatory scroll-smooth"
-           style="scrollbar-width:none;-ms-overflow-style:none;">
-        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
-          <img src="https://images.unsplash.com/photo-1503917988258-f87a78e3c995?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Paris"/>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
-            <p class="text-white font-bold">Paris, Frankreich</p>
-            <p class="text-white/60 text-xs">📅 Sommer 2024</p>
-          </div>
-        </div>
-        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
-          <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Tokyo"/>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
-            <p class="text-white font-bold">Tokyo, Japan</p>
-            <p class="text-white/60 text-xs">📅 Frühling 2024</p>
-          </div>
-        </div>
-        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
-          <img src="https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Santorini"/>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
-            <p class="text-white font-bold">Santorini, Griechenland</p>
-            <p class="text-white/60 text-xs">📅 Herbst 2023</p>
-          </div>
-        </div>
-        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
-          <img src="https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Bangkok"/>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
-            <p class="text-white font-bold">Bangkok, Thailand</p>
-            <p class="text-white/60 text-xs">📅 Winter 2023</p>
-          </div>
-        </div>
-        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
-          <img src="https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="New York"/>
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
-            <p class="text-white font-bold">New York, USA</p>
-            <p class="text-white/60 text-xs">📅 Sommer 2023</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── 5. FINAL CTA ───────────────────────────────────────────────────── -->
-    <section class="bg-gradient-to-br from-orange-500 to-amber-400 py-28 px-6 text-center">
-      <p class="text-orange-100 font-semibold tracking-widest uppercase text-xs mb-5">Bereit?</p>
-      <h2 class="text-4xl sm:text-6xl font-black text-white leading-tight mb-6">
-        Starte dein<br/>Abenteuer
-      </h2>
-      <p class="text-orange-100 text-lg mb-12 max-w-md mx-auto">
-        Erstelle dein kostenloses Konto und halte jede Reise für immer fest.
-      </p>
-      <button onclick="startJourney()"
-        class="group inline-flex items-center gap-3 bg-white text-orange-500 font-black
-               px-10 py-5 rounded-2xl text-lg hover:bg-orange-50 transition-all
-               hover:scale-105 shadow-2xl">
-        <span>Start Your Journey</span>
-        <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-        </svg>
-      </button>
-    </section>
-
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- ════ AUTH OVERLAY ═══════════════════════════════════════════════════════ -->
-  <div id="auth-overlay"
-    class="fixed inset-0 z-[6000] flex items-center justify-center
-           bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 p-4">
+  <div id="auth-overlay" class="hidden">
 
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
 
@@ -401,25 +257,33 @@
     class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-orange-50 border-r border-orange-200 -translate-x-full"
     style="width:min(80vw,300px)">
 
-    <!-- Profil-Header -->
-    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-5 py-5 flex-shrink-0">
-      <div class="flex items-center gap-3">
-        <!-- Avatar -->
+    <!-- ── GRADIENT HEADER ──────────────────────────────────────────────── -->
+    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-5 py-4 flex-shrink-0">
+
+      <!-- Logo-Zeile (nicht eingeloggt) -->
+      <div id="panel-logo-row" class="flex items-center gap-3 text-white">
+        <span class="text-2xl select-none">🌍</span>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-sm leading-tight tracking-tight">Reisetagebuch</p>
+          <p class="text-orange-100 text-xs mt-0.5">Melde dich an</p>
+        </div>
+        <button id="left-panel-close"
+          class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
+                 text-white flex items-center justify-center text-base transition-colors flex-shrink-0">×</button>
+      </div>
+
+      <!-- Profil-Zeile (eingeloggt, anfangs versteckt) -->
+      <div id="panel-profile-row" class="hidden flex items-center gap-3">
         <div id="profile-avatar"
           class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl
                  font-extrabold flex-shrink-0 cursor-pointer hover:scale-105 transition-transform
                  shadow-lg select-none"
-          style="background:rgba(255,255,255,0.25)" onclick="toggleProfileEdit()">
-          ?
-        </div>
-        <!-- Name + Untertitel -->
+          style="background:rgba(255,255,255,0.25)" onclick="toggleProfileEdit()">?</div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
-            <span id="profile-name-display"
-              class="text-white font-semibold text-sm truncate cursor-pointer"
+            <span id="profile-name-display" class="text-white font-semibold text-sm truncate cursor-pointer"
               onclick="toggleProfileEdit()">Reisender</span>
-            <button onclick="toggleProfileEdit()"
-              class="text-white/50 hover:text-white transition-colors flex-shrink-0">
+            <button onclick="toggleProfileEdit()" class="text-white/50 hover:text-white transition-colors flex-shrink-0">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 012.828 2.828L11.828
@@ -430,115 +294,169 @@
           <p id="profile-subtitle" class="text-stone-400 text-xs mt-0.5 truncate">Weltenbummler</p>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
-          <!-- Logout -->
           <button onclick="logout()" title="Abmelden"
             class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
                    flex items-center justify-center transition-colors">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7
-                   a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
             </svg>
           </button>
-          <!-- Mobil schließen -->
-          <button id="left-panel-close"
+          <button id="left-panel-close-logged"
             class="md:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
                    text-white flex items-center justify-center text-base transition-colors">×</button>
         </div>
       </div>
-      <!-- Inline-Edit -->
+
+      <!-- Profil Inline-Edit -->
       <div id="profile-edit" class="hidden mt-3 flex gap-2">
         <input id="profile-name-input" type="text" placeholder="Dein Reisename …" maxlength="24"
           class="flex-1 bg-white/10 text-white placeholder-white/50 rounded-xl px-3 py-1.5
                  text-sm outline-none border border-white/20 focus:border-white/50 transition-colors" />
         <button onclick="saveProfile()"
-          class="bg-white/20 hover:bg-white/35 text-white text-xs font-bold px-3 rounded-xl
-                 transition-colors">OK</button>
+          class="bg-white/20 hover:bg-white/35 text-white text-xs font-bold px-3 rounded-xl transition-colors">OK</button>
       </div>
     </div>
 
-    <!-- Dashboard: 3 Metrik-Karten -->
-    <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-orange-100">
-      <p id="lbl-stats" class="text-xs font-medium text-stone-400 uppercase tracking-widest mb-3">Statistiken</p>
-      <div class="grid grid-cols-3 gap-2">
+    <!-- ── AUTH-SECTION (nicht eingeloggt) ──────────────────────────────── -->
+    <div id="panel-auth-section" class="flex-1 overflow-y-auto scroll-thin px-5 py-5 space-y-4">
 
-        <div class="bg-white rounded-xl px-2 py-3 text-center">
-          <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5
-                 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2
-                 2 0 012-2h3.064"/>
-          </svg>
-          <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
-          <p id="lbl-trips" class="text-xs text-stone-400 mt-0.5">Reisen</p>
-        </div>
-
-        <div class="bg-white rounded-xl px-2 py-3 text-center">
-          <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9
-                 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1
-                 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-          </svg>
-          <p id="dash-north" class="text-xs font-extrabold text-stone-900 leading-tight truncate px-1">–</p>
-          <p id="lbl-north" class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
-        </div>
-
-        <div class="bg-white rounded-xl px-2 py-3 text-center">
-          <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2
-                 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-          <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
-          <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
-        </div>
-
+      <!-- Tabs -->
+      <div class="flex gap-1 bg-orange-100 rounded-xl p-1">
+        <button id="auth-tab-login"
+          class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-orange-500 shadow-sm transition-all">
+          <span id="lbl-auth-login">Anmelden</span>
+        </button>
+        <button id="auth-tab-register"
+          class="flex-1 py-2 rounded-lg text-xs font-bold text-stone-400 transition-all hover:text-orange-400">
+          <span id="lbl-auth-register">Registrieren</span>
+        </button>
       </div>
-    </div>
 
-    <!-- Filterleiste -->
-    <div class="px-4 py-3 flex-shrink-0 border-b border-orange-100 flex gap-2">
-      <div class="flex items-center flex-1 bg-white rounded-xl px-2.5 py-1.5 gap-1.5
-                  border border-orange-200 focus-within:border-orange-400 transition-colors">
-        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
-        </svg>
-        <input id="filter-text" type="text" placeholder="Orte filtern …" autocomplete="off"
-          class="bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none w-full" />
+      <!-- Fehlermeldung -->
+      <div id="auth-error" class="hidden text-xs px-4 py-3 rounded-xl bg-red-50 text-red-600"></div>
+
+      <!-- Name -->
+      <div id="auth-name-field" class="hidden">
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
+          <span id="lbl-auth-name">Name</span>
+        </label>
+        <input id="auth-name" type="text" autocomplete="name" placeholder="Dein Reisename"
+          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
       </div>
-      <select id="filter-year"
-        class="bg-white border border-orange-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
-               outline-none focus:border-orange-400 transition-colors cursor-pointer">
-        <option id="opt-all-years" value="">Alle</option>
-      </select>
-      <button id="filter-reset"
-        class="hidden w-6 h-6 rounded-full bg-orange-100 hover:bg-red-50 text-stone-400
-               hover:text-red-400 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
-    </div>
 
-    <!-- Tabs: Alle / Favoriten -->
-    <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
-      <button id="tab-all"
-        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">
-        🗺 Alle
-      </button>
-      <button id="tab-favs"
-        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">
-        ❤ Favoriten
-      </button>
-    </div>
+      <!-- E-Mail -->
+      <div>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">E-Mail</label>
+        <input id="auth-email" type="email" autocomplete="email" placeholder="name@example.com"
+          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+      </div>
 
-    <!-- Trip-Cards (scrollbar) -->
-    <div id="trip-cards" class="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-2">
-      <div id="trip-loader" class="flex items-center justify-center gap-2 py-8 text-stone-300 text-xs">
-        <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
+      <!-- Passwort -->
+      <div>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
+          <span id="lbl-auth-password">Passwort</span>
+        </label>
+        <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••"
+          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+      </div>
+
+      <!-- Submit -->
+      <button id="auth-submit"
+        class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white
+               font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2
+               disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg id="auth-spinner" class="w-4 h-4 spin hidden" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
-        <span id="lbl-loading">Lädt …</span>
+        <span id="auth-btn-label">Anmelden</span>
+      </button>
+
+      <!-- Switch-Link -->
+      <p id="auth-info" class="text-center text-xs text-stone-400">
+        <span id="lbl-auth-info">Noch kein Konto?</span>
+        <button id="auth-switch-link" class="text-orange-500 font-semibold ml-1 hover:underline">
+          <span id="lbl-auth-switch">Jetzt registrieren</span>
+        </button>
+      </p>
+    </div>
+
+    <!-- ── MAIN-SECTION (eingeloggt, anfangs versteckt) ──────────────────── -->
+    <div id="panel-main-section" class="hidden flex-1 flex flex-col overflow-hidden">
+
+      <!-- Dashboard: 3 Metrik-Karten -->
+      <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-orange-100">
+        <p id="lbl-stats" class="text-xs font-medium text-stone-400 uppercase tracking-widest mb-3">Statistiken</p>
+        <div class="grid grid-cols-3 gap-2">
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+            </svg>
+            <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
+            <p id="lbl-trips" class="text-xs text-stone-400 mt-0.5">Reisen</p>
+          </div>
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+            </svg>
+            <p id="dash-north" class="text-xs font-extrabold text-stone-900 leading-tight truncate px-1">–</p>
+            <p id="lbl-north" class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
+          </div>
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
+            <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
+          </div>
+        </div>
       </div>
+
+      <!-- Filterleiste -->
+      <div class="px-4 py-3 flex-shrink-0 border-b border-orange-100 flex gap-2">
+        <div class="flex items-center flex-1 bg-white rounded-xl px-2.5 py-1.5 gap-1.5
+                    border border-orange-200 focus-within:border-orange-400 transition-colors">
+          <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+          </svg>
+          <input id="filter-text" type="text" placeholder="Orte filtern …" autocomplete="off"
+            class="bg-transparent text-xs text-gray-700 placeholder-gray-400 outline-none w-full" />
+        </div>
+        <select id="filter-year"
+          class="bg-white border border-orange-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
+                 outline-none focus:border-orange-400 transition-colors cursor-pointer">
+          <option id="opt-all-years" value="">Alle</option>
+        </select>
+        <button id="filter-reset"
+          class="hidden w-6 h-6 rounded-full bg-orange-100 hover:bg-red-50 text-stone-400
+                 hover:text-red-400 flex items-center justify-center text-sm transition-colors flex-shrink-0">×</button>
+      </div>
+
+      <!-- Tabs: Alle / Favoriten -->
+      <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
+        <button id="tab-all" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">🗺 Alle</button>
+        <button id="tab-favs" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">❤ Favoriten</button>
+      </div>
+
+      <!-- Trip-Cards -->
+      <div id="trip-cards" class="flex-1 overflow-y-auto scroll-thin px-3 py-2 space-y-2">
+        <div id="trip-loader" class="flex items-center justify-center gap-2 py-8 text-stone-300 text-xs">
+          <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span id="lbl-loading">Lädt …</span>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -2217,9 +2135,27 @@
     onAuthSuccess();
   });
 
+  function showPanelAuth() {
+    document.getElementById('panel-auth-section').classList.remove('hidden');
+    document.getElementById('panel-main-section').classList.add('hidden');
+    document.getElementById('panel-logo-row').classList.remove('hidden');
+    document.getElementById('panel-profile-row').classList.add('hidden');
+  }
+
+  function showPanelMain() {
+    document.getElementById('panel-auth-section').classList.add('hidden');
+    document.getElementById('panel-main-section').classList.remove('hidden');
+    document.getElementById('panel-logo-row').classList.add('hidden');
+    document.getElementById('panel-profile-row').classList.remove('hidden');
+    // zweiter Mobile-Schließen-Button
+    document.getElementById('left-panel-close-logged')
+      ?.addEventListener('click', () => leftPanel.classList.add('-translate-x-full'));
+  }
+
   function onAuthSuccess() {
-    authOverlay.classList.add('hidden');
-    // Name aus Auth-Metadaten in Profil übernehmen (wenn noch Standard)
+    // Panel auf Haupt-Content umschalten
+    showPanelMain();
+    // Name aus Auth-Metadaten
     const authName = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Reisender';
     if (profile.name === 'Reisender') {
       profile.name = authName;
@@ -2237,11 +2173,12 @@
     if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
     entries = []; allEntries = [];
     renderList(); renderTripCards(); updateDashboard();
-    // Auth-Overlay wieder anzeigen
-    authOverlay.classList.remove('hidden');
+    // Panel auf Auth umschalten + öffnen
+    showPanelAuth();
     authEmail.value = ''; authPassword.value = ''; authNameInp.value = '';
     authError.classList.add('hidden');
     setAuthMode('login');
+    showPanel();
   }
 
   // ─── Homepage Slider ──────────────────────────────────────────────────────
@@ -2271,13 +2208,14 @@
   buildDots();
   setInterval(() => goSlide(slideIdx + 1), 5000);
 
-  // ─── Homepage → Auth-Overlay ──────────────────────────────────────────────
+  // ─── Homepage → Map (Auth im linken Panel) ───────────────────────────────
   function startJourney() {
     const hp = document.getElementById('homepage');
     hp.style.opacity = '0';
     setTimeout(() => {
       hp.classList.add('hidden');
-      document.getElementById('auth-overlay').classList.remove('hidden');
+      // Linkes Panel mit Auth-Form öffnen
+      showPanel();
     }, 800);
   }
 
@@ -2286,11 +2224,17 @@
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
       currentUser = session.user;
-      // Direkt zur App — Homepage und Auth überspringen
       document.getElementById('homepage').classList.add('hidden');
-      onAuthSuccess();
+      showPanelMain();
+      const authName = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Reisender';
+      if (profile.name === 'Reisender') {
+        profile.name = authName;
+        localStorage.setItem('reise_profile', JSON.stringify(profile));
+      }
+      applyProfile();
+      init();
     }
-    // Sonst: Homepage bleibt sichtbar, User klickt "Start Your Journey"
+    // Sonst: Homepage bleibt, Panel zeigt Auth-Form nach "Start Your Journey"
   }
 
   // ══════════════════════════════════════════════════════════════════════════

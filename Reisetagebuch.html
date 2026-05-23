@@ -2565,6 +2565,7 @@
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
+      user_id:       currentUser?.id ?? null,
     };
 
     if (editingId) {

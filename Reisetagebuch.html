@@ -2610,7 +2610,8 @@
   // ══════════════════════════════════════════════════════════════════════════
   //  KI-Formatierer (Google Gemini Flash – kostenlos, direkt im Browser)
   // ══════════════════════════════════════════════════════════════════════════
-  const GEMINI_KEY_LS = 'reise_gemini_key';
+  const GEMINI_KEY_LS   = 'reise_gemini_key';
+  const GEMINI_MODEL_LS = 'reise_gemini_model';
 
   function getGeminiApiKey() {
     let key = localStorage.getItem(GEMINI_KEY_LS);
@@ -2622,6 +2623,51 @@
       if (key?.trim()) localStorage.setItem(GEMINI_KEY_LS, key.trim());
     }
     return key?.trim() || null;
+  }
+
+  async function callGemini(apiKey, body) {
+    const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+    // Cached model — direkt versuchen
+    const cached = localStorage.getItem(GEMINI_MODEL_LS);
+    if (cached) {
+      const r = await fetch(`${BASE}/${cached}:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+      if (r.status === 403 || r.status === 401) {
+        localStorage.removeItem(GEMINI_KEY_LS);
+        throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
+      }
+      if (r.ok) return r;
+      localStorage.removeItem(GEMINI_MODEL_LS); // Modell nicht mehr gültig → neu suchen
+    }
+
+    // Verfügbare Modelle abrufen
+    const listRes = await fetch(`${BASE}?key=${apiKey}`);
+    if (listRes.status === 403 || listRes.status === 401) {
+      localStorage.removeItem(GEMINI_KEY_LS);
+      throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
+    }
+    if (!listRes.ok) throw new Error(`Modell-Liste nicht abrufbar (HTTP ${listRes.status})`);
+
+    const models = ((await listRes.json()).models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => m.name.replace('models/', ''))
+      .sort((a, b) => b.localeCompare(a)); // neuere zuerst (höhere Versionsnummer)
+
+    // Jedes Modell ausprobieren bis eines antwortet
+    for (const model of models) {
+      const r = await fetch(`${BASE}/${model}:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+      if (r.status === 403 || r.status === 401) {
+        localStorage.removeItem(GEMINI_KEY_LS);
+        throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
+      }
+      if (r.ok) {
+        localStorage.setItem(GEMINI_MODEL_LS, model); // funktionierendes Modell merken
+        return r;
+      }
+    }
+    throw new Error('Kein verfügbares Gemini-Modell gefunden. Bitte API-Key prüfen.');
   }
 
   async function formatNotesWithAI() {
@@ -2650,38 +2696,8 @@
       'Original:\n' + text;
 
     try {
-      // Verfügbare Modelle vom API abfragen und bestes wählen
-      const listRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-      );
-      if (listRes.status === 403 || listRes.status === 401) {
-        localStorage.removeItem(GEMINI_KEY_LS);
-        throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
-      }
-      if (!listRes.ok) throw new Error(`Modell-Liste nicht abrufbar (HTTP ${listRes.status})`);
-
-      const listData = await listRes.json();
-      const available = (listData.models || [])
-        .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-        .map(m => m.name.replace('models/', ''));
-
-      const preferred = ['gemini-2.0-flash-lite','gemini-2.0-flash','gemini-1.5-flash-latest',
-                         'gemini-1.5-flash','gemini-1.5-pro-latest','gemini-1.5-pro'];
-      const model = preferred.find(p => available.includes(p)) || available[0];
-      if (!model) throw new Error('Kein passendes Gemini-Modell gefunden.');
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        }
-      );
-      if (res.status === 403 || res.status === 401) {
-        localStorage.removeItem(GEMINI_KEY_LS);
-        throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
-      }
+      const body = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] });
+      const res  = await callGemini(apiKey, body);
       if (!res.ok) {
         const e = await res.json().catch(() => ({}));
         throw new Error(e.error?.message || `HTTP ${res.status}`);

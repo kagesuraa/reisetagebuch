@@ -2376,6 +2376,12 @@
     showPreviewPin(pendingLat, pendingLng);
     document.getElementById('coords-display').textContent =
       `${pendingLat.toFixed(5)}°, ${pendingLng.toFixed(5)}°`;
+    // Karte-Klick bricht Edit-Modus ab und startet neuen Eintrag
+    if (editingId) {
+      editingId = null;
+      document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
+      document.getElementById('save-label').textContent    = 'Eintrag speichern';
+    }
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
     document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);

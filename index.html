@@ -126,7 +126,7 @@
 
     <!-- Dashboard: 3 Metrik-Karten -->
     <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-stone-100">
-      <p class="text-xs font-medium text-stone-400 uppercase tracking-widest mb-3">Statistiken</p>
+      <p id="lbl-stats" class="text-xs font-medium text-stone-400 uppercase tracking-widest mb-3">Statistiken</p>
       <div class="grid grid-cols-3 gap-2">
 
         <div class="bg-stone-50 rounded-xl px-2 py-3 text-center">
@@ -137,7 +137,7 @@
                  2 0 012-2h3.064"/>
           </svg>
           <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
-          <p class="text-xs text-stone-400 mt-0.5">Reisen</p>
+          <p id="lbl-trips" class="text-xs text-stone-400 mt-0.5">Reisen</p>
         </div>
 
         <div class="bg-stone-50 rounded-xl px-2 py-3 text-center">
@@ -148,7 +148,7 @@
                  0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
           </svg>
           <p id="dash-north" class="text-xs font-extrabold text-stone-900 leading-tight truncate px-1">–</p>
-          <p class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
+          <p id="lbl-north" class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
         </div>
 
         <div class="bg-stone-50 rounded-xl px-2 py-3 text-center">
@@ -158,7 +158,7 @@
                  0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
           <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
-          <p class="text-xs text-stone-400 mt-0.5">Letztes</p>
+          <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
         </div>
 
       </div>
@@ -178,7 +178,7 @@
       <select id="filter-year"
         class="bg-stone-50 border border-stone-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
                outline-none focus:border-amber-500 transition-colors cursor-pointer">
-        <option value="">Alle</option>
+        <option id="opt-all-years" value="">Alle</option>
       </select>
       <button id="filter-reset"
         class="hidden w-6 h-6 rounded-full bg-stone-100 hover:bg-red-50 text-stone-400
@@ -204,7 +204,7 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
-        Lädt …
+        <span id="lbl-loading">Lädt …</span>
       </div>
     </div>
 
@@ -285,6 +285,16 @@
     </svg>
   </button>
 
+  <!-- Sprach-Toggle -->
+  <button id="lang-btn" onclick="toggleLang()"
+    class="fixed top-[6.75rem] right-4 z-[1000] h-10 px-3.5
+           bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-stone-200
+           text-xs font-semibold text-stone-600 hover:bg-stone-50 transition-colors
+           flex items-center gap-1.5">
+    <span id="lang-flag">🇩🇪</span>
+    <span id="lang-code">DE</span>
+  </button>
+
   <!-- Style-Switcher (oben rechts) -->
   <div class="fixed top-4 right-4 z-[1000]">
     <div class="relative">
@@ -305,15 +315,15 @@
         <li><button onclick="setTileStyle('standard')" data-style="standard"
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
                  flex items-center gap-3 transition-colors font-semibold text-amber-700 bg-amber-50">
-          🌍 Standard</button></li>
+          <span id="style-opt-standard">🌍 Standard</span></button></li>
         <li><button onclick="setTileStyle('dark')" data-style="dark"
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
                  flex items-center gap-3 transition-colors border-t border-gray-50">
-          🌑 Dark Mode</button></li>
+          <span id="style-opt-dark">🌑 Dark Mode</span></button></li>
         <li><button onclick="setTileStyle('satellite')" data-style="satellite"
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
                  flex items-center gap-3 transition-colors border-t border-gray-50">
-          🛰️ Satellit</button></li>
+          <span id="style-opt-satellite">🛰️ Satellit</span></button></li>
       </ul>
     </div>
   </div>
@@ -359,7 +369,7 @@
           <svg class="w-5 h-5 opacity-90" viewBox="0 0 24 24" fill="currentColor">
             <path d="M13.5 0C13.5 0 14 4.5 11.5 7C9 9.5 6 9 6 9C6 9 7 13 10 14.5C10 14.5 9 16 7.5 16C7.5 16 9 19.5 13 20C17 20.5 20 17 20 13C20 9 17 7 17 7C17 7 16.5 9.5 14.5 10C14.5 10 15.5 7.5 13.5 0Z"/>
           </svg>
-          <h2 class="text-lg font-bold tracking-tight">Neuer Eintrag</h2>
+          <h2 id="sidebar-title" class="text-lg font-bold tracking-tight">Neuer Eintrag</h2>
         </div>
         <button id="btn-close"
           class="w-8 h-8 rounded-full hover:bg-white/20 transition-colors
@@ -371,7 +381,7 @@
     <div class="flex-1 overflow-y-auto scroll-thin px-6 py-5 space-y-5">
 
       <div class="relative">
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Ortsname</label>
+        <label id="lbl-location" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Ortsname</label>
         <div class="flex items-center gap-2">
           <div class="flex-1 flex items-center rounded-lg border border-stone-200 bg-stone-50
                       focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-transparent transition">
@@ -407,7 +417,7 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Datum</label>
+        <label id="lbl-date" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Datum</label>
         <input id="inp-date" type="date"
           class="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5
                  text-sm text-gray-800
@@ -416,9 +426,7 @@
 
       <!-- Foto-Upload -->
       <div>
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
-          Foto (optional)
-        </label>
+        <label id="lbl-photo" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Foto (optional)</label>
         <div id="upload-area"
           class="relative flex flex-col items-center justify-center w-full border-2 border-dashed
                  border-stone-200 rounded-xl bg-stone-50
@@ -434,8 +442,8 @@
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
                    0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
-            <span class="text-xs font-medium">Fotos auswählen oder hierher ziehen</span>
-            <span class="text-xs text-gray-300">Mehrere Bilder möglich · JPG, PNG, WEBP</span>
+            <span id="lbl-upload-main" class="text-xs font-medium">Fotos auswählen oder hierher ziehen</span>
+            <span id="lbl-upload-sub" class="text-xs text-gray-300">Mehrere Bilder möglich · JPG, PNG, WEBP</span>
           </div>
 
           <!-- Thumbnail-Grid (sichtbar sobald Bilder gewählt) -->
@@ -446,9 +454,7 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
-          Erinnerungen &amp; Notizen
-        </label>
+        <label id="lbl-notes" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Erinnerungen &amp; Notizen</label>
         <textarea id="inp-notes" rows="5"
           placeholder="Was hast du erlebt? Besondere Momente, Menschen, Gerüche …"
           class="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5
@@ -474,7 +480,7 @@
     <!-- Eintrags-Liste -->
     <div class="border-t border-stone-100 flex-shrink-0">
       <div class="flex items-center justify-between px-6 pt-3 pb-1">
-        <h3 class="text-xs font-semibold text-stone-400 uppercase tracking-wider">Meine Reisen</h3>
+        <h3 id="lbl-my-trips" class="text-xs font-semibold text-stone-400 uppercase tracking-wider">Meine Reisen</h3>
         <span id="entry-count" class="text-xs font-bold text-amber-600"></span>
       </div>
       <div id="list-loader"
@@ -483,7 +489,7 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
         </svg>
-        Verbinde mit Supabase …
+        <span id="lbl-connecting">Verbinde mit Supabase …</span>
       </div>
       <div id="entries-list"
         class="scroll-thin overflow-y-auto max-h-48 px-4 pb-4 space-y-1.5 hidden"></div>
@@ -546,7 +552,7 @@
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5
                    4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
             </svg>
-            Eintrag löschen
+            <span id="lbl-lb-delete">Eintrag löschen</span>
           </button>
           <span class="text-xs text-gray-300" id="lb-coords"></span>
         </div>
@@ -569,7 +575,7 @@
            rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
            hover:bg-stone-50 transition-colors whitespace-nowrap select-none">
     <span class="text-base">✈️</span>
-    <span class="text-gray-700 text-sm font-medium">Route</span>
+    <span id="lbl-route" class="text-gray-700 text-sm font-medium">Route</span>
     <!-- Toggle-Switch -->
     <div id="route-switch"
       class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-amber-600">
@@ -584,8 +590,8 @@
               rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2 pointer-events-none
               whitespace-nowrap">
     <span class="text-base">🗺️</span>
-    <span class="text-gray-700 text-sm font-medium hidden sm:inline">Klicke auf die Karte, um einen Eintrag hinzuzufügen.</span>
-    <span class="text-gray-700 text-sm font-medium sm:hidden">Karte antippen</span>
+    <span id="hint-desktop" class="text-gray-700 text-sm font-medium hidden sm:inline">Klicke auf die Karte, um einen Eintrag hinzuzufügen.</span>
+    <span id="hint-mobile" class="text-gray-700 text-sm font-medium sm:hidden">Karte antippen</span>
   </div>
 
   <script>
@@ -1007,8 +1013,8 @@
 
     if (!list.length) {
       container.innerHTML = activeTab === 'favs'
-        ? '<p class="text-center text-gray-300 text-xs py-8">Noch keine Favoriten gespeichert.<br/>Klicke auf ❤ um einen Eintrag zu speichern.</p>'
-        : '<p class="text-center text-gray-300 text-xs py-8">Noch keine Reisen gespeichert.</p>';
+        ? `<p class="text-center text-gray-300 text-xs py-8">${t('noFavs')}</p>`
+        : `<p class="text-center text-gray-300 text-xs py-8">${t('noTrips')}</p>`;
       return;
     }
 
@@ -1078,7 +1084,7 @@
 
     if (!list.length) {
       grid.innerHTML = `<p style="column-span:all" class="text-white/30 text-center py-20 text-sm">
-        ${galMode === 'favs' ? 'Keine Favoriten mit Fotos vorhanden.' : 'Noch keine Fotos hochgeladen.'}
+        ${galMode === 'favs' ? t('galNoFavPhotos') : t('galNoPhotos')}
       </p>`;
       return;
     }
@@ -1188,7 +1194,7 @@
 
     lbDate.textContent   = entry.date ? `📅  ${fmtDate(entry.date)}` : '';
     lbName.textContent   = entry.locationName;
-    lbNotes.textContent  = entry.notes || 'Keine Notizen hinterlassen.';
+    lbNotes.textContent  = entry.notes || t('noNotes');
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
     lightbox.classList.add('open');
@@ -1228,7 +1234,7 @@
       : '';
 
     if (entries.length === 0) {
-      list.innerHTML = '<p class="text-center text-gray-300 text-xs py-3">Noch keine Einträge gespeichert.</p>';
+      list.innerHTML = `<p class="text-center text-gray-300 text-xs py-3">${t('noTrips')}</p>`;
       updateStats();
       return;
     }
@@ -1265,15 +1271,15 @@
 
   // ─── Löschen ──────────────────────────────────────────────────────────────
   async function deleteEntry(id) {
-    if (!confirm('Diesen Eintrag wirklich löschen?')) return;
+    if (!confirm(t('confirmDelete'))) return;
     const { error } = await sb.from(TABLE).delete().eq('id', id);
-    if (error) { toast('Fehler beim Löschen: ' + error.message, 'err'); return; }
+    if (error) { toast(t('errDelete') + error.message, 'err'); return; }
     entries    = entries.filter(e => e.id !== id);
     allEntries = allEntries.filter(e => e.id !== id);
     if (markerMap[id]) { map.removeLayer(markerMap[id]); delete markerMap[id]; }
     map.closePopup();
     renderList();
-    toast('Eintrag gelöscht.');
+    toast(t('deleted'));
   }
 
   // ─── Foto-Upload (Multi) ─────────────────────────────────────────────────
@@ -1297,7 +1303,7 @@
       const compressed = await Promise.all(valid.map(f => compressImage(f)));
       pendingPhotos = [...pendingPhotos, ...compressed];
     } catch {
-      toast('Fehler beim Lesen eines Bildes.', 'err');
+      toast(t('errImg'), 'err');
     }
     renderThumbGrid();
     inpPhoto.value = '';
@@ -1394,7 +1400,7 @@
 
   function setSaving(on) {
     btnSave.disabled = on;
-    saveLabel.textContent = on ? 'Wird gespeichert …' : 'Eintrag speichern';
+    saveLabel.textContent = on ? t('saving') : t('saveBtn');
     saveSpinner.classList.toggle('hidden', !on);
   }
 
@@ -1410,7 +1416,7 @@
         const urls = await Promise.all(pendingPhotos.map(b64 => uploadPhoto(b64)));
         imageUrl = JSON.stringify(urls);
       } catch (e) {
-        toast('Foto-Upload fehlgeschlagen: ' + e.message, 'err');
+        toast(t('errUpload') + e.message, 'err');
         setSaving(false);
         return;
       }
@@ -1428,7 +1434,7 @@
     const { data, error } = await sb.from(TABLE).insert([payload]).select().single();
 
     if (error) {
-      toast('Fehler beim Speichern: ' + error.message, 'err');
+      toast(t('errSave') + error.message, 'err');
       setSaving(false);
       return;
     }
@@ -1439,7 +1445,7 @@
     placeMarker(entry);
     renderList();
     closeSidebar();
-    toast(`"${entry.locationName}" gespeichert ✓`);
+    toast(`"${entry.locationName}" ${t('savedOk')}`);
     setSaving(false);
   });
 
@@ -1566,7 +1572,7 @@
     if (year) q = q.like('date', `${year}-%`);
 
     const { data, error } = await q;
-    if (error) { toast('Filterfehler: ' + error.message, 'err'); return; }
+    if (error) { toast(t('errFilter') + error.message, 'err'); return; }
 
     // Alle Marker entfernen und neu zeichnen
     Object.keys(markerMap).forEach(id => { map.removeLayer(markerMap[id]); delete markerMap[id]; });
@@ -1632,7 +1638,7 @@
   // ─── GPS-Standort-Button ──────────────────────────────────────────────────
   document.getElementById('btn-gps').addEventListener('click', () => {
     if (!navigator.geolocation) {
-      toast('GPS nicht verfügbar in diesem Browser.', 'err'); return;
+      toast(t('gpsNA'), 'err'); return;
     }
     const btn = document.getElementById('btn-gps');
     btn.innerHTML = `<svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
@@ -1663,17 +1669,17 @@
           const data = await res.json();
           const name = data.address?.city || data.address?.town ||
                        data.address?.village || data.address?.county ||
-                       data.display_name?.split(',')[0] || 'Mein Standort';
+                       data.display_name?.split(',')[0] || t('myLocation');
           inpLoc.value = name;
           locClear.classList.remove('hidden');
         } catch {
-          inpLoc.value = 'Mein Standort';
+          inpLoc.value = t('myLocation');
         }
 
         if (!document.getElementById('inp-date').value)
           document.getElementById('inp-date').value = new Date().toISOString().slice(0, 10);
 
-        toast('Standort erkannt ✓');
+        toast(t('gpsOk'));
 
         // Button zurücksetzen
         btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1684,7 +1690,7 @@
         btn.disabled = false;
       },
       err => {
-        toast('Standort konnte nicht ermittelt werden.', 'err');
+        toast(t('gpsErr'), 'err');
         btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7z"/>
@@ -1769,6 +1775,175 @@
 
   function hideLocResults() { locResults.classList.add('hidden'); }
 
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Sprachsystem (DE / EN)
+  // ══════════════════════════════════════════════════════════════════════════
+  const tr = {
+    de: {
+      // Left panel
+      stats:'Statistiken', trips:'Reisen', north:'Nördlichst', last:'Letztes',
+      filterPh:'Orte filtern …', allYears:'Alle',
+      tabAll:'🗺 Alle', tabFavs:'❤ Favoriten',
+      loading:'Lädt …', profileSub:'Weltenbummler', profilePh:'Dein Reisename …',
+      noTrips:'Noch keine Reisen gespeichert.',
+      noFavs:'Noch keine Favoriten.<br/>Klicke auf ❤ um einen Eintrag zu speichern.',
+      // Gallery
+      galTitle:'Galerie', galSub:'Deine Erinnerungen',
+      galAll:'Alle', galFavs:'❤ Favoriten',
+      galNoPhotos:'Noch keine Fotos hochgeladen.',
+      galNoFavPhotos:'Keine Favoriten mit Fotos vorhanden.',
+      // Form sidebar
+      newEntry:'Neuer Eintrag', lblLocation:'Ortsname', locationPh:'Ort suchen oder eingeben …',
+      lblDate:'Datum', lblPhoto:'Foto (optional)',
+      uploadMain:'Fotos auswählen oder hierher ziehen',
+      uploadSub:'Mehrere Bilder möglich · JPG, PNG, WEBP',
+      lblNotes:'Erinnerungen & Notizen',
+      notesPh:'Was hast du erlebt? Besondere Momente, Menschen, Gerüche …',
+      saveBtn:'Eintrag speichern', saving:'Wird gespeichert …',
+      myTrips:'Meine Reisen', connecting:'Verbinde mit Supabase …',
+      // Map
+      styleTitle:'Kartenstil wechseln', galleryTitle:'Galerie öffnen',
+      styleStd:'🌍 Standard', styleDark:'🌑 Dark Mode', styleSat:'🛰️ Satellit',
+      lblRoute:'Route',
+      hintDesktop:'Klicke auf die Karte, um einen Eintrag hinzuzufügen.',
+      hintMobile:'Karte antippen',
+      searchPh:'Stadt oder Ort suchen …',
+      gpsBtnTitle:'Meinen Standort verwenden',
+      // Lightbox
+      lbDelete:'Eintrag löschen', noNotes:'Keine Notizen hinterlassen.',
+      // Dynamic
+      deleted:'Eintrag gelöscht.', loaded:'Einträge geladen',
+      savedOk:'gespeichert ✓', gpsOk:'Standort erkannt ✓',
+      gpsErr:'Standort konnte nicht ermittelt werden.',
+      gpsNA:'GPS nicht verfügbar in diesem Browser.',
+      myLocation:'Mein Standort',
+      errImg:'Fehler beim Lesen eines Bildes.',
+      errUpload:'Foto-Upload fehlgeschlagen: ',
+      errSave:'Fehler beim Speichern: ',
+      errDelete:'Fehler beim Löschen: ',
+      errFilter:'Filterfehler: ',
+      errSupabase:'Supabase-Fehler: ',
+      errConn:'⚠ Verbindungsfehler – RLS-Regeln prüfen',
+      confirmDelete:'Diesen Eintrag wirklich löschen?',
+      cardNoPhoto:'Noch keine Reisen gespeichert.',
+      compressing: n => `Komprimiere ${n} Bild${n>1?'er':''} …`,
+    },
+    en: {
+      stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
+      filterPh:'Filter places …', allYears:'All',
+      tabAll:'🗺 All', tabFavs:'❤ Favorites',
+      loading:'Loading …', profileSub:'World Traveler', profilePh:'Your travel name …',
+      noTrips:'No trips saved yet.',
+      noFavs:'No favorites yet.<br/>Click ❤ to save an entry.',
+      galTitle:'Gallery', galSub:'Your Memories',
+      galAll:'All', galFavs:'❤ Favorites',
+      galNoPhotos:'No photos uploaded yet.',
+      galNoFavPhotos:'No favorite entries with photos.',
+      newEntry:'New Entry', lblLocation:'Location', locationPh:'Search or enter a place …',
+      lblDate:'Date', lblPhoto:'Photo (optional)',
+      uploadMain:'Select photos or drag here',
+      uploadSub:'Multiple images supported · JPG, PNG, WEBP',
+      lblNotes:'Memories & Notes',
+      notesPh:'What did you experience? Special moments, people, scents …',
+      saveBtn:'Save Entry', saving:'Saving …',
+      myTrips:'My Trips', connecting:'Connecting to Supabase …',
+      styleTitle:'Switch map style', galleryTitle:'Open Gallery',
+      styleStd:'🌍 Standard', styleDark:'🌑 Dark Mode', styleSat:'🛰️ Satellite',
+      lblRoute:'Route',
+      hintDesktop:'Click on the map to add an entry.',
+      hintMobile:'Tap the map',
+      searchPh:'Search city or place …',
+      gpsBtnTitle:'Use my location',
+      lbDelete:'Delete Entry', noNotes:'No notes left.',
+      deleted:'Entry deleted.', loaded:'entries loaded',
+      savedOk:'saved ✓', gpsOk:'Location detected ✓',
+      gpsErr:'Could not determine your location.',
+      gpsNA:'GPS not available in this browser.',
+      myLocation:'My Location',
+      errImg:'Error reading image file.',
+      errUpload:'Photo upload failed: ',
+      errSave:'Error saving: ',
+      errDelete:'Error deleting: ',
+      errFilter:'Filter error: ',
+      errSupabase:'Supabase error: ',
+      errConn:'⚠ Connection error – check RLS rules',
+      confirmDelete:'Really delete this entry?',
+      cardNoPhoto:'No trips saved yet.',
+      compressing: n => `Compressing ${n} image${n>1?'s':''} …`,
+    }
+  };
+
+  let currentLang = localStorage.getItem('reise_lang') || 'de';
+
+  function t(key) { return tr[currentLang][key] ?? tr.de[key] ?? key; }
+
+  function applyLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('reise_lang', lang);
+    const T = tr[lang];
+
+    const s  = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+    const sp = (id, v) => { const e = document.getElementById(id); if(e) e.placeholder  = v; };
+    const st = (id, v) => { const e = document.getElementById(id); if(e) e.title        = v; };
+
+    // Left panel
+    s('lbl-stats', T.stats);
+    s('lbl-trips', T.trips);
+    s('lbl-north', T.north);
+    s('lbl-last',  T.last);
+    s('opt-all-years', T.allYears);
+    s('tab-all',   T.tabAll);
+    s('tab-favs',  T.tabFavs);
+    s('lbl-loading', T.loading);
+    s('profile-subtitle', T.profileSub);
+    sp('profile-name-input', T.profilePh);
+    sp('filter-text', T.filterPh);
+
+    // Gallery
+    s('gal-tab-all',  T.galAll);
+    s('gal-tab-favs', T.galFavs);
+    s('gallery-subtitle', T.galSub);
+
+    // Form sidebar
+    s('sidebar-title',    T.newEntry);
+    s('lbl-location',     T.lblLocation);
+    s('lbl-date',         T.lblDate);
+    s('lbl-photo',        T.lblPhoto);
+    s('lbl-upload-main',  T.uploadMain);
+    s('lbl-upload-sub',   T.uploadSub);
+    s('lbl-notes',        T.lblNotes);
+    sp('inp-notes',       T.notesPh);
+    sp('inp-location',    T.locationPh);
+    s('save-label',       T.saveBtn);
+    s('lbl-my-trips',     T.myTrips);
+    s('lbl-connecting',   T.connecting);
+    s('lbl-lb-delete',    T.lbDelete);
+
+    // Map controls
+    st('style-btn',    T.styleTitle);
+    st('gallery-btn',  T.galleryTitle);
+    st('btn-gps',      T.gpsBtnTitle);
+    s('style-opt-standard',  T.styleStd);
+    s('style-opt-dark',      T.styleDark);
+    s('style-opt-satellite', T.styleSat);
+    s('lbl-route',     T.lblRoute);
+    s('hint-desktop',  T.hintDesktop);
+    s('hint-mobile',   T.hintMobile);
+    sp('search-input', T.searchPh);
+
+    // Lang toggle button
+    document.getElementById('lang-flag').textContent = lang === 'de' ? '🇩🇪' : '🇬🇧';
+    document.getElementById('lang-code').textContent = lang === 'de' ? 'DE'   : 'EN';
+
+    // Re-render dynamic lists with new language
+    renderTripCards();
+    if (galleryEl.classList.contains('open')) renderGallery();
+  }
+
+  function toggleLang() {
+    applyLang(currentLang === 'de' ? 'en' : 'de');
+  }
+
   async function init() {
     const { data, error } = await sb
       .from(TABLE)
@@ -1776,9 +1951,9 @@
       .order('created_at', { ascending: true });
 
     if (error) {
-      toast('Supabase-Fehler: ' + error.message, 'err');
+      toast(t('errSupabase') + error.message, 'err');
       const loader = document.getElementById('list-loader');
-      loader.textContent = '⚠ Verbindungsfehler – RLS-Regeln prüfen';
+      loader.textContent = t('errConn');
       return;
     }
 
@@ -1789,7 +1964,8 @@
     renderList();
     updateDashboard();
     renderTripCards();
-    if (entries.length) toast(`${entries.length} Einträge geladen`, 'info');
+    if (entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
+    applyLang(currentLang);
   }
 
   init();

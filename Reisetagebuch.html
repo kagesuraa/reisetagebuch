@@ -804,7 +804,7 @@
           <!-- Thumbnail-Grid (sichtbar sobald Bilder gewählt) -->
           <div id="thumb-grid" class="hidden w-full p-2 grid grid-cols-3 gap-2"></div>
 
-          <input id="inp-photo" type="file" accept="image/*" multiple class="hidden" />
+          <input id="inp-photo" type="file" accept="image/*,video/*" multiple class="hidden" />
         </div>
       </div>
 
@@ -918,6 +918,8 @@
         class="sm:w-[45%] flex-shrink-0 bg-gray-900 hidden relative overflow-hidden">
         <img id="lb-img" alt=""
           class="w-full h-56 sm:h-full object-cover transition-opacity duration-300" />
+        <video id="lb-vid" controls playsinline
+          class="hidden w-full h-56 sm:h-full object-contain bg-black"></video>
         <!-- Pfeil-Buttons (nur bei > 1 Bild) -->
         <button id="lb-prev"
           class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10
@@ -1161,7 +1163,8 @@
   let allEntries    = [];   // ungefilterte Vollmenge für Galerie & Favoriten
   let pendingLat    = null;
   let pendingLng    = null;
-  let pendingPhotos = [];    // Array von Base64-Strings
+  let pendingPhotos = [];    // Array von Base64-Strings (Bilder)
+  let pendingVideos = [];    // Array von { blob, previewUrl } (Videos)
   let previewMarker = null;
   const markerMap  = {};
 
@@ -1428,21 +1431,35 @@
     return toDisplayUrl(src, width);
   }
 
+  function isVideoUrl(url) {
+    return /\.(mp4|webm|mov|avi|mkv|ogv)(\?|$)/i.test(url || '');
+  }
+
   function toDisplayUrl(src, width = 400) {
     if (!src) return null;
-    if (src.startsWith('data:') || !src.includes('supabase')) return src;
+    if (src.startsWith('data:') || !src.includes('supabase') || isVideoUrl(src)) return src;
     return `${src}?width=${width}&resize=contain`;
   }
 
   function hasPhoto(entry) { return !!(entry.photos?.length); }
 
-  // ─── Foto in Supabase Storage hochladen ───────────────────────────────────
+  // ─── Medien in Supabase Storage hochladen ────────────────────────────────
   async function uploadPhoto(base64DataUrl) {
     const res      = await fetch(base64DataUrl);
     const blob     = await res.blob();
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
     const { error } = await sb.storage.from('trip-images').upload(fileName, blob, {
       contentType: 'image/jpeg', upsert: false,
+    });
+    if (error) throw error;
+    return sb.storage.from('trip-images').getPublicUrl(fileName).data.publicUrl;
+  }
+
+  async function uploadVideo(blob) {
+    const ext      = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await sb.storage.from('trip-images').upload(fileName, blob, {
+      contentType: blob.type || 'video/mp4', upsert: false,
     });
     if (error) throw error;
     return sb.storage.from('trip-images').getPublicUrl(fileName).data.publicUrl;
@@ -1746,14 +1763,22 @@
     grid.innerHTML = list.map(e => {
       const src        = toDisplayUrl(e.photos[0], 600);
       const count      = e.photos.length;
+      const isVid      = isVideoUrl(e.photos[0]);
       const notesClean = (e.notes || '').replace(/\*\*(.+?)\*\*/g, '$1').trim();
+      const mediaEl    = isVid
+        ? `<video src="${src}" muted playsinline preload="metadata"
+               class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300"></video>
+           <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <span class="bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white text-base">▶</span>
+           </span>`
+        : `<img src="${src}" loading="lazy"
+               class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300" />`;
       return `
         <div class="group rounded-2xl overflow-hidden shadow-md cursor-pointer bg-white
                     hover:scale-[1.03] hover:shadow-xl transition-all duration-200"
              onclick="pinnwandItemClick('${e.id}')">
           <div class="relative overflow-hidden">
-            <img src="${src}" loading="lazy"
-                 class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300" />
+            ${mediaEl}
             ${count > 1
               ? `<span class="absolute top-2.5 right-2.5 bg-black/55 text-white text-xs px-2 py-0.5
                               rounded-full backdrop-blur-sm font-medium">+${count - 1}</span>`
@@ -1816,11 +1841,19 @@
 
     grid.innerHTML = items.map(({ e, src, i, total }) => {
       const displaySrc = toDisplayUrl(src, 400);
+      const isVid = isVideoUrl(src);
+      const mediaEl = isVid
+        ? `<video src="${displaySrc}" muted playsinline preload="metadata"
+             class="w-full block object-cover" style="max-height:160px;min-height:80px"></video>
+           <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <span class="bg-black/50 rounded-full w-8 h-8 flex items-center justify-center text-white text-sm">▶</span>
+           </span>`
+        : `<img src="${displaySrc}" loading="lazy"
+             class="w-full block object-cover" style="max-height:160px;min-height:80px" />`;
       return `
         <div class="gal-item rounded-xl overflow-hidden relative cursor-pointer shadow-md"
              onclick="galItemClick('${e.id}',${i})">
-          <img src="${displaySrc}" loading="lazy"
-            class="w-full block object-cover" style="max-height:160px;min-height:80px" />
+          ${mediaEl}
           <div class="gal-overlay absolute inset-0 bg-gradient-to-t from-black/75 via-transparent
                       flex flex-col justify-end px-2.5 py-2">
             <p class="text-white text-xs font-bold truncate leading-tight">${esc(e.locationName)}</p>
@@ -1878,12 +1911,24 @@
   let   lbPhotos     = [];
   let   lbIdx        = 0;
 
+  const lbVid = document.getElementById('lb-vid');
+
   function showLbSlide(idx) {
     lbIdx = (idx + lbPhotos.length) % lbPhotos.length;
-    // Sanftes Ausblenden → Bild wechseln → Einblenden
+    const url = lbPhotos[lbIdx];
     lbImg.style.opacity = '0';
     setTimeout(() => {
-      lbImg.src           = toDisplayUrl(lbPhotos[lbIdx], 900) || '';
+      if (isVideoUrl(url)) {
+        lbImg.classList.add('hidden');
+        lbVid.src = url;
+        lbVid.classList.remove('hidden');
+      } else {
+        lbVid.classList.add('hidden');
+        lbVid.pause?.();
+        lbVid.src = '';
+        lbImg.src = toDisplayUrl(url, 900) || '';
+        lbImg.classList.remove('hidden');
+      }
       lbImg.style.opacity = '1';
     }, 150);
     lbCounter.textContent = `${lbIdx + 1} / ${lbPhotos.length}`;
@@ -1895,8 +1940,7 @@
     lbIdx      = 0;
 
     if (lbPhotos.length) {
-      lbImg.src = toDisplayUrl(lbPhotos[0], 900) || '';
-      lbImg.style.opacity = '1';
+      showLbSlide(0);
       lbPhotoPanel.classList.remove('hidden');
       const multi = lbPhotos.length > 1;
       lbPrev.classList.toggle('hidden',    !multi);
@@ -1935,7 +1979,7 @@
     lightbox.classList.remove('open');
     document.removeEventListener('keydown', onLbKey);
     lbCard.classList.add('sm:flex-row');
-    setTimeout(() => { lbImg.src = ''; lbPhotos = []; }, 260);
+    setTimeout(() => { lbImg.src = ''; const lbVid2 = document.getElementById('lb-vid'); if (lbVid2) { lbVid2.pause(); lbVid2.src = ''; lbVid2.classList.add('hidden'); lbImg.classList.remove('hidden'); } lbPhotos = []; }, 260);
   }
 
   function onLbKey(e) {
@@ -2020,22 +2064,28 @@
   const uploadArea        = document.getElementById('upload-area');
 
   async function addFiles(fileList) {
-    const valid = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-    if (!valid.length) return;
+    const images = Array.from(fileList).filter(f => f.type.startsWith('image/'));
+    const videos = Array.from(fileList).filter(f => f.type.startsWith('video/'));
 
-    // Jedes Bild einzeln durch den Editor schicken
-    for (let i = 0; i < valid.length; i++) {
-      const dataUrl = await openImageEditor(valid[i], i, valid.length);
-      if (dataUrl) {
-        pendingPhotos.push(dataUrl);
-        renderThumbGrid();
-      }
+    // Bilder durch Cropper
+    for (let i = 0; i < images.length; i++) {
+      const dataUrl = await openImageEditor(images[i], i, images.length);
+      if (dataUrl) { pendingPhotos.push(dataUrl); renderThumbGrid(); }
     }
+
+    // Videos direkt als Blob (kein Cropper)
+    for (const vid of videos) {
+      const previewUrl = URL.createObjectURL(vid);
+      pendingVideos.push({ blob: vid, previewUrl });
+      renderThumbGrid();
+    }
+
     inpPhoto.value = '';
   }
 
   function renderThumbGrid() {
-    if (!pendingPhotos.length) {
+    const total = pendingPhotos.length + pendingVideos.length;
+    if (!total) {
       thumbGrid.classList.add('hidden');
       uploadPlaceholder.classList.remove('hidden');
       uploadPlaceholder.innerHTML =
@@ -2044,34 +2094,61 @@
              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
                 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
          </svg>
-         <span class="text-xs font-medium">Fotos auswählen oder hierher ziehen</span>
-         <span class="text-xs text-gray-300">Mehrere Bilder möglich · JPG, PNG, WEBP</span>`;
+         <span class="text-xs font-medium">Fotos &amp; Videos auswählen oder hierher ziehen</span>
+         <span class="text-xs text-gray-300">JPG, PNG, WEBP, MP4, WEBM</span>`;
       return;
     }
 
     uploadPlaceholder.classList.add('hidden');
     thumbGrid.classList.remove('hidden');
-    thumbGrid.innerHTML = pendingPhotos.map((src, i) => `
+
+    const imgItems = pendingPhotos.map((src, i) => `
       <div class="relative group aspect-square">
         <img src="${src}" class="w-full h-full object-cover rounded-xl" />
-        <button type="button" onclick="removeThumb(${i})"
+        <button type="button" onclick="removeThumb('img',${i})"
           class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600
                  text-white text-xs font-bold flex items-center justify-center
                  opacity-0 group-hover:opacity-100 transition-all z-10">×</button>
-      </div>`).join('') +
+      </div>`);
+
+    const vidItems = pendingVideos.map((v, i) => `
+      <div class="relative group aspect-square bg-black rounded-xl overflow-hidden">
+        <video src="${v.previewUrl}" muted preload="metadata"
+          class="w-full h-full object-cover"></video>
+        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+            <svg class="w-4 h-4 text-gray-800" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+        <button type="button" onclick="removeThumb('vid',${i})"
+          class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600
+                 text-white text-xs font-bold flex items-center justify-center
+                 opacity-0 group-hover:opacity-100 transition-all z-10">×</button>
+      </div>`);
+
+    thumbGrid.innerHTML = [...imgItems, ...vidItems].join('') +
       `<div onclick="document.getElementById('inp-photo').click()"
         class="aspect-square rounded-xl border-2 border-dashed border-gray-200
                flex items-center justify-center cursor-pointer
                hover:border-orange-300 hover:bg-orange-50 transition-colors text-gray-300 text-2xl">+</div>`;
   }
 
-  function removeThumb(i) {
-    pendingPhotos.splice(i, 1);
+  function removeThumb(kind, i) {
+    if (kind === 'img') {
+      pendingPhotos.splice(i, 1);
+    } else {
+      URL.revokeObjectURL(pendingVideos[i].previewUrl);
+      pendingVideos.splice(i, 1);
+    }
     renderThumbGrid();
   }
 
   function resetPhoto() {
     pendingPhotos = [];
+    pendingVideos.forEach(v => URL.revokeObjectURL(v.previewUrl));
+    pendingVideos = [];
     inpPhoto.value = '';
     renderThumbGrid();
   }
@@ -2138,13 +2215,13 @@
     if (pendingLat === null) return;
     setSaving(true);
 
-    // Alle Bilder in trip-images hochladen → URLs als JSON-Array in image_url
+    // Bilder + Videos hochladen → URLs als JSON-Array in image_url
     let imageUrl = null;
-    if (pendingPhotos.length) {
+    if (pendingPhotos.length || pendingVideos.length) {
       try {
-        setSaving(true);
-        const urls = await Promise.all(pendingPhotos.map(b64 => uploadPhoto(b64)));
-        imageUrl = JSON.stringify(urls);
+        const imgUrls = await Promise.all(pendingPhotos.map(b64 => uploadPhoto(b64)));
+        const vidUrls = await Promise.all(pendingVideos.map(v => uploadVideo(v.blob)));
+        imageUrl = JSON.stringify([...imgUrls, ...vidUrls]);
       } catch (e) {
         toast(t('errUpload') + e.message, 'err');
         setSaving(false);

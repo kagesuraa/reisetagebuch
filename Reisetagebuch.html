@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mein Reisetagebuch</title>
 
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src  'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+    style-src   'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+    font-src    'self' https://fonts.gstatic.com;
+    img-src     'self' data: blob: https:;
+    media-src   'self' blob: https:;
+    connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://nominatim.openstreetmap.org https://api.open-meteo.com https://api.anthropic.com wss://*.supabase.co;
+    worker-src  'self';
+    frame-src   'none';
+    object-src  'none';
+  " />
   <meta name="theme-color" content="#f97316" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -244,16 +256,19 @@
     @media print {
       body * { visibility: hidden; }
       #print-area, #print-area * { visibility: visible; }
+      /* hide all app chrome so only the cards show */
+      #left-panel, #sidebar, #map, #homepage, #lightbox,
+      .leaflet-container, #bottom-nav, #toast-container,
+      #anniversary-banner, #gallery-overlay, #pinnwand-overlay,
+      #stats-overlay, #vid-preview-modal, #slideshow-overlay { display: none !important; }
       #print-area { position: fixed; inset: 0; overflow: visible; background: white; padding: 24px; }
+      .print-header { display: none; }
       .print-card { page-break-inside: avoid; margin-bottom: 20px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; display: flex; gap: 16px; }
       .print-card img, .print-card video { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
       .print-card-body { flex: 1; }
       .print-card-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
       .print-card-date { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
       .print-card-notes { font-size: 12px; color: #4b5563; white-space: pre-wrap; }
-      .print-header { margin-bottom: 20px; border-bottom: 2px solid #f97316; padding-bottom: 12px; }
-      .print-header h1 { font-size: 22px; font-weight: 800; color: #1c1917; }
-      .print-header p { font-size: 12px; color: #9ca3af; margin-top: 2px; }
     }
   </style>
 </head>
@@ -865,7 +880,7 @@
 
       <!-- Foto-Upload -->
       <div>
-        <label id="lbl-photo" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Foto (optional)</label>
+        <label id="lbl-photo" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Foto</label>
         <div id="upload-area"
           class="relative flex flex-col items-center justify-center w-full border-2 border-dashed
                  border-orange-200 rounded-xl bg-white
@@ -1474,10 +1489,17 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
+  const TILE_STD_LANG = {
+    de: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          opts: { maxZoom: 19, noWrap: true, bounds: worldBounds, subdomains: 'abc',
+                  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' } },
+    en: { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+          opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
+                  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } },
+  };
+
   const tileDefs = {
-    standard: { url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      opts: { maxZoom: 19, noWrap: true, bounds: worldBounds, subdomains: 'abc',
-              attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' } },
+    standard: TILE_STD_LANG.de,
     dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
               attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
@@ -1488,6 +1510,14 @@
 
   let activeStyle = 'standard';
   let activeTile  = L.tileLayer(tileDefs.standard.url, tileDefs.standard.opts).addTo(map);
+
+  function setMapLang(lang) {
+    if (activeStyle !== 'standard') return; // dark/satellite have no language variant
+    const def = TILE_STD_LANG[lang] || TILE_STD_LANG.de;
+    map.removeLayer(activeTile);
+    activeTile = L.tileLayer(def.url, def.opts).addTo(map);
+    tileDefs.standard = def;
+  }
 
   function setTileStyle(name) {
     if (name === activeStyle) { closeStyleDrop(); return; }
@@ -1676,6 +1706,17 @@
     return String(str || '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // H-2: Block dangerous URL schemes in src/href attributes built via innerHTML
+  function safeSrc(url) {
+    if (!url) return '';
+    const s = String(url).trim();
+    // Block javascript:, vbscript:, and data: URLs that aren't images/video/audio
+    const lower = s.toLowerCase().replace(/\s/g, '');
+    if (lower.startsWith('javascript:') || lower.startsWith('vbscript:')) return '';
+    if (lower.startsWith('data:') && !/^data:(image|video|audio)\//i.test(s)) return '';
+    return esc(s);
   }
 
   // ─── Toast ────────────────────────────────────────────────────────────────
@@ -1889,7 +1930,7 @@
                     transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
           <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
             ${src
-              ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
+              ? `<img src="${safeSrc(src)}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
               : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
             <div class="min-w-0 flex-1">
               <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
@@ -1973,12 +2014,12 @@
       const isVid      = isVideoUrl(e.photos[0]);
       const notesClean = (e.notes || '').replace(/\*\*(.+?)\*\*/g, '$1').trim();
       const mediaEl    = isVid
-        ? `<video src="${src}" muted playsinline preload="metadata"
+        ? `<video src="${safeSrc(src)}" muted playsinline preload="metadata"
                class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300"></video>
            <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
              <span class="bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white text-base">▶</span>
            </span>`
-        : `<img src="${src}" loading="lazy"
+        : `<img src="${safeSrc(src)}" loading="lazy"
                class="w-full aspect-[4/3] object-cover group-hover:scale-105 transition-transform duration-300" />`;
       return `
         <div class="group rounded-2xl overflow-hidden shadow-md cursor-pointer bg-white
@@ -2050,12 +2091,12 @@
       const displaySrc = toDisplayUrl(src, 400);
       const isVid = isVideoUrl(src);
       const mediaEl = isVid
-        ? `<video src="${displaySrc}" muted playsinline preload="metadata"
+        ? `<video src="${safeSrc(displaySrc)}" muted playsinline preload="metadata"
              class="w-full block object-cover" style="max-height:160px;min-height:80px"></video>
            <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
              <span class="bg-black/50 rounded-full w-8 h-8 flex items-center justify-center text-white text-sm">▶</span>
            </span>`
-        : `<img src="${displaySrc}" loading="lazy"
+        : `<img src="${safeSrc(displaySrc)}" loading="lazy"
              class="w-full block object-cover" style="max-height:160px;min-height:80px" />`;
       return `
         <div class="gal-item rounded-xl overflow-hidden relative cursor-pointer shadow-md"
@@ -2163,7 +2204,7 @@
 
     lbDate.textContent   = entry.date ? `📅  ${fmtDate(entry.date)}` : '';
     lbName.textContent   = entry.locationName;
-    lbNotes.innerHTML    = mdBold(entry.notes || t('noNotes'));
+    renderMdBold(lbNotes, entry.notes || t('noNotes'));
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
     // Likes
@@ -2266,10 +2307,10 @@
         ${hasPhoto(e)
           ? isVideoUrl(e.photos[0])
             ? `<div class="w-9 h-9 rounded-md bg-gray-800 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
-                 <video src="${getPhotoSrc(e, 80)}" muted preload="metadata" class="absolute inset-0 w-full h-full object-cover opacity-70"></video>
+                 <video src="${safeSrc(getPhotoSrc(e, 80))}" muted preload="metadata" class="absolute inset-0 w-full h-full object-cover opacity-70"></video>
                  <span class="relative text-white text-xs z-10">▶</span>
                </div>`
-            : `<img src="${getPhotoSrc(e, 80)}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" loading="lazy" />`
+            : `<img src="${safeSrc(getPhotoSrc(e, 80))}" class="w-9 h-9 rounded-md object-cover flex-shrink-0" loading="lazy" />`
           : `<div class="w-9 h-9 rounded-md bg-orange-100 flex items-center justify-center flex-shrink-0 text-sm">📍</div>`
         }
         <div class="flex-1 min-w-0 cursor-pointer" onclick="flyTo('${e.id}')">
@@ -2299,7 +2340,8 @@
   // ─── Löschen ──────────────────────────────────────────────────────────────
   async function deleteEntry(id) {
     if (!confirm(t('confirmDelete'))) return;
-    const { error } = await sb.from(TABLE).delete().eq('id', id);
+    let dq = sb.from(TABLE).delete().eq('id', id);
+    const { error } = await dq;
     if (error) { toast(t('errDelete') + error.message, 'err'); return; }
     entries    = entries.filter(e => e.id !== id);
     allEntries = allEntries.filter(e => e.id !== id);
@@ -2316,18 +2358,27 @@
   const thumbGrid         = document.getElementById('thumb-grid');
   const uploadArea        = document.getElementById('upload-area');
 
-  async function addFiles(fileList) {
-    const images = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-    const videos = Array.from(fileList).filter(f => f.type.startsWith('video/'));
+  const ALLOWED_IMG_TYPES = new Set(['image/jpeg','image/png','image/webp','image/gif','image/heic','image/heif']);
+  const ALLOWED_VID_TYPES = new Set(['video/mp4','video/webm','video/quicktime','video/x-msvideo']);
+  const MAX_IMG_BYTES = 10 * 1024 * 1024;   // 10 MB
+  const MAX_VID_BYTES = 200 * 1024 * 1024;  // 200 MB
 
-    // Bilder durch Cropper
-    for (let i = 0; i < images.length; i++) {
-      const dataUrl = await openImageEditor(images[i], i, images.length);
+  async function addFiles(fileList) {
+    const all    = Array.from(fileList);
+    const images = all.filter(f => ALLOWED_IMG_TYPES.has(f.type));
+    const videos = all.filter(f => ALLOWED_VID_TYPES.has(f.type));
+    const rejected = all.filter(f => !ALLOWED_IMG_TYPES.has(f.type) && !ALLOWED_VID_TYPES.has(f.type));
+
+    if (rejected.length) toast(`${rejected.length} Datei(en) übersprungen – nicht erlaubter Typ.`, 'err');
+
+    for (const img of images) {
+      if (img.size > MAX_IMG_BYTES) { toast(`${img.name}: Bild zu groß (max. 10 MB).`, 'err'); continue; }
+      const dataUrl = await openImageEditor(img, images.indexOf(img), images.length);
       if (dataUrl) { pendingPhotos.push(dataUrl); renderThumbGrid(); }
     }
 
-    // Videos direkt als Blob (kein Cropper)
     for (const vid of videos) {
+      if (vid.size > MAX_VID_BYTES) { toast(`${vid.name}: Video zu groß (max. 200 MB).`, 'err'); continue; }
       const previewUrl = URL.createObjectURL(vid);
       pendingVideos.push({ blob: vid, previewUrl });
       renderThumbGrid();
@@ -2358,11 +2409,11 @@
     const existItems = existingPhotos.map((src, i) => {
       const isVid = isVideoUrl(src);
       const mediaEl = isVid
-        ? `<video src="${src}" muted preload="metadata" class="w-full h-full object-cover pointer-events-none"></video>
+        ? `<video src="${safeSrc(src)}" muted preload="metadata" class="w-full h-full object-cover pointer-events-none"></video>
            <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
              <span class="bg-black/50 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs">▶</span>
            </span>`
-        : `<img src="${toDisplayUrl(src,200)}" class="w-full h-full object-cover" />`;
+        : `<img src="${safeSrc(toDisplayUrl(src,200))}" class="w-full h-full object-cover" />`;
       return `
         <div class="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
           ${mediaEl}
@@ -2378,7 +2429,7 @@
 
     const imgItems = pendingPhotos.map((src, i) => `
       <div class="relative group aspect-square">
-        <img src="${src}" class="w-full h-full object-cover rounded-xl" />
+        <img src="${safeSrc(src)}" class="w-full h-full object-cover rounded-xl" />
         <button type="button" onclick="removeThumb('img',${i})"
           class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600
                  text-white text-xs font-bold flex items-center justify-center
@@ -2388,7 +2439,7 @@
     const vidItems = pendingVideos.map((v, i) => `
       <div class="relative group aspect-square bg-black rounded-xl overflow-hidden cursor-pointer"
            onclick="previewPendingVideo(${i})">
-        <video src="${v.previewUrl}" muted preload="metadata"
+        <video src="${safeSrc(v.previewUrl)}" muted preload="metadata"
           class="w-full h-full object-cover pointer-events-none"></video>
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center
@@ -2565,12 +2616,11 @@
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
-      user_id:       currentUser?.id ?? null,
     };
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select().single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,created_at').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       const idxA = entries.findIndex(e => e.id === editingId);
@@ -2590,7 +2640,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select().single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,created_at').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       entries.push(entry);
@@ -2640,7 +2690,7 @@
   async function fetchPlaces(q) {
     try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
-      const res  = await fetch(url, { headers: { 'Accept-Language': 'de' } });
+      const res  = await fetch(url, { headers: { 'Accept-Language': currentLang, 'User-Agent': 'Reisetagebuch/1.0' } });
       const data = await res.json();
       showResults(data);
     } catch {
@@ -2726,9 +2776,10 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select('*').order('created_at', { ascending: true });
-    const txt  = filterTextEl.value.trim();
-    const year = filterYearEl.value;
+    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,created_at').order('created_at', { ascending: true });
+    const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
+    const txt    = rawTxt.replace(/[%_\\]/g, c => `\\${c}`); // escape wildcards
+    const year   = filterYearEl.value;
     if (txt)  q = q.or(`location_name.ilike.%${txt}%,notes.ilike.%${txt}%`);
     if (year) q = q.like('date', `${year}-%`);
 
@@ -2825,7 +2876,7 @@
         try {
           const res  = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-            { headers: { 'Accept-Language': 'de' } }
+            { headers: { 'Accept-Language': currentLang, 'User-Agent': 'Reisetagebuch/1.0' } }
           );
           const data = await res.json();
           const name = data.address?.city || data.address?.town ||
@@ -2871,7 +2922,7 @@
   async function fetchLocSuggestions(q) {
     try {
       const url  = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=5&addressdetails=1`;
-      const data = await (await fetch(url, { headers: { 'Accept-Language': 'de' } })).json();
+      const data = await (await fetch(url, { headers: { 'Accept-Language': currentLang, 'User-Agent': 'Reisetagebuch/1.0' } })).json();
       renderLocResults(data);
     } catch { hideLocResults(); }
   }
@@ -2939,8 +2990,9 @@
   // ══════════════════════════════════════════════════════════════════════════
   //  Auth (Supabase Email / Password)
   // ══════════════════════════════════════════════════════════════════════════
-  let currentUser = null;
-  let authMode    = 'login'; // 'login' | 'register'
+  let currentUser   = null;
+  let authMode      = 'login'; // 'login' | 'register'
+  let hasUserIdCol  = false;   // set true after running supabase_migration.sql
 
   const authEmail    = document.getElementById('auth-email');
   const authPassword = document.getElementById('auth-password');
@@ -2994,13 +3046,24 @@
     el.addEventListener('keydown', e => { if (e.key === 'Enter') authSubmit.click(); });
   });
 
+  // M-1: Client-side login rate limiting
+  let authFailCount  = 0;
+  let authLockedUntil = 0;
+
   authSubmit.addEventListener('click', async () => {
+    const now = Date.now();
+    if (now < authLockedUntil) {
+      const wait = Math.ceil((authLockedUntil - now) / 1000);
+      showAuthError(`Zu viele Versuche. Bitte ${wait} Sekunden warten.`);
+      return;
+    }
+
     const email    = authEmail.value.trim();
     const password = authPassword.value;
     const name     = authNameInp.value.trim();
 
     if (!email || !password) { showAuthError('Bitte E-Mail und Passwort eingeben.'); return; }
-    if (password.length < 6) { showAuthError('Passwort muss mindestens 6 Zeichen haben.'); return; }
+    if (password.length < 8) { showAuthError('Passwort muss mindestens 8 Zeichen haben.'); return; }
 
     setAuthLoading(true);
     authError.classList.add('hidden');
@@ -3018,21 +3081,29 @@
     setAuthLoading(false);
 
     if (result.error) {
-      // Benutzerfreundliche Fehlertexte
+      // M-1: exponential backoff on failure
+      authFailCount++;
+      if (authFailCount >= 3) {
+        const backoff = Math.min(Math.pow(2, authFailCount - 3) * 10, 300); // 10s, 20s, 40s … max 300s
+        authLockedUntil = Date.now() + backoff * 1000;
+      }
+      // M-2: user-friendly messages without developer hints
       const msg = result.error.message;
       if (msg.includes('Invalid login') || msg.includes('invalid_credentials'))
         showAuthError('E-Mail oder Passwort falsch.');
       else if (msg.includes('already registered') || msg.includes('User already registered'))
         showAuthError('Diese E-Mail ist bereits registriert. Bitte melde dich an.');
       else if (msg.includes('Email not confirmed'))
-        showAuthError('Bitte deaktiviere in Supabase die Email-Bestätigung (Authentication → Email → Confirm email OFF).');
-      else if (msg.includes('email rate limit') || msg.includes('rate limit'))
-        showAuthError('Zu viele Registrierungsversuche. Bitte deaktiviere in Supabase die Email-Bestätigung.');
-      else if (msg.includes('over_email_send_rate_limit'))
-        showAuthError('Email-Limit erreicht. Deaktiviere die Email-Bestätigung in Supabase → Authentication → Email.');
-      else showAuthError(msg);
+        showAuthError('Bitte bestätige zuerst deine E-Mail-Adresse.');
+      else if (msg.includes('email rate limit') || msg.includes('rate limit') || msg.includes('over_email_send_rate_limit'))
+        showAuthError('Zu viele Versuche. Bitte warte einige Minuten.');
+      else showAuthError('Anmeldung fehlgeschlagen. Bitte erneut versuchen.');
       return;
     }
+
+    // Erfolg → Zähler zurücksetzen
+    authFailCount = 0;
+    authLockedUntil = 0;
 
     // Registrierung ohne sofortige Session → E-Mail-Bestätigung nötig
     if (authMode === 'register' && !result.data.session) {
@@ -3077,12 +3148,11 @@
   async function logout() {
     await sb.auth.signOut();
     currentUser = null;
-    // Karte und Listen leeren
+    audioDB.clearAll().catch(() => {}); // L-4: clear local audio recordings on logout
     Object.keys(markerMap).forEach(id => { clusterGroup.removeLayer(markerMap[id]); delete markerMap[id]; });
     if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
     entries = []; allEntries = [];
     renderList(); renderTripCards(); updateDashboard();
-    // Panel auf Auth umschalten + öffnen
     showPanelAuth();
     authEmail.value = ''; authPassword.value = ''; authNameInp.value = '';
     authError.classList.add('hidden');
@@ -3165,7 +3235,7 @@
       galNoFavPhotos:'Keine Favoriten mit Fotos vorhanden.',
       // Form sidebar
       newEntry:'Neuer Eintrag', lblLocation:'Ortsname', locationPh:'Ort suchen oder eingeben …',
-      lblDate:'Datum', lblPhoto:'Foto (optional)',
+      lblDate:'Datum', lblPhoto:'Foto',
       uploadMain:'Fotos auswählen oder hierher ziehen',
       uploadSub:'Mehrere Bilder möglich · JPG, PNG, WEBP',
       lblNotes:'Erinnerungen & Notizen',
@@ -3211,7 +3281,7 @@
       galNoPhotos:'No photos uploaded yet.',
       galNoFavPhotos:'No favorite entries with photos.',
       newEntry:'New Entry', lblLocation:'Location', locationPh:'Search or enter a place …',
-      lblDate:'Date', lblPhoto:'Photo (optional)',
+      lblDate:'Date', lblPhoto:'Photo',
       uploadMain:'Select photos or drag here',
       uploadSub:'Multiple images supported · JPG, PNG, WEBP',
       lblNotes:'Memories & Notes',
@@ -3306,6 +3376,9 @@
     document.getElementById('lang-flag').textContent = lang === 'de' ? '🇩🇪' : '🇬🇧';
     document.getElementById('lang-code').textContent = lang === 'de' ? 'DE'   : 'EN';
 
+    // Switch map tile language (only affects standard style)
+    setMapLang(lang);
+
     // Re-render dynamic lists with new language
     renderTripCards();
     if (galleryEl.classList.contains('open')) renderGallery();
@@ -3318,7 +3391,7 @@
   async function init() {
     const { data, error } = await sb
       .from(TABLE)
-      .select('*')
+      .select('id,lat,lng,location_name,date,notes,image_url,created_at')
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -3343,10 +3416,19 @@
     checkAnniversaries();
   }
 
-  // ─── Markdown-Bold für Lightbox-Anzeige ─────────────────────────────────
-  // Wandelt **text** in <strong>text</strong> um (nach XSS-Escape)
-  function mdBold(text) {
-    return esc(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // ─── DOM-safe Markdown-Bold für Lightbox ─────────────────────────────────
+  function renderMdBold(container, text) {
+    container.textContent = '';
+    const parts = (text || '').split(/\*\*(.+?)\*\*/g);
+    parts.forEach((part, i) => {
+      if (i % 2 === 1) {
+        const s = document.createElement('strong');
+        s.textContent = part;
+        container.appendChild(s);
+      } else if (part) {
+        container.appendChild(document.createTextNode(part));
+      }
+    });
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -3375,6 +3457,7 @@
         r.onerror   = () => rej(r.error);
       })),
       delete: (id)       => tx('readwrite', s => s.delete(id)),
+      clearAll: ()       => tx('readwrite', s => s.clear()),
     };
   })();
 
@@ -3531,36 +3614,46 @@
   const GEMINI_MODEL_LS = 'reise_gemini_model';
 
   function getGeminiApiKey() {
-    let key = localStorage.getItem(GEMINI_KEY_LS);
+    // H-4: prefer sessionStorage (cleared when tab closes); fall back to localStorage for convenience
+    let key = sessionStorage.getItem(GEMINI_KEY_LS) || localStorage.getItem(GEMINI_KEY_LS);
     if (!key) {
       key = window.prompt(
         'Google Gemini API-Key eingeben (kostenlos unter aistudio.google.com → "Get API key"):\n' +
-        'Wird nur lokal in deinem Browser gespeichert.'
+        'Wird nur für diese Browser-Sitzung gespeichert.'
       );
-      if (key?.trim()) localStorage.setItem(GEMINI_KEY_LS, key.trim());
+      if (key?.trim()) {
+        sessionStorage.setItem(GEMINI_KEY_LS, key.trim());
+        localStorage.removeItem(GEMINI_KEY_LS); // migrate away from localStorage
+      }
     }
     return key?.trim() || null;
+  }
+
+  // H-4: key in header, not URL
+  function geminiHeaders(apiKey) {
+    return { 'content-type': 'application/json', 'x-goog-api-key': apiKey };
   }
 
   async function callGemini(apiKey, body) {
     const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-    // Cached model — direkt versuchen
     const cached = localStorage.getItem(GEMINI_MODEL_LS);
     if (cached) {
-      const r = await fetch(`${BASE}/${cached}:generateContent?key=${apiKey}`,
-        { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+      const r = await fetch(`${BASE}/${cached}:generateContent`,
+        { method: 'POST', headers: geminiHeaders(apiKey), body });
       if (r.status === 403 || r.status === 401) {
+        sessionStorage.removeItem(GEMINI_KEY_LS);
         localStorage.removeItem(GEMINI_KEY_LS);
         throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
       }
       if (r.ok) return r;
-      localStorage.removeItem(GEMINI_MODEL_LS); // Modell nicht mehr gültig → neu suchen
+      localStorage.removeItem(GEMINI_MODEL_LS);
     }
 
     // Verfügbare Modelle abrufen
-    const listRes = await fetch(`${BASE}?key=${apiKey}`);
+    const listRes = await fetch(`${BASE}`, { headers: geminiHeaders(apiKey) });
     if (listRes.status === 403 || listRes.status === 401) {
+      sessionStorage.removeItem(GEMINI_KEY_LS);
       localStorage.removeItem(GEMINI_KEY_LS);
       throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
     }
@@ -3569,18 +3662,18 @@
     const models = ((await listRes.json()).models || [])
       .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
       .map(m => m.name.replace('models/', ''))
-      .sort((a, b) => b.localeCompare(a)); // neuere zuerst (höhere Versionsnummer)
+      .sort((a, b) => b.localeCompare(a));
 
-    // Jedes Modell ausprobieren bis eines antwortet
     for (const model of models) {
-      const r = await fetch(`${BASE}/${model}:generateContent?key=${apiKey}`,
-        { method: 'POST', headers: { 'content-type': 'application/json' }, body });
+      const r = await fetch(`${BASE}/${model}:generateContent`,
+        { method: 'POST', headers: geminiHeaders(apiKey), body });
       if (r.status === 403 || r.status === 401) {
+        sessionStorage.removeItem(GEMINI_KEY_LS);
         localStorage.removeItem(GEMINI_KEY_LS);
         throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
       }
       if (r.ok) {
-        localStorage.setItem(GEMINI_MODEL_LS, model); // funktionierendes Modell merken
+        localStorage.setItem(GEMINI_MODEL_LS, model);
         return r;
       }
     }
@@ -3845,8 +3938,8 @@
       const firstMedia = e.photos?.[0];
       const mediaHtml  = firstMedia
         ? isVideoUrl(firstMedia)
-          ? `<video src="${firstMedia}" class="print-card-img" style="width:120px;height:90px;object-fit:cover;border-radius:8px;flex-shrink:0"></video>`
-          : `<img src="${toDisplayUrl(firstMedia, 300)}" alt="" />`
+          ? `<video src="${safeSrc(firstMedia)}" class="print-card-img" style="width:120px;height:90px;object-fit:cover;border-radius:8px;flex-shrink:0"></video>`
+          : `<img src="${safeSrc(toDisplayUrl(firstMedia, 300))}" alt="" />`
         : '';
       return `<div class="print-card">
         ${mediaHtml}
@@ -3976,7 +4069,7 @@
                       transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
             <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
               ${src
-                ? `<img src="${src}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
+                ? `<img src="${safeSrc(src)}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
                 : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
               <div class="min-w-0 flex-1">
                 <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>

@@ -1,4 +1,4 @@
-const CACHE = 'reisetagebuch-v1';
+const CACHE = 'reisetagebuch-v2';
 const CORE  = [
   './Reisetagebuch.html',
   'https://cdn.tailwindcss.com',
@@ -24,21 +24,18 @@ self.addEventListener('activate', e => {
   );
 });
 
+const CORE_URLS = new Set(CORE.map(u => u.startsWith('./') ? u.slice(2) : u));
+
 self.addEventListener('fetch', e => {
-  // Supabase-Requests niemals cachen
-  if (e.request.url.includes('supabase.co') ||
-      e.request.url.includes('generativelanguage.googleapis.com')) return;
+  if (e.request.method !== 'GET') return;
+
+  const url = e.request.url;
+  const isCore = CORE.some(c => url === c || url.endsWith(c.replace('./', '/')));
+
+  // Only serve cached responses for known CORE assets
+  if (!isCore) return;
 
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(res => {
-        // Nur GET-Responses cachen
-        if (e.request.method !== 'GET' || !res || res.status !== 200) return res;
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      }).catch(() => cached);
-    })
+    caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });

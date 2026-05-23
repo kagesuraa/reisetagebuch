@@ -82,14 +82,14 @@
     style="width:min(80vw,300px)">
 
     <!-- Profil-Header -->
-    <div class="bg-stone-900 px-5 py-5 flex-shrink-0">
+    <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-5 py-5 flex-shrink-0">
       <div class="flex items-center gap-3">
         <!-- Avatar -->
         <div id="profile-avatar"
           class="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl
                  font-extrabold flex-shrink-0 cursor-pointer hover:scale-105 transition-transform
                  shadow-lg select-none"
-          style="background:rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2)" onclick="toggleProfileEdit()">
+          style="background:rgba(255,255,255,0.25)" onclick="toggleProfileEdit()">
           ?
         </div>
         <!-- Name + Untertitel -->
@@ -119,7 +119,7 @@
           class="flex-1 bg-white/10 text-white placeholder-white/50 rounded-xl px-3 py-1.5
                  text-sm outline-none border border-white/20 focus:border-white/50 transition-colors" />
         <button onclick="saveProfile()"
-          class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 rounded-xl
+          class="bg-white/20 hover:bg-white/35 text-white text-xs font-bold px-3 rounded-xl
                  transition-colors">OK</button>
       </div>
     </div>
@@ -167,7 +167,7 @@
     <!-- Filterleiste -->
     <div class="px-4 py-3 flex-shrink-0 border-b border-stone-100 flex gap-2">
       <div class="flex items-center flex-1 bg-stone-50 rounded-xl px-2.5 py-1.5 gap-1.5
-                  border border-stone-200 focus-within:border-amber-500 transition-colors">
+                  border border-stone-200 focus-within:border-orange-400 transition-colors">
         <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -177,7 +177,7 @@
       </div>
       <select id="filter-year"
         class="bg-stone-50 border border-stone-200 text-xs text-gray-700 rounded-xl px-2 py-1.5
-               outline-none focus:border-amber-500 transition-colors cursor-pointer">
+               outline-none focus:border-orange-400 transition-colors cursor-pointer">
         <option id="opt-all-years" value="">Alle</option>
       </select>
       <button id="filter-reset"
@@ -188,7 +188,7 @@
     <!-- Tabs: Alle / Favoriten -->
     <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
       <button id="tab-all"
-        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-stone-900 text-white">
+        class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">
         🗺 Alle
       </button>
       <button id="tab-favs"
@@ -221,9 +221,9 @@
     class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden md:flex
            flex-col items-center gap-1 py-3 px-1
            bg-white rounded-r-xl shadow-md cursor-pointer transition-opacity duration-300">
-    <div class="w-0.5 h-3 bg-amber-500 rounded-full"></div>
-    <div class="w-0.5 h-3 bg-amber-500 rounded-full"></div>
-    <div class="w-0.5 h-3 bg-amber-500 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+    <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
   </div>
 
   <!-- Mobiler Panel-Toggle (nur sichtbar wenn Panel geschlossen) -->
@@ -314,7 +314,7 @@
                border border-stone-100 overflow-hidden min-w-[170px] z-10">
         <li><button onclick="setTileStyle('standard')" data-style="standard"
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
-                 flex items-center gap-3 transition-colors font-semibold text-amber-700 bg-amber-50">
+                 flex items-center gap-3 transition-colors font-semibold text-orange-600 bg-orange-50">
           <span id="style-opt-standard">🌍 Standard</span></button></li>
         <li><button onclick="setTileStyle('dark')" data-style="dark"
           class="style-opt w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-stone-50
@@ -338,7 +338,7 @@
     <div class="relative">
       <!-- Eingabefeld -->
       <div class="flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden
-                  border-2 border-transparent focus-within:border-amber-500 transition-colors">
+                  border-2 border-transparent focus-within:border-orange-400 transition-colors">
         <svg class="w-4 h-4 text-gray-400 ml-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -363,7 +363,7 @@
   <aside id="sidebar"
     class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-[1001] flex flex-col select-none">
 
-    <div class="bg-stone-900 text-white px-6 py-5 flex-shrink-0">
+    <div class="bg-gradient-to-br from-orange-500 to-amber-400 text-white px-6 py-5 flex-shrink-0">
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-2">
           <svg class="w-5 h-5 opacity-90" viewBox="0 0 24 24" fill="currentColor">
@@ -384,7 +384,7 @@
         <label id="lbl-location" class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Ortsname</label>
         <div class="flex items-center gap-2">
           <div class="flex-1 flex items-center rounded-lg border border-stone-200 bg-stone-50
-                      focus-within:ring-2 focus-within:ring-amber-500 focus-within:border-transparent transition">
+                      focus-within:ring-2 focus-within:ring-orange-400 focus-within:border-transparent transition">
             <svg class="w-4 h-4 text-gray-400 ml-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -400,8 +400,8 @@
           <!-- GPS-Standort-Button -->
           <button id="btn-gps" type="button" title="Meinen Standort verwenden"
             class="w-10 h-10 flex-shrink-0 rounded-lg border border-stone-200 bg-stone-50
-                   flex items-center justify-center text-gray-400 hover:text-amber-600
-                   hover:border-amber-300 hover:bg-amber-50 transition-colors">
+                   flex items-center justify-center text-gray-400 hover:text-orange-500
+                   hover:border-orange-300 hover:bg-orange-50 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7z"/>
@@ -421,7 +421,7 @@
         <input id="inp-date" type="date"
           class="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5
                  text-sm text-gray-800
-                 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition" />
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
       </div>
 
       <!-- Foto-Upload -->
@@ -430,7 +430,7 @@
         <div id="upload-area"
           class="relative flex flex-col items-center justify-center w-full border-2 border-dashed
                  border-stone-200 rounded-xl bg-stone-50
-                 hover:bg-amber-50 hover:border-amber-300 transition-colors overflow-hidden"
+                 hover:bg-orange-50 hover:border-orange-300 transition-colors overflow-hidden"
           style="min-height:7rem">
 
           <!-- Platzhalter -->
@@ -459,13 +459,13 @@
           placeholder="Was hast du erlebt? Besondere Momente, Menschen, Gerüche …"
           class="w-full rounded-lg border border-stone-200 bg-stone-50 px-4 py-2.5
                  text-sm text-gray-800 placeholder-gray-400 resize-none
-                 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition">
         </textarea>
       </div>
 
       <button id="btn-save"
         class="w-full flex items-center justify-center gap-2
-               bg-stone-900 hover:bg-stone-800 active:bg-stone-700
+               bg-orange-500 hover:bg-orange-600 active:bg-orange-700
                text-white font-semibold text-sm py-3 rounded-lg
                transition-colors duration-150 shadow-sm
                disabled:opacity-50 disabled:cursor-not-allowed">
@@ -481,7 +481,7 @@
     <div class="border-t border-stone-100 flex-shrink-0">
       <div class="flex items-center justify-between px-6 pt-3 pb-1">
         <h3 id="lbl-my-trips" class="text-xs font-semibold text-stone-400 uppercase tracking-wider">Meine Reisen</h3>
-        <span id="entry-count" class="text-xs font-bold text-amber-600"></span>
+        <span id="entry-count" class="text-xs font-bold text-orange-500"></span>
       </div>
       <div id="list-loader"
         class="flex items-center justify-center gap-2 py-4 text-stone-400 text-xs px-4">
@@ -533,7 +533,7 @@
 
         <!-- Datum + Koordinaten -->
         <p id="lb-date"
-          class="text-amber-600 text-xs font-bold uppercase tracking-widest mb-3"></p>
+          class="text-orange-500 text-xs font-bold uppercase tracking-widest mb-3"></p>
 
         <!-- Ortsname -->
         <h2 id="lb-name"
@@ -578,7 +578,7 @@
     <span id="lbl-route" class="text-gray-700 text-sm font-medium">Route</span>
     <!-- Toggle-Switch -->
     <div id="route-switch"
-      class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-amber-600">
+      class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-orange-500">
       <div id="route-thumb"
         class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 right-0.5">
       </div>
@@ -694,12 +694,12 @@
     const sw    = document.getElementById('route-switch');
     const thumb = document.getElementById('route-thumb');
     if (showRoute) {
-      sw.classList.replace('bg-gray-300', 'bg-amber-600');
+      sw.classList.replace('bg-gray-300', 'bg-orange-500');
       thumb.classList.replace('left-0.5', 'right-0.5');
       thumb.classList.remove('left-0.5');
       thumb.classList.add('right-0.5');
     } else {
-      sw.classList.replace('bg-amber-600', 'bg-gray-300');
+      sw.classList.replace('bg-orange-500', 'bg-gray-300');
       thumb.classList.remove('right-0.5');
       thumb.classList.add('left-0.5');
     }
@@ -742,9 +742,9 @@
     activeStyle = name;
     document.querySelectorAll('.style-opt').forEach(b => {
       const on = b.dataset.style === name;
-      b.classList.toggle('bg-amber-50',      on);
+      b.classList.toggle('bg-orange-50',      on);
       b.classList.toggle('font-semibold',    on);
-      b.classList.toggle('text-amber-700',   on);
+      b.classList.toggle('text-orange-600',   on);
     });
     closeStyleDrop();
   }
@@ -991,10 +991,10 @@
     activeTab = tab;
     document.getElementById('tab-all').className  =
       'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (tab === 'all'  ? 'bg-stone-900 text-white' : 'text-stone-400 hover:bg-stone-50');
+      (tab === 'all'  ? 'bg-orange-500 text-white' : 'text-stone-400 hover:bg-stone-50');
     document.getElementById('tab-favs').className =
       'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors ' +
-      (tab === 'favs' ? 'bg-stone-900 text-white' : 'text-stone-400 hover:bg-stone-50');
+      (tab === 'favs' ? 'bg-orange-500 text-white' : 'text-stone-400 hover:bg-stone-50');
     renderTripCards();
   }
 
@@ -1030,7 +1030,7 @@
               : `<div class="w-14 h-14 rounded-xl bg-stone-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
             <div class="min-w-0 flex-1">
               <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
-              <p class="text-xs text-amber-600 font-medium mt-0.5">${fmtDate(e.date)}</p>
+              <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
               ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
             </div>
           </div>
@@ -1337,7 +1337,7 @@
       `<div onclick="document.getElementById('inp-photo').click()"
         class="aspect-square rounded-xl border-2 border-dashed border-gray-200
                flex items-center justify-center cursor-pointer
-               hover:border-amber-300 hover:bg-amber-50 transition-colors text-gray-300 text-2xl">+</div>`;
+               hover:border-orange-300 hover:bg-orange-50 transition-colors text-gray-300 text-2xl">+</div>`;
   }
 
   function removeThumb(i) {
@@ -1355,15 +1355,15 @@
 
   uploadArea.addEventListener('dragover', e => {
     e.preventDefault();
-    uploadArea.classList.add('border-amber-400', 'bg-amber-50');
+    uploadArea.classList.add('border-orange-400', 'bg-orange-50');
   });
   uploadArea.addEventListener('dragleave', e => {
     if (!uploadArea.contains(e.relatedTarget))
-      uploadArea.classList.remove('border-amber-400', 'bg-amber-50');
+      uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
   });
   uploadArea.addEventListener('drop', async e => {
     e.preventDefault();
-    uploadArea.classList.remove('border-amber-400', 'bg-amber-50');
+    uploadArea.classList.remove('border-orange-400', 'bg-orange-50');
     await addFiles(e.dataTransfer.files);
   });
 
@@ -1502,7 +1502,7 @@
         <li data-i="${i}" data-lat="${p.lat}" data-lng="${p.lon}" data-name="${esc(p.display_name)}"
           class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-stone-50
                  transition-colors border-b border-gray-50 last:border-0">
-          <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0
                      9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>
@@ -1730,7 +1730,7 @@
         <li data-lat="${p.lat}" data-lng="${p.lon}" data-name="${esc(p.display_name)}"
           class="flex items-center gap-3 px-4 py-3 cursor-pointer text-sm
                  hover:bg-stone-50 transition-colors border-b border-gray-50 last:border-0">
-          <svg class="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z
                      m0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
           </svg>

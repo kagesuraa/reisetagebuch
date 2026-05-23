@@ -1,6 +1,6 @@
 # Reisetagebuch — Entwicklungsprotokoll
 
-Aufgezeichnet: 22.–23. Mai 2026  
+Aufgezeichnet: 22.–23. Mai 2026, aktualisiert: 23. Mai 2026  
 Entwickelt mit: Claude Sonnet 4.6 (Claude Code)
 
 ---
@@ -115,6 +115,95 @@ create table public.reise_eintraege (
 - **Bereits eingeloggt**: Homepage wird übersprungen, direkt zur Karte
 - **Auth im linken Panel**: `panel-auth-section` / `panel-main-section` Toggle
 
+### Phase 13 — Mobile-Optimierung
+- **Bottom Navigation**: 4 Tabs (Reisen, Galerie, Pinnwand, Route) + zentraler + FAB-Button
+- **Bottom-Sheet Sidebar**: Formular schiebt sich von unten hoch auf Mobile/Tablet
+- **Swipe-Gesten**: Sidebar schließen per Wischgeste nach unten, Panel per Wischgeste nach links
+- **GitHub Pages Fix**: `index.html`-Redirect, `.nojekyll`-Datei gegen Jekyll-Build
+
+### Phase 14 — Bild-Editor & KI-Formatierer
+- **Cropper.js**: In-Browser Zuschneiden jedes Fotos vor dem Upload (Seitenverhältnis frei, Drehen)
+- **KI-Formatierer** (Button im Notizen-Feld):
+  - Zuerst über Supabase Edge Function (Deno, Anthropic API) — scheiterte an CORS/Adblocker
+  - Dann direkter Aufruf der Anthropic API — ebenfalls geblockt
+  - Lösung: **Google Gemini API** (kostenlos, CORS-freundlich, kein Backend nötig)
+  - **Auto-Discovery**: `GET /v1beta/models` liefert alle verfügbaren Modelle → jedes proben bis eines antwortet → funktionierendes Modell in `localStorage('reise_gemini_model')` gecacht
+  - API-Key wird einmalig eingegeben und in `localStorage('reise_gemini_key')` gespeichert
+
+### Phase 15 — Pinnwand & Statistik-Diagramm
+- **Pinnwand-Modus**: Pinterest-ähnliches CSS-Grid aller Einträge mit Fotos
+  - Hover-Zoom, Foto-Zähler-Badge, Klick öffnet Lightbox
+  - Selbe `opacity-0 pointer-events-none` / `.open`-Pattern wie Galerie
+- **Chart.js Aktivitätsdiagramm**: Balkendiagramm im Statistik-Panel
+  - Monat/Jahr-Umschalter
+  - Orange-500 Farben, kein Gitternetz, responsive
+
+### Phase 16 — Sprach-Features
+- **Speech-to-Text**: Mikrofon-Button im Notizen-Feld
+  - Web Speech API (`webkitSpeechRecognition`), `lang='de-DE'`, `continuous=true`
+  - Echtzeit-Transkription: Interim-Text grau, Final-Text schwarz
+  - Zweiter Klick stoppt die Aufnahme
+- **Sprachnotiz-Aufnahme**: Separater Aufnahme-Button — ganzen Sprachmemo aufnehmen
+  - `MediaRecorder` API für Aufnahme als WebM/OGG-Blob
+  - **IndexedDB** (`reise_audio`, Store `rec`) für lokale Speicherung — kein Backend nötig
+  - Aufnahme an Eintrag gebunden (Key = Supabase Entry ID)
+  - In der Lightbox abspielbar mit `<audio>`-Element + orangem Player-Panel
+
+### Phase 17 — Video-Upload
+- **Video-Dateiauswahl**: `accept="image/*,video/*"` am File-Input
+- **Upload**: Videos in denselben `trip-images` Supabase-Bucket — kein Backend-Change
+- **`isVideoUrl(url)`**: Erkennt `.mp4`, `.webm`, `.mov`, `.avi`, `.mkv`, `.ogv` per Regex
+- **`toDisplayUrl()`**: Überspringt Supabase Image-Transform-Parameter für Videos
+- **Thumbnail-Grid**: Video-Vorschau mit ▶-Play-Icon-Overlay
+- **Video-Vorschau-Modal**: Klick auf Thumbnail vor dem Speichern → Vollbild-Modal mit nativen Controls
+- **Lightbox**: `<img>` und `<video>` Element koexistieren, werden per `classList.add('hidden')` umgeschaltet
+- **Galerie & Pinnwand**: Rendern `<video>` statt `<img>` für Video-URLs
+- **Eintragsliste** (linkes Panel): Video-Einträge zeigen dunkle Thumbnail-Kachel mit ▶ statt kaputtem Bild-Icon
+
+### Phase 18 — 5 Major Features
+**1. Einträge bearbeiten**
+- Stift-Button in der Lightbox (Footer, neben Löschen)
+- `openEditForm(entry)`: Füllt alle Felder vor, setzt `editingId`, zeigt bestehende Fotos als „gespeichert"-Kacheln
+- Save-Handler erkennt `editingId !== null` → `UPDATE` statt `INSERT`
+- Nach dem Update: Marker erneuert, `entries`/`allEntries` aktualisiert
+- Karte-Klick während Edit-Modus: bricht Edit sauber ab (Bug-Fix)
+
+**2. PWA / Installierbar**
+- `manifest.json`: Name, Icons (SVG Data-URI), theme-color orange
+- `sw.js`: Service Worker mit Offline-Cache für HTML + CDN-Assets
+- iOS Meta-Tags: `apple-mobile-web-app-capable`, Status-Bar-Style
+- App auf Homescreen installierbar (Chrome → „Zum Startbildschirm")
+
+**3. PDF-Export**
+- Download-Button neben „Statistiken" im Panel
+- Rendert alle Einträge als Karten (Foto + Ort + Datum + Notizen) in `#print-area`
+- `window.print()` + `@media print` CSS → Druckdialog → Als PDF speichern
+
+**4. Jahrestags-Erinnerungen**
+- Beim Laden: Check ob Monat+Tag eines Eintrags = heute UND ≥ 1 Jahr alt
+- Zeigt dismissibles Banner oben: „Vor 2 Jahren warst du in Tokio!"
+- Wegklicken speichert `dismissed`-State in `localStorage` (pro Tag)
+
+**5. Marker-Clustering**
+- `Leaflet.markercluster@1.5.3` via CDN
+- Orange Cluster-Bubbles mit Anzahl, fächern beim Reinzoomen auf
+- `clusterGroup.addLayer(marker)` statt `marker.addTo(map)`
+
+### Phase 19 — Bugfixes & Stabilität
+- **Tile-Server**: Wechsel von `tile.openstreetmap.de` (unzuverlässig) auf `{a|b|c}.tile.openstreetmap.org` mit Subdomain-Loadbalancing
+- **Markercluster-Fehler**: `maxZoom: 19` am Map-Objekt gesetzt → behebt „Map has no maxZoom specified"
+- **Edit-Bug**: Karte-Klick während offener Edit-Form überschrieb `editingId` nicht → Datenverlust-Risiko behoben
+- **Video-Icon in Eintragsliste**: `<img>` für Video-URLs zeigte kaputtes Icon → ersetzt durch `<video preload="metadata">` mit ▶-Overlay
+
+---
+
+## Geplant / Nächstes Feature
+
+### Phase 20 — Reise-Slideshow (in Arbeit)
+- Vollbild-Slideshow aller Einträge mit Foto als Hintergrund
+- Ortsname groß, Datum + Notizen eingeblendet
+- Auto-Advance alle 4–5 Sekunden, Pause/Play, Pfeiltasten
+
 ---
 
 ## Technischer Stack
@@ -128,8 +217,14 @@ create table public.reise_eintraege (
 | Storage | Supabase Storage (Bucket: `trip-images`) |
 | Fonts | Inter (Google Fonts) |
 | Geocoding | Nominatim (OpenStreetMap) |
-| Tile-Server | OSM DE / CartoDB / ESRI |
-| Hosting | GitHub Pages / Netlify |
+| Tile-Server | OSM CDN (a/b/c.tile.openstreetmap.org) / CartoDB / ESRI |
+| KI | Google Gemini API (kostenlos, Auto-Discovery) |
+| Diagramme | Chart.js (CDN) |
+| Bild-Editor | Cropper.js 1.6.2 (CDN) |
+| Marker-Clustering | Leaflet.markercluster 1.5.3 (CDN) |
+| Audio-Speicher | IndexedDB (Browser-nativ) |
+| PWA | Web App Manifest + Service Worker |
+| Hosting | GitHub Pages |
 | Versionierung | Git + GitHub |
 
 ---
@@ -198,6 +293,23 @@ create policy "public delete" on public.reise_eintraege for delete using (true);
 24. Add Supabase Auth: register, login, logout
 25. Add cinematic homepage with hero slider
 26. Homepage: hero only + login/register in left panel
+27. Responsive layout for phones and tablets
+28. Add mobile bottom nav, swipe gestures, bottom-sheet sidebar
+29. Fix mobile nav: route toggle
+30. Add index.html redirect + .nojekyll for GitHub Pages
+31. Add in-browser image editor with Cropper.js
+32. Add AI notes formatter (Claude Haiku → Gemini Flash)
+33. KI-Formatierer: Gemini auto-discovery + model caching
+34. Add Pinnwand view: Pinterest-style photo grid
+35. Add Chart.js activity bar chart to statistics panel
+36. Add Speech-to-Text mic button for notes textarea
+37. Add voice memo recording with IndexedDB + lightbox playback
+38. Add video upload support for travel entries
+39. Add video preview modal before saving entry
+40. Fix broken image icon for video entries in left panel list
+41. Add 5 major features: edit, PWA, PDF export, anniversaries, clustering
+42. Fix edit-mode data corruption on accidental map click
+43. Fix map tiles not loading (tile server + maxZoom)
 
 ---
 

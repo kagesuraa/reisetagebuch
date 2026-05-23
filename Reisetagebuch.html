@@ -10,6 +10,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -886,6 +888,71 @@
     <span id="hint-mobile" class="text-gray-700 text-sm font-medium sm:hidden">Karte antippen</span>
   </div>
 
+  <!-- ════ BILD-EDITOR MODAL ══════════════════════════════════════════════════ -->
+  <div id="img-editor-modal"
+    class="hidden fixed inset-0 z-[9000] bg-black/80 backdrop-blur-sm
+           flex items-center justify-center p-3 sm:p-6">
+
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col overflow-hidden"
+         style="max-height:94dvh">
+
+      <!-- Header -->
+      <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-6 py-4
+                  flex items-center justify-between flex-shrink-0">
+        <div>
+          <h3 class="text-white font-bold text-lg leading-tight">Bild bearbeiten</h3>
+          <p id="editor-counter" class="text-orange-100 text-xs mt-0.5"></p>
+        </div>
+        <button id="editor-cancel"
+          class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/40 text-white text-2xl
+                 flex items-center justify-center transition-colors leading-none">×</button>
+      </div>
+
+      <!-- Cropper-Bereich -->
+      <div class="bg-gray-950 flex-1 overflow-hidden" style="min-height:180px;max-height:52dvh">
+        <img id="editor-img" src="" alt="" style="display:block;max-width:100%;max-height:52dvh">
+      </div>
+
+      <!-- Steuerelemente -->
+      <div class="px-5 py-4 space-y-3 flex-shrink-0">
+
+        <!-- Drei Aktions-Buttons -->
+        <div class="grid grid-cols-3 gap-2">
+          <button id="editor-rotate-left"
+            class="flex flex-col items-center gap-1 bg-stone-100 hover:bg-stone-200
+                   text-stone-700 font-semibold py-3 rounded-xl transition-colors">
+            <span class="text-xl leading-none">↺</span>
+            <span class="text-xs">Links drehen</span>
+          </button>
+          <button id="editor-rotate-right"
+            class="flex flex-col items-center gap-1 bg-stone-100 hover:bg-stone-200
+                   text-stone-700 font-semibold py-3 rounded-xl transition-colors">
+            <span class="text-xl leading-none">↻</span>
+            <span class="text-xs">Rechts drehen</span>
+          </button>
+          <button id="editor-square"
+            class="flex flex-col items-center gap-1 bg-stone-100 hover:bg-stone-200
+                   text-stone-700 font-semibold py-3 rounded-xl transition-colors">
+            <span class="text-xl leading-none">✂️</span>
+            <span class="text-xs">1:1 Quadrat</span>
+          </button>
+        </div>
+
+        <!-- Übernehmen -->
+        <button id="editor-accept"
+          class="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white
+                 font-bold py-3.5 rounded-xl transition-colors shadow-sm flex items-center
+                 justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+          </svg>
+          Bild übernehmen
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+
   <!-- ════ MOBILE BOTTOM NAV ══════════════════════════════════════════════════ -->
   <nav id="mobile-nav"
     class="fixed bottom-0 inset-x-0 z-[5000] lg:hidden
@@ -1639,20 +1706,14 @@
     const valid = Array.from(fileList).filter(f => f.type.startsWith('image/'));
     if (!valid.length) return;
 
-    // Lade-Indikator
-    uploadPlaceholder.innerHTML =
-      `<svg class="w-5 h-5 spin" fill="none" viewBox="0 0 24 24">
-         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-       </svg><span class="text-xs">Komprimiere ${valid.length} Bild${valid.length > 1 ? 'er' : ''} …</span>`;
-
-    try {
-      const compressed = await Promise.all(valid.map(f => compressImage(f)));
-      pendingPhotos = [...pendingPhotos, ...compressed];
-    } catch {
-      toast(t('errImg'), 'err');
+    // Jedes Bild einzeln durch den Editor schicken
+    for (let i = 0; i < valid.length; i++) {
+      const dataUrl = await openImageEditor(valid[i], i, valid.length);
+      if (dataUrl) {
+        pendingPhotos.push(dataUrl);
+        renderThumbGrid();
+      }
     }
-    renderThumbGrid();
     inpPhoto.value = '';
   }
 
@@ -2529,6 +2590,91 @@
     if (entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
     applyLang(currentLang);
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Bild-Editor (Cropper.js)
+  // ══════════════════════════════════════════════════════════════════════════
+  let cropperInstance = null;
+  let editorResolve   = null;
+
+  const editorModal   = document.getElementById('img-editor-modal');
+  const editorImg     = document.getElementById('editor-img');
+  const editorCounter = document.getElementById('editor-counter');
+
+  function openImageEditor(file, idx, total) {
+    return new Promise(resolve => {
+      editorResolve = resolve;
+      editorCounter.textContent = total > 1 ? `Bild ${idx + 1} von ${total}` : '';
+
+      // Alten Cropper-Zustand aufräumen
+      if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+      editorImg.src = '';
+
+      const reader = new FileReader();
+      reader.onload = evt => {
+        // Erst Bild laden, dann Modal zeigen und Cropper initialisieren
+        editorImg.onload = () => {
+          editorModal.classList.remove('hidden');
+          // requestAnimationFrame: sicherstellen dass das DOM gemalt wurde
+          requestAnimationFrame(() => {
+            cropperInstance = new Cropper(editorImg, {
+              viewMode:         1,       // Crop-Box bleibt im Bild
+              autoCropArea:     0.9,     // 90 % des Bildes vorauswählen
+              responsive:       true,
+              checkCrossOrigin: false,
+            });
+          });
+        };
+        editorImg.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function closeImageEditor() {
+    editorModal.classList.add('hidden');
+    if (cropperInstance) { cropperInstance.destroy(); cropperInstance = null; }
+    editorImg.src = '';
+  }
+
+  // ─── Aktions-Buttons ──────────────────────────────────────────────────────
+  document.getElementById('editor-rotate-left').addEventListener('click', () => {
+    cropperInstance?.rotate(-90);
+  });
+
+  document.getElementById('editor-rotate-right').addEventListener('click', () => {
+    cropperInstance?.rotate(90);
+  });
+
+  document.getElementById('editor-square').addEventListener('click', () => {
+    cropperInstance?.setAspectRatio(1);
+  });
+
+  // ─── Abbrechen ────────────────────────────────────────────────────────────
+  document.getElementById('editor-cancel').addEventListener('click', () => {
+    closeImageEditor();
+    editorResolve?.(null);   // null = Bild übersprungen
+    editorResolve = null;
+  });
+
+  // ─── Übernehmen: Canvas → JPEG Data-URL → pendingPhotos ──────────────────
+  document.getElementById('editor-accept').addEventListener('click', () => {
+    if (!cropperInstance) return;
+
+    const canvas = cropperInstance.getCroppedCanvas({
+      maxWidth:              1200,
+      maxHeight:             1200,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
+    });
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+    closeImageEditor();
+    editorResolve?.(dataUrl);
+    editorResolve = null;
+  });
+
+  // ════════════════════════════════════════════════════════════════════════════
 
   checkAuth();
 

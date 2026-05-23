@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 
@@ -455,6 +456,26 @@
             <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
             <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Aktivitäts-Diagramm -->
+      <div class="px-4 pt-3 pb-3 flex-shrink-0 border-b border-orange-100">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
+          <div class="flex bg-orange-50 rounded-lg p-0.5 gap-0.5">
+            <button id="chart-mode-month"
+              class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors">
+              Monate
+            </button>
+            <button id="chart-mode-year"
+              class="text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors">
+              Jahre
+            </button>
+          </div>
+        </div>
+        <div style="height:140px; position:relative;">
+          <canvas id="stats-chart"></canvas>
         </div>
       </div>
 
@@ -1410,7 +1431,102 @@
 
     const last = [...entries].filter(e => e.date).sort((a,b) => b.date.localeCompare(a.date))[0];
     document.getElementById('dash-last').textContent = last ? fmtDate(last.date) : '–';
+
+    renderChart();
   }
+
+  // ─── Aktivitäts-Diagramm (Chart.js) ──────────────────────────────────────
+  let chartInstance = null;
+  let chartMode     = 'month';
+
+  function renderChart() {
+    const canvas = document.getElementById('stats-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    let labels, data;
+
+    if (chartMode === 'month') {
+      const counts = new Array(12).fill(0);
+      allEntries.forEach(e => { if (e.date) counts[new Date(e.date).getMonth()]++; });
+      labels = MONTHS;
+      data   = counts;
+    } else {
+      const yearMap = {};
+      allEntries.forEach(e => {
+        if (e.date) { const y = String(new Date(e.date).getFullYear()); yearMap[y] = (yearMap[y] || 0) + 1; }
+      });
+      const years = Object.keys(yearMap).sort();
+      labels = years;
+      data   = years.map(y => yearMap[y]);
+    }
+
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+    chartInstance = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: 'rgba(249,115,22,0.75)',
+          hoverBackgroundColor: 'rgba(234,88,12,0.9)',
+          borderRadius: 5,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(28,25,23,0.88)',
+            titleFont: { size: 11 },
+            bodyFont: { size: 11 },
+            callbacks: {
+              label: ctx => ` ${ctx.parsed.y} Eintrag${ctx.parsed.y !== 1 ? 'e' : ''}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { size: 9 }, color: '#a8a29e', maxRotation: 0 },
+          },
+          y: {
+            beginAtZero: true,
+            border: { display: false },
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: {
+              font: { size: 9 }, color: '#a8a29e',
+              precision: 0, stepSize: 1,
+              callback: v => Number.isInteger(v) ? v : '',
+            },
+          },
+        },
+      },
+    });
+  }
+
+  document.getElementById('chart-mode-month').addEventListener('click', () => {
+    chartMode = 'month';
+    document.getElementById('chart-mode-month').className =
+      'text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors';
+    document.getElementById('chart-mode-year').className =
+      'text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors';
+    renderChart();
+  });
+
+  document.getElementById('chart-mode-year').addEventListener('click', () => {
+    chartMode = 'year';
+    document.getElementById('chart-mode-year').className =
+      'text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors';
+    document.getElementById('chart-mode-month').className =
+      'text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors';
+    renderChart();
+  });
 
   // ─── Profil ───────────────────────────────────────────────────────────────
   let profile = JSON.parse(localStorage.getItem('reise_profile') || '{"name":"Reisender"}');

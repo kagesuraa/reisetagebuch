@@ -67,6 +67,36 @@
     .gal-item { break-inside: avoid; margin-bottom: 8px; }
     .gal-item img { transition: transform .4s ease; }
     .gal-item:hover img { transform: scale(1.03); }
+
+    /* ── Homepage ─────────────────────────────────────────────────────────── */
+    #homepage { transition: opacity .8s ease; }
+
+    .hero-slide {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      opacity: 0; transition: opacity 1.8s ease;
+    }
+    .hero-slide.active { opacity: 1; }
+
+    @keyframes float-up {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero-text > * { animation: float-up .9s ease both; }
+    .hero-text > *:nth-child(1) { animation-delay: .1s; }
+    .hero-text > *:nth-child(2) { animation-delay: .3s; }
+    .hero-text > *:nth-child(3) { animation-delay: .5s; }
+    .hero-text > *:nth-child(4) { animation-delay: .7s; }
+
+    @keyframes scroll-hint {
+      0%, 100% { opacity: .4; transform: translateY(0); }
+      50%       { opacity: 1;  transform: translateY(6px); }
+    }
+    .scroll-hint { animation: scroll-hint 1.8s ease-in-out infinite; }
+
+    .memory-card { flex: 0 0 260px; }
+    .memory-card img { transition: transform .5s ease; }
+    .memory-card:hover img { transform: scale(1.06); }
     .gal-item .gal-overlay { transition: opacity .3s ease; opacity: 0; }
     .gal-item:hover .gal-overlay { opacity: 1; }
   </style>
@@ -75,6 +105,204 @@
 <body class="overflow-hidden bg-white">
 
   <div id="map"></div>
+
+  <!-- ════ HOMEPAGE ══════════════════════════════════════════════════════════ -->
+  <div id="homepage" class="fixed inset-0 z-[7000] overflow-y-auto bg-black">
+
+    <!-- ── 1. HERO ─────────────────────────────────────────────────────────── -->
+    <section class="relative h-screen flex items-center justify-center overflow-hidden">
+
+      <!-- Bild-Slider -->
+      <div id="hero-slider" class="absolute inset-0">
+        <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80')"></div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1920&q=80')"></div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80')"></div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1488085061851-07c3c6797be7?auto=format&fit=crop&w=1920&q=80')"></div>
+        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1530521954074-e0a103ceff92?auto=format&fit=crop&w=1920&q=80')"></div>
+      </div>
+
+      <!-- Gradient-Overlay -->
+      <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/70"></div>
+
+      <!-- Inhalt -->
+      <div class="relative z-10 text-center text-white px-6 max-w-4xl mx-auto hero-text">
+        <p class="text-orange-400 font-semibold tracking-[.25em] uppercase text-xs sm:text-sm mb-5">
+          Dein persönliches
+        </p>
+        <h1 class="text-5xl sm:text-7xl lg:text-8xl font-black leading-none tracking-tight mb-6">
+          Reise&shy;tagebuch
+        </h1>
+        <p class="text-white/70 text-base sm:text-xl max-w-xl mx-auto leading-relaxed mb-10">
+          Pins auf der Karte. Fotos. Notizen.<br class="hidden sm:block"/>
+          Alles was zählt — an einem Ort.
+        </p>
+        <button onclick="startJourney()"
+          class="group relative inline-flex items-center gap-3 bg-orange-500 hover:bg-orange-400
+                 text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-base sm:text-lg
+                 transition-all duration-300 hover:scale-105 shadow-2xl shadow-orange-500/40
+                 hover:shadow-orange-400/50">
+          <span>Start Your Journey</span>
+          <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Scroll-Hinweis -->
+      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-hint">
+        <svg class="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+
+      <!-- Slider-Dots -->
+      <div id="hero-dots" class="absolute bottom-8 right-8 flex gap-2"></div>
+    </section>
+
+    <!-- ── 2. QUOTE ────────────────────────────────────────────────────────── -->
+    <section class="bg-stone-950 text-white py-24 px-6">
+      <div class="max-w-3xl mx-auto text-center">
+        <svg class="w-10 h-10 text-orange-500/40 mx-auto mb-8" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+        </svg>
+        <blockquote class="text-2xl sm:text-4xl font-light italic text-white/90 leading-relaxed mb-8">
+          Die Welt ist ein Buch, und wer nicht reist,<br class="hidden sm:block"/> liest nur eine Seite.
+        </blockquote>
+        <p class="text-orange-400 font-semibold tracking-widest uppercase text-sm">
+          — Augustinus von Hippo
+        </p>
+      </div>
+    </section>
+
+    <!-- ── 3. FEATURES ────────────────────────────────────────────────────── -->
+    <section class="bg-white py-24 px-6">
+      <div class="max-w-5xl mx-auto">
+        <p class="text-orange-500 font-semibold text-center tracking-widest uppercase text-xs mb-3">Was dich erwartet</p>
+        <h2 class="text-3xl sm:text-5xl font-black text-center text-stone-900 mb-4 leading-tight">
+          Alles für deine Abenteuer
+        </h2>
+        <p class="text-stone-400 text-center mb-16 max-w-lg mx-auto">
+          Einfach. Schön. Dein eigenes digitales Reisetagebuch.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+
+          <div class="group rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+            <div class="relative overflow-hidden h-52">
+              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Karte"/>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
+              <div class="absolute bottom-4 left-4">
+                <span class="text-2xl">🗺️</span>
+                <p class="text-white font-bold mt-1">Interaktive Karte</p>
+              </div>
+            </div>
+            <div class="p-5 bg-orange-50">
+              <p class="text-stone-500 text-sm leading-relaxed">Markiere jeden Ort, den du besucht hast. Fliege zu deinen Erinnerungen mit einem Klick.</p>
+            </div>
+          </div>
+
+          <div class="group rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+            <div class="relative overflow-hidden h-52">
+              <img src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?auto=format&fit=crop&w=800&q=80"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Fotos"/>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
+              <div class="absolute bottom-4 left-4">
+                <span class="text-2xl">📸</span>
+                <p class="text-white font-bold mt-1">Foto-Galerie</p>
+              </div>
+            </div>
+            <div class="p-5 bg-orange-50">
+              <p class="text-stone-500 text-sm leading-relaxed">Lade mehrere Fotos pro Eintrag hoch. Blättere durch deine Bilder in der eleganten Lightbox.</p>
+            </div>
+          </div>
+
+          <div class="group rounded-3xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+            <div class="relative overflow-hidden h-52">
+              <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Route"/>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent"></div>
+              <div class="absolute bottom-4 left-4">
+                <span class="text-2xl">✈️</span>
+                <p class="text-white font-bold mt-1">Reise-Route</p>
+              </div>
+            </div>
+            <div class="p-5 bg-orange-50">
+              <p class="text-stone-500 text-sm leading-relaxed">Verbinde deine Orte zu einer animierten Route auf der Karte — chronologisch sortiert.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 4. MEMORIES CAROUSEL ───────────────────────────────────────────── -->
+    <section class="bg-stone-950 py-24 px-6 overflow-hidden">
+      <p class="text-orange-500 font-semibold text-center tracking-widest uppercase text-xs mb-3">Erinnerungen</p>
+      <h2 class="text-3xl sm:text-4xl font-black text-white text-center mb-12">
+        Jede Reise. Unvergesslich.
+      </h2>
+      <div class="flex gap-5 overflow-x-auto pb-4 px-4 snap-x snap-mandatory scroll-smooth"
+           style="scrollbar-width:none;-ms-overflow-style:none;">
+        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
+          <img src="https://images.unsplash.com/photo-1503917988258-f87a78e3c995?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Paris"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
+            <p class="text-white font-bold">Paris, Frankreich</p>
+            <p class="text-white/60 text-xs">📅 Sommer 2024</p>
+          </div>
+        </div>
+        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
+          <img src="https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Tokyo"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
+            <p class="text-white font-bold">Tokyo, Japan</p>
+            <p class="text-white/60 text-xs">📅 Frühling 2024</p>
+          </div>
+        </div>
+        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
+          <img src="https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Santorini"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
+            <p class="text-white font-bold">Santorini, Griechenland</p>
+            <p class="text-white/60 text-xs">📅 Herbst 2023</p>
+          </div>
+        </div>
+        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
+          <img src="https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="Bangkok"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
+            <p class="text-white font-bold">Bangkok, Thailand</p>
+            <p class="text-white/60 text-xs">📅 Winter 2023</p>
+          </div>
+        </div>
+        <div class="memory-card snap-start rounded-2xl overflow-hidden flex-shrink-0 relative">
+          <img src="https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?auto=format&fit=crop&w=520&h=340&q=80" class="w-[260px] h-[200px] object-cover" alt="New York"/>
+          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex flex-col justify-end p-4">
+            <p class="text-white font-bold">New York, USA</p>
+            <p class="text-white/60 text-xs">📅 Sommer 2023</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 5. FINAL CTA ───────────────────────────────────────────────────── -->
+    <section class="bg-gradient-to-br from-orange-500 to-amber-400 py-28 px-6 text-center">
+      <p class="text-orange-100 font-semibold tracking-widest uppercase text-xs mb-5">Bereit?</p>
+      <h2 class="text-4xl sm:text-6xl font-black text-white leading-tight mb-6">
+        Starte dein<br/>Abenteuer
+      </h2>
+      <p class="text-orange-100 text-lg mb-12 max-w-md mx-auto">
+        Erstelle dein kostenloses Konto und halte jede Reise für immer fest.
+      </p>
+      <button onclick="startJourney()"
+        class="group inline-flex items-center gap-3 bg-white text-orange-500 font-black
+               px-10 py-5 rounded-2xl text-lg hover:bg-orange-50 transition-all
+               hover:scale-105 shadow-2xl">
+        <span>Start Your Journey</span>
+        <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+        </svg>
+      </button>
+    </section>
+
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- ════ AUTH OVERLAY ═══════════════════════════════════════════════════════ -->
   <div id="auth-overlay"
@@ -2016,14 +2244,53 @@
     setAuthMode('login');
   }
 
-  // Session beim Start prüfen
+  // ─── Homepage Slider ──────────────────────────────────────────────────────
+  const heroSlides = document.querySelectorAll('.hero-slide');
+  let   slideIdx   = 0;
+
+  function buildDots() {
+    const dots = document.getElementById('hero-dots');
+    heroSlides.forEach((_, i) => {
+      const d = document.createElement('button');
+      d.className = `w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === 0 ? 'bg-white w-4' : 'bg-white/40'}`;
+      d.addEventListener('click', () => goSlide(i));
+      dots.appendChild(d);
+    });
+  }
+
+  function goSlide(n) {
+    heroSlides[slideIdx].classList.remove('active');
+    document.querySelectorAll('#hero-dots button')[slideIdx].className =
+      'w-1.5 h-1.5 rounded-full transition-all duration-300 bg-white/40';
+    slideIdx = (n + heroSlides.length) % heroSlides.length;
+    heroSlides[slideIdx].classList.add('active');
+    document.querySelectorAll('#hero-dots button')[slideIdx].className =
+      'w-1.5 h-1.5 rounded-full transition-all duration-300 bg-white w-4';
+  }
+
+  buildDots();
+  setInterval(() => goSlide(slideIdx + 1), 5000);
+
+  // ─── Homepage → Auth-Overlay ──────────────────────────────────────────────
+  function startJourney() {
+    const hp = document.getElementById('homepage');
+    hp.style.opacity = '0';
+    setTimeout(() => {
+      hp.classList.add('hidden');
+      document.getElementById('auth-overlay').classList.remove('hidden');
+    }, 800);
+  }
+
+  // ─── Session beim Start prüfen ────────────────────────────────────────────
   async function checkAuth() {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
       currentUser = session.user;
+      // Direkt zur App — Homepage und Auth überspringen
+      document.getElementById('homepage').classList.add('hidden');
       onAuthSuccess();
     }
-    // Sonst bleibt das Auth-Overlay sichtbar
+    // Sonst: Homepage bleibt sichtbar, User klickt "Start Your Journey"
   }
 
   // ══════════════════════════════════════════════════════════════════════════

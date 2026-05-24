@@ -304,6 +304,10 @@
       { background:rgba(30,41,59,.92) !important; border-color:var(--dk-brd) !important; color:var(--dk-txt) !important; }
     html.dark #btn-route, html.dark #hint-chip
       { background:rgba(30,41,59,.95) !important; color:var(--dk-txt) !important; }
+    html.dark .leaflet-bar a
+      { background:rgba(30,41,59,.92) !important; border-color:var(--dk-brd) !important; color:var(--dk-txt) !important; }
+    html.dark .leaflet-bar a:hover
+      { background:rgba(30,41,59,1) !important; }
     html.dark #style-dropdown
       { background:var(--dk-card) !important; border-color:var(--dk-brd) !important; }
     html.dark #style-dropdown button { color:var(--dk-txt) !important; }
@@ -1614,19 +1618,17 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
+  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 4, updateWhenZooming: false };
   const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                     opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
-                             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
+                     opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
   const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };
 
   const tileDefs = {
     standard: TILE_STD,
     dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
-              attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
+      opts: { ...TILE_BASE, attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
     satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      opts: { maxZoom: 19, noWrap: true, bounds: worldBounds,
-              attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
+      opts: { ...TILE_BASE, attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
   };
 
   let activeStyle = 'standard';

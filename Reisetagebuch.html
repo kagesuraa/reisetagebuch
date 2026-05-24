@@ -3126,7 +3126,7 @@
     document.getElementById('auth-name-field').classList.toggle('hidden', !isReg);
     document.getElementById('auth-pw-field').classList.toggle('hidden', isForgot || isReset);
     document.getElementById('auth-newpw-field').classList.toggle('hidden', !isReset);
-    document.getElementById('turnstile-widget').classList.toggle('hidden', isForgot || isReset);
+    document.getElementById('turnstile-widget').classList.toggle('hidden', isReset);
     document.getElementById('auth-info').classList.toggle('hidden', isForgot || isReset);
 
     if (isForgot) {
@@ -3194,9 +3194,15 @@
     if (authMode === 'forgot') {
       const email = authEmail.value.trim();
       if (!email) { showAuthError('Bitte E-Mail eingeben.'); return; }
+      let captchaToken;
+      if (TURNSTILE_SITE_KEY && window.turnstile) {
+        captchaToken = window.turnstile.getResponse(turnstileWidgetId) || '';
+        if (!captchaToken) { showAuthError('Bitte das Captcha bestätigen.'); return; }
+      }
       setAuthLoading(true);
       const { error } = await sb.auth.resetPasswordForEmail(email, {
         redirectTo: location.href.split('#')[0],
+        captchaToken,
       });
       setAuthLoading(false);
       if (error) { showAuthError('Fehler: ' + error.message); return; }

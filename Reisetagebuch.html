@@ -487,14 +487,20 @@
 
       <!-- E-Mail -->
       <div>
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">E-Mail</label>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
+          E-Mail
+          <span class="relative inline-block ml-1 group align-middle">
+            <span class="cursor-pointer text-stone-400 hover:text-orange-400 transition">ℹ️</span>
+            <span class="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56
+                         bg-stone-800 text-white text-xs rounded-xl px-3 py-2 shadow-lg
+                         opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 leading-relaxed">
+              💡 <strong>Merke:</strong> Nutze eine echte E-Mail — sie ist dein einziger Weg zurück, falls du dein Passwort vergisst.
+            </span>
+          </span>
+        </label>
         <input id="auth-email" type="email" autocomplete="email" placeholder="name@example.com"
           class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
                  focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
-        <p class="mt-1.5 text-xs text-stone-400 flex items-start gap-1">
-          <span>💡</span>
-          <span><strong>Merke:</strong> Nutze eine echte E-Mail — sie ist dein einziger Weg zurück, falls du dein Passwort vergisst.</span>
-        </p>
       </div>
 
       <!-- Passwort -->

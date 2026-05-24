@@ -7,14 +7,14 @@
 
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src  'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+    script-src  'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://challenges.cloudflare.com;
     style-src   'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
     font-src    'self' https://fonts.gstatic.com;
     img-src     'self' data: blob: https:;
     media-src   'self' blob: https:;
     connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://nominatim.openstreetmap.org https://api.open-meteo.com https://api.anthropic.com wss://*.supabase.co;
     worker-src  'self';
-    frame-src   'none';
+    frame-src   https://challenges.cloudflare.com;
     object-src  'none';
   " />
   <meta name="theme-color" content="#f97316" />
@@ -31,6 +31,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -468,6 +469,9 @@
           class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
                  focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
       </div>
+
+      <!-- Captcha (Cloudflare Turnstile — wird per JS gerendert wenn TURNSTILE_SITE_KEY gesetzt) -->
+      <div id="turnstile-widget" class="flex justify-center min-h-[65px]"></div>
 
       <!-- Submit -->
       <button id="auth-submit"
@@ -1355,9 +1359,12 @@
   // ══════════════════════════════════════════════════════════════════════════
   //  Supabase-Konfiguration
   // ══════════════════════════════════════════════════════════════════════════
-  const SUPABASE_URL = 'https://zjykhnebeyqmonhgvlja.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqeWtobmViZXlxbW9uaGd2bGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzQ2NDEsImV4cCI6MjA5NTA1MDY0MX0.Ou7bbpYeiHz7G9s4iJEBW9syAapw23EsgMcYd14iw1k';
-  const TABLE        = 'reise_eintraege';
+  const SUPABASE_URL       = 'https://zjykhnebeyqmonhgvlja.supabase.co';
+  const SUPABASE_KEY       = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpqeWtobmViZXlxbW9uaGd2bGphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NzQ2NDEsImV4cCI6MjA5NTA1MDY0MX0.Ou7bbpYeiHz7G9s4iJEBW9syAapw23EsgMcYd14iw1k';
+  const TABLE              = 'reise_eintraege';
+  // Cloudflare Turnstile — Sitekey eintragen nach: cloudflare.com/products/turnstile → Site erstellen
+  // Dann in Supabase: Authentication → Settings → Enable Captcha → Turnstile → Secret eingeben
+  const TURNSTILE_SITE_KEY = '';
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   // ══════════════════════════════════════════════════════════════════════════
@@ -1630,15 +1637,12 @@
 
   // ─── Supabase-Zeile → JS-Objekt ───────────────────────────────────────────
   function parsePhotos(row) {
-    // Priorität: image_url (neues Format) → photo_url → photo_base64
-    const raw = row.image_url || row.photo_url || null;
-    if (raw) {
-      if (raw.trimStart().startsWith('[')) {
-        try { return JSON.parse(raw); } catch { /* fall through */ }
-      }
-      return [raw];
+    const raw = row.image_url || null;
+    if (!raw) return [];
+    if (raw.trimStart().startsWith('[')) {
+      try { return JSON.parse(raw); } catch { /* fall through */ }
     }
-    return row.photo_base64 ? [row.photo_base64] : [];
+    return [raw];
   }
 
   function rowToEntry(row) {
@@ -1664,9 +1668,48 @@
     return /\.(mp4|webm|mov|avi|mkv|ogv)(\?|$)/i.test(url || '');
   }
 
+  // ─── Signed-URL-Cache für private Storage-Bucket ─────────────────────────
+  const signedUrlCache = new Map(); // path → { signed, expiresAt }
+
+  function storagePathFromSrc(src) {
+    if (!src || src.startsWith('data:')) return null;
+    // Vollständige public/signed URL → Pfad extrahieren
+    const m = String(src).match(/\/object\/(?:public|sign)\/trip-images\/([^?]+)/);
+    if (m) return decodeURIComponent(m[1]);
+    // Bare path (neues Format: uid/dateiname)
+    if (!src.startsWith('http')) return src;
+    return null;
+  }
+
+  async function getSignedUrl(src) {
+    if (!src || src.startsWith('data:')) return src;
+    const path = storagePathFromSrc(src);
+    if (!path) return src;
+    const cached = signedUrlCache.get(path);
+    if (cached && Date.now() < cached.expiresAt) return cached.signed;
+    const { data } = await sb.storage.from('trip-images').createSignedUrl(path, 3600);
+    if (data?.signedUrl) {
+      signedUrlCache.set(path, { signed: data.signedUrl, expiresAt: Date.now() + 55 * 60 * 1000 });
+      return data.signedUrl;
+    }
+    return src;
+  }
+
+  async function preSignEntries(entries) {
+    const urls = [...new Set((entries || []).flatMap(e => e.photos || []).filter(Boolean))];
+    await Promise.all(urls.map(u => getSignedUrl(u).catch(() => {})));
+  }
+
   function toDisplayUrl(src, width = 400) {
     if (!src) return null;
-    if (src.startsWith('data:') || !src.includes('supabase') || isVideoUrl(src)) return src;
+    if (src.startsWith('data:')) return src;
+    const path = storagePathFromSrc(src);
+    if (path) {
+      const cached = signedUrlCache.get(path);
+      if (cached && Date.now() < cached.expiresAt) return cached.signed;
+      return src; // Fallback bis preSign abgeschlossen
+    }
+    if (isVideoUrl(src)) return src;
     return `${src}?width=${width}&resize=contain`;
   }
 
@@ -1683,23 +1726,23 @@
   }
 
   async function uploadPhoto(base64DataUrl) {
-    const blob     = dataUrlToBlob(base64DataUrl);
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error } = await sb.storage.from('trip-images').upload(fileName, blob, {
+    const blob = dataUrlToBlob(base64DataUrl);
+    const path = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+    const { error } = await sb.storage.from('trip-images').upload(path, blob, {
       contentType: 'image/jpeg', upsert: false,
     });
     if (error) throw error;
-    return sb.storage.from('trip-images').getPublicUrl(fileName).data.publicUrl;
+    return path; // Pfad speichern, nicht Public-URL
   }
 
   async function uploadVideo(blob) {
-    const ext      = blob.type.includes('mp4') ? 'mp4' : 'webm';
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await sb.storage.from('trip-images').upload(fileName, blob, {
+    const ext  = blob.type.includes('mp4') ? 'mp4' : 'webm';
+    const path = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await sb.storage.from('trip-images').upload(path, blob, {
       contentType: blob.type || 'video/mp4', upsert: false,
     });
     if (error) throw error;
-    return sb.storage.from('trip-images').getPublicUrl(fileName).data.publicUrl;
+    return path;
   }
 
   // ─── Datum formatieren ────────────────────────────────────────────────────
@@ -1711,9 +1754,10 @@
 
   // ─── XSS-Schutz ───────────────────────────────────────────────────────────
   function esc(str) {
-    return String(str || '')
+    return String(str ?? '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;').replace(/`/g,'&#96;');
   }
 
   // H-2: Block dangerous URL schemes in src/href attributes built via innerHTML
@@ -2631,6 +2675,7 @@
       const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,created_at').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
+      await preSignEntries([updated]);
       const idxA = entries.findIndex(e => e.id === editingId);
       const idxB = allEntries.findIndex(e => e.id === editingId);
       if (idxA >= 0) entries[idxA] = updated;
@@ -2651,6 +2696,7 @@
       const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,created_at').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
+      await preSignEntries([entry]);
       entries.push(entry);
       allEntries.push(entry);
       placeMarker(entry);
@@ -2786,7 +2832,7 @@
 
     let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,created_at').order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
-    const txt    = rawTxt.replace(/[%_\\]/g, c => `\\${c}`); // escape wildcards
+    const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
     if (txt)  q = q.or(`location_name.ilike.%${txt}%,notes.ilike.%${txt}%`);
     if (year) q = q.like('date', `${year}-%`);
@@ -2797,6 +2843,7 @@
     // Alle Marker entfernen und neu zeichnen
     Object.keys(markerMap).forEach(id => { clusterGroup.removeLayer(markerMap[id]); delete markerMap[id]; });
     entries = data.map(rowToEntry);
+    await preSignEntries(entries);
     entries.forEach(placeMarker);
     renderList();
   }
@@ -3073,16 +3120,23 @@
     if (!email || !password) { showAuthError('Bitte E-Mail und Passwort eingeben.'); return; }
     if (password.length < 8) { showAuthError('Passwort muss mindestens 8 Zeichen haben.'); return; }
 
+    // Captcha-Token prüfen (nur wenn Turnstile konfiguriert)
+    let captchaToken;
+    if (TURNSTILE_SITE_KEY && window.turnstile) {
+      captchaToken = window.turnstile.getResponse(turnstileWidgetId) || '';
+      if (!captchaToken) { showAuthError('Bitte das Captcha bestätigen.'); return; }
+    }
+
     setAuthLoading(true);
     authError.classList.add('hidden');
 
     let result;
     if (authMode === 'login') {
-      result = await sb.auth.signInWithPassword({ email, password });
+      result = await sb.auth.signInWithPassword({ email, password, options: { captchaToken } });
     } else {
       result = await sb.auth.signUp({
         email, password,
-        options: { data: { name: name || email.split('@')[0] } }
+        options: { data: { name: name || email.split('@')[0] }, captchaToken }
       });
     }
 
@@ -3106,6 +3160,8 @@
       else if (msg.includes('email rate limit') || msg.includes('rate limit') || msg.includes('over_email_send_rate_limit'))
         showAuthError('Zu viele Versuche. Bitte warte einige Minuten.');
       else showAuthError('Anmeldung fehlgeschlagen. Bitte erneut versuchen.');
+      if (TURNSTILE_SITE_KEY && window.turnstile && turnstileWidgetId !== null)
+        window.turnstile.reset(turnstileWidgetId);
       return;
     }
 
@@ -3123,11 +3179,23 @@
     onAuthSuccess();
   });
 
+  let turnstileWidgetId = null;
+  function renderTurnstile() {
+    if (!TURNSTILE_SITE_KEY || !window.turnstile) return;
+    const container = document.getElementById('turnstile-widget');
+    if (!container || turnstileWidgetId !== null) return;
+    turnstileWidgetId = window.turnstile.render(container, {
+      sitekey: TURNSTILE_SITE_KEY,
+      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+    });
+  }
+
   function showPanelAuth() {
     document.getElementById('panel-auth-section').classList.remove('hidden');
     document.getElementById('panel-main-section').classList.add('hidden');
     document.getElementById('panel-logo-row').classList.remove('hidden');
     document.getElementById('panel-profile-row').classList.add('hidden');
+    renderTurnstile();
   }
 
   function showPanelMain() {
@@ -3412,6 +3480,7 @@
     populateYearFilter(data);
     allEntries = data.map(rowToEntry);
     entries    = [...allEntries];
+    await preSignEntries(entries);
     entries.forEach(placeMarker);
     renderList();
     updateDashboard();

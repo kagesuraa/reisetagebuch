@@ -466,17 +466,12 @@
           <p class="font-bold text-sm leading-tight tracking-tight">Reisetagebuch</p>
           <p class="text-orange-100 text-xs mt-0.5">Melde dich an</p>
         </div>
-        <!-- Mobile: Dark + Lang Buttons im Panel -->
+        <!-- Mobile: Lang Button im Panel -->
         <div class="flex items-center gap-1 lg:hidden">
           <button onclick="toggleLang()"
             class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
                    flex items-center justify-center text-sm transition-colors">
             <span id="panel-lang-flag">🇩🇪</span>
-          </button>
-          <button onclick="toggleDarkMode()"
-            class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
-                   flex items-center justify-center text-sm transition-colors">
-            <span id="panel-dark-icon">🌙</span>
           </button>
         </div>
         <button id="left-panel-close"
@@ -506,16 +501,11 @@
           <p id="profile-subtitle" class="text-stone-400 text-xs mt-0.5 truncate">Weltenbummler</p>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
-          <!-- Mobile: Dark + Lang -->
+          <!-- Mobile: Lang -->
           <button onclick="toggleLang()"
             class="lg:hidden w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
                    flex items-center justify-center text-sm transition-colors">
             <span id="panel-lang-flag2">🇩🇪</span>
-          </button>
-          <button onclick="toggleDarkMode()"
-            class="lg:hidden w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
-                   flex items-center justify-center text-sm transition-colors">
-            <span id="panel-dark-icon2">🌙</span>
           </button>
           <button onclick="logout()" title="Abmelden"
             class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
@@ -856,15 +846,9 @@
     <span id="lang-code">DE</span>
   </button>
 
-  <!-- Dark Mode Toggle -->
-  <button id="btn-darkmode" onclick="toggleDarkMode()"
-    class="fixed top-[14.5rem] right-4 z-[1000] h-10 px-3.5
-           bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-orange-200
-           text-xs font-semibold text-stone-600 hover:bg-white transition-colors
-           flex items-center gap-1.5">
-    <span id="dark-icon">🌙</span>
-    <span id="dark-label">Dark</span>
-  </button>
+  <!-- Dark Mode Toggle — entfernt; wird über Map-Style gesteuert -->
+  <span id="dark-icon" class="hidden">🌙</span>
+  <span id="dark-label" class="hidden">Dark</span>
 
   <!-- Style-Switcher (oben rechts) -->
   <div class="fixed top-4 right-4 z-[1000]">
@@ -1663,10 +1647,14 @@
     activeStyle = name;
     document.querySelectorAll('.style-opt').forEach(b => {
       const on = b.dataset.style === name;
-      b.classList.toggle('bg-orange-50',      on);
-      b.classList.toggle('font-semibold',    on);
-      b.classList.toggle('text-orange-600',   on);
+      b.classList.toggle('bg-orange-50',    on);
+      b.classList.toggle('font-semibold',   on);
+      b.classList.toggle('text-orange-600', on);
     });
+    // Map Dark Mode → UI Dark Mode synchronisieren
+    const wantDark = name === 'dark';
+    const isDark   = document.documentElement.classList.contains('dark');
+    if (wantDark !== isDark) toggleDarkMode();
     closeStyleDrop();
   }
 

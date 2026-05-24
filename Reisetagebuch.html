@@ -3197,7 +3197,12 @@
       setAuthLoading(false);
       if (error) { showAuthError('Fehler: ' + error.message); return; }
       showAuthSuccess('Passwort gespeichert! Du wirst angemeldet…');
-      setTimeout(() => location.hash = '', 1500);
+      history.replaceState(null, '', location.pathname);
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) {
+        currentUser = session.user;
+        setTimeout(() => onAuthSuccess(), 800);
+      }
       return;
     }
 

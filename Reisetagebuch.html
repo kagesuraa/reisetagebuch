@@ -1655,6 +1655,8 @@
     const wantDark = name === 'dark';
     const isDark   = document.documentElement.classList.contains('dark');
     if (wantDark !== isDark) toggleDarkMode();
+    // In Account speichern (falls eingeloggt)
+    if (currentUser) sb.auth.updateUser({ data: { map_style: name } }).catch(() => {});
     closeStyleDrop();
   }
 
@@ -3408,6 +3410,9 @@
       localStorage.setItem('reise_profile', JSON.stringify(profile));
     }
     applyProfile();
+    // Kartenstil (und Dark Mode) aus Account wiederherstellen
+    const savedStyle = currentUser.user_metadata?.map_style;
+    if (savedStyle && savedStyle !== activeStyle) setTileStyle(savedStyle);
     init();
   }
 
@@ -3502,6 +3507,9 @@
         localStorage.setItem('reise_profile', JSON.stringify(profile));
       }
       applyProfile();
+      // Kartenstil (und Dark Mode) aus Account wiederherstellen
+      const savedStyle = currentUser.user_metadata?.map_style;
+      if (savedStyle && savedStyle !== activeStyle) setTileStyle(savedStyle);
       init();
     }
     // Sonst: Homepage bleibt, Panel zeigt Auth-Form nach "Start Your Journey"

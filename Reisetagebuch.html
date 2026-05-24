@@ -647,12 +647,12 @@
   <!-- Kleiner sichtbarer Tab als Hinweis (Desktop) -->
   <button id="panel-tab"
     class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden lg:flex
-           flex-col items-center gap-1 py-3 px-1
-           bg-white rounded-r-xl shadow-md cursor-pointer
+           flex-col items-center gap-1.5 py-5 px-2.5
+           bg-white rounded-r-2xl shadow-md cursor-pointer
            hover:bg-orange-50 active:scale-95 transition-all duration-150">
-    <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
-    <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
-    <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
+    <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+    <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+    <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
   </button>
 
   <!-- Mobiler Panel-Toggle — ausgeblendet, Funktion jetzt in Bottom Nav -->
@@ -1583,12 +1583,10 @@
   function showPanel() {
     clearTimeout(hideTimer);
     leftPanel.classList.remove('-translate-x-full');
-    if (panelTab) panelTab.style.opacity = '0';
   }
 
   function hidePanel() {
     leftPanel.classList.add('-translate-x-full');
-    if (panelTab) panelTab.style.opacity = '1';
   }
 
   function scheduleHide() {

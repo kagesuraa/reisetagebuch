@@ -1402,6 +1402,17 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <script>
+  // Session in localStorage → Homepage sofort ausblenden (kein Flash beim Refresh)
+  try {
+    const _sk = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+    if (_sk) {
+      const _sd = JSON.parse(localStorage.getItem(_sk));
+      if (_sd?.access_token || _sd?.session?.access_token) {
+        document.getElementById('homepage').classList.add('hidden');
+      }
+    }
+  } catch {}
+
   // ══════════════════════════════════════════════════════════════════════════
   //  Supabase-Konfiguration
   // ══════════════════════════════════════════════════════════════════════════

@@ -163,6 +163,36 @@
 
       /* Swipe-Handle sichtbar */
       #sidebar-handle { display: flex; }
+
+      /* Panel-Backdrop */
+      #panel-backdrop { display: block; }
+    }
+
+    /* Tablet: breiteres Panel */
+    @media (min-width: 640px) and (max-width: 1023px) {
+      #left-panel { width: min(65vw, 380px) !important; }
+    }
+
+    /* Mobile: Panel nimmt 88vw, max 320px */
+    @media (max-width: 639px) {
+      #left-panel { width: min(88vw, 320px) !important; }
+      #panel-auth-section { padding-left: 1rem !important; padding-right: 1rem !important; }
+      #turnstile-widget iframe { max-width: 100% !important; }
+    }
+
+    /* Panel Backdrop */
+    #panel-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 4499;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+    #panel-backdrop.active {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     /* Swipe-Handle: Standardmäßig versteckt */
@@ -379,7 +409,9 @@
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
-  <!-- auth-overlay removed — the left panel's panel-auth-section is the real form -->
+  <!-- Panel Backdrop (Mobile/Tablet) -->
+  <div id="panel-backdrop"></div>
+
   <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
   <div id="left-panel"
     class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-orange-50 border-r border-orange-200 -translate-x-full overflow-visible"
@@ -1614,13 +1646,17 @@
   const panelTab     = document.getElementById('panel-tab');
   let   hideTimer    = null;
 
+  const panelBackdrop = document.getElementById('panel-backdrop');
+
   function showPanel() {
     clearTimeout(hideTimer);
     leftPanel.classList.remove('-translate-x-full');
+    panelBackdrop?.classList.add('active');
   }
 
   function hidePanel() {
     leftPanel.classList.add('-translate-x-full');
+    panelBackdrop?.classList.remove('active');
   }
 
   function scheduleHide() {
@@ -1634,10 +1670,14 @@
     leftPanel.classList.contains('-translate-x-full') ? showPanel() : hidePanel();
   });
 
-  // Außerhalb klicken → Panel schließen
+  // Backdrop klicken → Panel schließen
+  panelBackdrop?.addEventListener('click', hidePanel);
+
+  // Außerhalb klicken → Panel schließen (Desktop)
   document.addEventListener('click', e => {
     if (!e.target.closest('#left-panel') &&
         !e.target.closest('#panel-tab') &&
+        !e.target.closest('#panel-backdrop') &&
         !leftPanel.classList.contains('-translate-x-full')) {
       hidePanel();
     }

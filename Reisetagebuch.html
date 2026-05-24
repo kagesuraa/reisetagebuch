@@ -382,8 +382,19 @@
   <!-- auth-overlay removed — the left panel's panel-auth-section is the real form -->
   <!-- ════ LINKES PANEL ══════════════════════════════════════════════════════ -->
   <div id="left-panel"
-    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-orange-50 border-r border-orange-200 -translate-x-full"
+    class="fixed left-0 top-0 h-dvh z-[4500] flex flex-col bg-orange-50 border-r border-orange-200 -translate-x-full overflow-visible"
     style="width:min(80vw,300px)">
+
+    <!-- Tab-Button am rechten Rand des Panels (bewegt sich mit) -->
+    <button id="panel-tab"
+      class="absolute -right-9 top-1/2 -translate-y-1/2 hidden lg:flex
+             flex-col items-center gap-1.5 py-5 px-2.5
+             bg-white rounded-r-2xl shadow-md cursor-pointer
+             hover:bg-orange-50 active:scale-95 transition-all duration-150">
+      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+    </button>
 
     <!-- ── GRADIENT HEADER ──────────────────────────────────────────────── -->
     <div class="bg-gradient-to-br from-orange-500 to-amber-400 px-5 py-4 flex-shrink-0">
@@ -645,15 +656,6 @@
     style="width:12px"></div>
 
   <!-- Kleiner sichtbarer Tab als Hinweis (Desktop) -->
-  <button id="panel-tab"
-    class="fixed left-0 top-1/2 -translate-y-1/2 z-[4502] hidden lg:flex
-           flex-col items-center gap-1.5 py-5 px-2.5
-           bg-white rounded-r-2xl shadow-md cursor-pointer
-           hover:bg-orange-50 active:scale-95 transition-all duration-150">
-    <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-    <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-    <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-  </button>
 
   <!-- Mobiler Panel-Toggle — ausgeblendet, Funktion jetzt in Bottom Nav -->
   <button id="left-panel-open"

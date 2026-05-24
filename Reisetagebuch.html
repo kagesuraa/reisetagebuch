@@ -3392,13 +3392,28 @@
 
   // ─── Session beim Start prüfen ────────────────────────────────────────────
   async function checkAuth() {
-    // Passwort-Reset-Link erkennen (#type=recovery in URL-Hash)
+    // Passwort-Reset-Link erkennen (#type=recovery oder #error in URL-Hash)
     const hash = new URLSearchParams(location.hash.slice(1));
+    if (hash.get('error')) {
+      const desc = hash.get('error_description') || 'Unbekannter Fehler';
+      document.getElementById('homepage').classList.add('hidden');
+      showPanel();
+      showPanelAuth();
+      setAuthMode('forgot');
+      showAuthError(
+        desc.includes('expired') || desc.includes('invalid')
+          ? 'Der Reset-Link ist abgelaufen. Bitte fordere einen neuen an.'
+          : 'Fehler: ' + desc.replace(/\+/g, ' ')
+      );
+      history.replaceState(null, '', location.pathname);
+      return;
+    }
     if (hash.get('type') === 'recovery') {
       document.getElementById('homepage').classList.add('hidden');
       showPanel();
       showPanelAuth();
       setAuthMode('reset');
+      history.replaceState(null, '', location.pathname);
       return;
     }
 

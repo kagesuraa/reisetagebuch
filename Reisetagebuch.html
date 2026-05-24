@@ -3678,8 +3678,13 @@
     sp('search-input', T.searchPh);
 
     // Lang toggle button
-    document.getElementById('lang-flag').textContent = lang === 'de' ? '🇩🇪' : '🇬🇧';
-    document.getElementById('lang-code').textContent = lang === 'de' ? 'DE'   : 'EN';
+    const flag = lang === 'de' ? '🇩🇪' : '🇬🇧';
+    document.getElementById('lang-flag').textContent = flag;
+    document.getElementById('lang-code').textContent = lang === 'de' ? 'DE' : 'EN';
+    const pf  = document.getElementById('panel-lang-flag');
+    const pf2 = document.getElementById('panel-lang-flag2');
+    if (pf)  pf.textContent  = flag;
+    if (pf2) pf2.textContent = flag;
 
     // Switch map tile language (only affects standard style)
     setMapLang(lang);
@@ -4400,8 +4405,13 @@
   // ══════════════════════════════════════════════════════════════════════════
   function toggleDarkMode() {
     const isDark = document.documentElement.classList.toggle('dark');
-    document.getElementById('dark-icon').textContent  = isDark ? '☀️' : '🌙';
+    const icon = isDark ? '☀️' : '🌙';
+    document.getElementById('dark-icon').textContent  = icon;
     document.getElementById('dark-label').textContent = isDark ? 'Hell' : 'Dark';
+    const pi = document.getElementById('panel-dark-icon');
+    const pi2 = document.getElementById('panel-dark-icon2');
+    if (pi)  pi.textContent  = icon;
+    if (pi2) pi2.textContent = icon;
     localStorage.setItem('reise_dark', isDark ? '1' : '0');
   }
   (function initDark() {

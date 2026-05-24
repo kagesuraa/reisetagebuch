@@ -53,6 +53,18 @@
 
     /* Leaflet-Zoom nach rechts unten verschieben */
     .leaflet-bottom.leaflet-right { bottom: 24px; right: 16px; }
+    /* Auf Mobil/Tablet: Zoom-Controls über Bottom Nav */
+    @media (max-width: 1023px) {
+      .leaflet-bottom.leaflet-right { bottom: 70px; }
+      .leaflet-bottom.leaflet-left  { bottom: 70px; }
+    }
+
+    /* Gallery Masonry: responsive Spalten */
+    .gallery-grid-masonry { column-gap: 8px; }
+    @media (max-width: 479px)  { .gallery-grid-masonry { columns: 2 120px; } }
+    @media (min-width: 480px) and (max-width: 767px) { .gallery-grid-masonry { columns: 2 150px; } }
+    @media (min-width: 768px) and (max-width: 1023px) { .gallery-grid-masonry { columns: 3 150px; } }
+    @media (min-width: 1024px) { .gallery-grid-masonry { columns: 3 120px; } }
 
     .leaflet-popup-content { margin: 12px 16px; }
 
@@ -725,34 +737,33 @@
     class="fixed inset-0 z-[3500] bg-gray-950 opacity-0 pointer-events-none flex flex-col">
 
     <!-- Header -->
-    <div class="flex items-center justify-between px-6 sm:px-10 py-5 flex-shrink-0
+    <div class="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-10 py-3 sm:py-5 flex-shrink-0
                 border-b border-white/8">
       <div>
-        <h2 class="text-white text-2xl font-bold tracking-tight">Galerie</h2>
-        <p class="text-white/35 text-xs mt-0.5" id="gallery-subtitle">Deine Erinnerungen</p>
+        <h2 class="text-white text-xl sm:text-2xl font-bold tracking-tight">Galerie</h2>
+        <p class="text-white/35 text-xs mt-0.5 hidden sm:block" id="gallery-subtitle">Deine Erinnerungen</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         <!-- Alle / Favoriten -->
         <div class="flex bg-white/10 rounded-2xl p-1 gap-1">
           <button id="gal-tab-all"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-white/15 transition-colors">
+            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-white/15 transition-colors">
             Alle
           </button>
           <button id="gal-tab-favs"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors">
-            ❤ Favoriten
+            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold text-white/50 hover:text-white transition-colors">
+            ❤ <span class="hidden sm:inline">Favoriten</span><span class="sm:hidden">Fav</span>
           </button>
         </div>
         <button id="gallery-close"
-          class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-xl
+          class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/25 text-white text-xl
                  flex items-center justify-center transition-colors">×</button>
       </div>
     </div>
 
     <!-- Masonry Grid -->
     <div id="gallery-grid"
-      class="flex-1 overflow-y-auto scroll-thin p-4 sm:p-6"
-      style="columns:3 120px;column-gap:8px">
+      class="flex-1 overflow-y-auto scroll-thin p-4 sm:p-6 gallery-grid-masonry">
     </div>
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -762,14 +773,14 @@
     class="fixed inset-0 z-[3500] bg-gray-50 opacity-0 pointer-events-none flex flex-col">
 
     <!-- Header -->
-    <div class="flex items-center justify-between px-6 sm:px-10 py-5 flex-shrink-0
+    <div class="flex items-center justify-between px-4 sm:px-10 py-3 sm:py-5 flex-shrink-0
                 bg-white border-b border-gray-100 shadow-sm">
       <div>
-        <h2 class="text-gray-900 text-2xl font-bold tracking-tight">📌 Pinnwand</h2>
-        <p class="text-gray-400 text-xs mt-0.5" id="pinnwand-subtitle">Deine Erinnerungen</p>
+        <h2 class="text-gray-900 text-xl sm:text-2xl font-bold tracking-tight">📌 Pinnwand</h2>
+        <p class="text-gray-400 text-xs mt-0.5 hidden sm:block" id="pinnwand-subtitle">Deine Erinnerungen</p>
       </div>
       <button id="pinnwand-close"
-        class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+        class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
                flex items-center justify-center transition-colors">×</button>
     </div>
 
@@ -1173,9 +1184,9 @@
       <div id="lb-photo-panel"
         class="sm:w-[45%] flex-shrink-0 bg-gray-900 hidden relative overflow-hidden">
         <img id="lb-img" alt=""
-          class="w-full h-56 sm:h-full object-cover transition-opacity duration-300" />
+          class="w-full h-48 sm:h-full object-cover transition-opacity duration-300" />
         <video id="lb-vid" controls playsinline
-          class="hidden w-full h-56 sm:h-full object-contain bg-black"></video>
+          class="hidden w-full h-48 sm:h-full object-contain bg-black"></video>
         <!-- Pfeil-Buttons (nur bei > 1 Bild) -->
         <button id="lb-prev"
           class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10

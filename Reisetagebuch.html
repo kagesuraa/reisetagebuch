@@ -3269,11 +3269,20 @@
       if (error) { showAuthError('Fehler: ' + error.message); return; }
       showAuthSuccess('Passwort gespeichert! Du wirst angemeldet…');
       history.replaceState(null, '', location.pathname);
-      const { data: { session } } = await sb.auth.getSession();
-      if (session?.user) {
-        currentUser = session.user;
-        setTimeout(() => onAuthSuccess(), 800);
-      }
+      // Retry bis Session propagiert (max 5s)
+      let attempts = 0;
+      const tryLogin = async () => {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.user) {
+          currentUser = session.user;
+          setTimeout(() => onAuthSuccess(), 500);
+        } else if (++attempts < 10) {
+          setTimeout(tryLogin, 500);
+        } else {
+          showAuthError('Anmeldung fehlgeschlagen – bitte manuell einloggen.');
+        }
+      };
+      setTimeout(tryLogin, 500);
       return;
     }
 
@@ -3641,7 +3650,10 @@
 
     // Gallery
     s('gal-tab-all',  T.galAll);
-    s('gal-tab-favs', T.galFavs);
+    // gal-tab-favs hat responsive Spans → innerHTML statt textContent
+    const favLabel = lang === 'de' ? 'Favoriten' : 'Favorites';
+    const favBtn = document.getElementById('gal-tab-favs');
+    if (favBtn) favBtn.innerHTML = `❤ <span class="hidden sm:inline">${favLabel}</span><span class="sm:hidden">Fav</span>`;
     s('gallery-subtitle', T.galSub);
 
     // Form sidebar
@@ -4402,10 +4414,6 @@
     const icon = isDark ? '☀️' : '🌙';
     document.getElementById('dark-icon').textContent  = icon;
     document.getElementById('dark-label').textContent = isDark ? 'Hell' : 'Dark';
-    const pi = document.getElementById('panel-dark-icon');
-    const pi2 = document.getElementById('panel-dark-icon2');
-    if (pi)  pi.textContent  = icon;
-    if (pi2) pi2.textContent = icon;
     localStorage.setItem('reise_dark', isDark ? '1' : '0');
   }
   (function initDark() {

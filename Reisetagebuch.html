@@ -160,6 +160,15 @@
       /* Floating Route-Button → Bottom Nav */
       #btn-route { display: none !important; }
 
+      /* DE + Dark Buttons auf Karte verstecken — zugänglich über Panel */
+      #lang-btn, #btn-darkmode { display: none !important; }
+
+      /* Style-Switcher kleiner + weiter nach oben */
+      #style-btn { width: 2.25rem !important; height: 2.25rem !important; }
+
+      /* Zoom-Buttons nicht überlappen lassen */
+      .leaflet-bottom.leaflet-right { bottom: 72px !important; right: 12px !important; }
+
       /* Sidebar als zentrierter Bottom-Sheet */
       #sidebar {
         top: auto !important;
@@ -178,6 +187,13 @@
 
       /* Panel-Backdrop */
       #panel-backdrop { display: block; }
+
+      /* Panel-Tab größer + besser sichtbar */
+      #panel-tab {
+        padding: 1.25rem 0.875rem !important;
+        border-radius: 0 1rem 1rem 0 !important;
+        box-shadow: 2px 0 12px rgba(0,0,0,.15) !important;
+      }
     }
 
     /* Tablet: breiteres Panel */
@@ -450,6 +466,19 @@
           <p class="font-bold text-sm leading-tight tracking-tight">Reisetagebuch</p>
           <p class="text-orange-100 text-xs mt-0.5">Melde dich an</p>
         </div>
+        <!-- Mobile: Dark + Lang Buttons im Panel -->
+        <div class="flex items-center gap-1 lg:hidden">
+          <button onclick="toggleLang()"
+            class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
+                   flex items-center justify-center text-sm transition-colors">
+            <span id="panel-lang-flag">🇩🇪</span>
+          </button>
+          <button onclick="toggleDarkMode()"
+            class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
+                   flex items-center justify-center text-sm transition-colors">
+            <span id="panel-dark-icon">🌙</span>
+          </button>
+        </div>
         <button id="left-panel-close"
           class="lg:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
                  text-white flex items-center justify-center text-base transition-colors flex-shrink-0">×</button>
@@ -477,6 +506,17 @@
           <p id="profile-subtitle" class="text-stone-400 text-xs mt-0.5 truncate">Weltenbummler</p>
         </div>
         <div class="flex items-center gap-1.5 flex-shrink-0">
+          <!-- Mobile: Dark + Lang -->
+          <button onclick="toggleLang()"
+            class="lg:hidden w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
+                   flex items-center justify-center text-sm transition-colors">
+            <span id="panel-lang-flag2">🇩🇪</span>
+          </button>
+          <button onclick="toggleDarkMode()"
+            class="lg:hidden w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
+                   flex items-center justify-center text-sm transition-colors">
+            <span id="panel-dark-icon2">🌙</span>
+          </button>
           <button onclick="logout()" title="Abmelden"
             class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
                    flex items-center justify-center transition-colors">
@@ -609,14 +649,6 @@
                   d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
               Memories
-            </button>
-            <button onclick="exportPDF()"
-              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              PDF
             </button>
           </div>
         </div>

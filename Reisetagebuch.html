@@ -645,14 +645,15 @@
     style="width:12px"></div>
 
   <!-- Kleiner sichtbarer Tab als Hinweis (Desktop) -->
-  <div id="panel-tab"
+  <button id="panel-tab"
     class="fixed left-0 top-1/2 -translate-y-1/2 z-[4498] hidden lg:flex
            flex-col items-center gap-1 py-3 px-1
-           bg-white rounded-r-xl shadow-md cursor-pointer transition-opacity duration-300">
+           bg-white rounded-r-xl shadow-md cursor-pointer
+           hover:bg-orange-50 active:scale-95 transition-all duration-150">
     <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
     <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
     <div class="w-0.5 h-3 bg-orange-500 rounded-full"></div>
-  </div>
+  </button>
 
   <!-- Mobiler Panel-Toggle — ausgeblendet, Funktion jetzt in Bottom Nav -->
   <button id="left-panel-open"
@@ -1595,15 +1596,20 @@
     hideTimer = setTimeout(hidePanel, 4000);
   }
 
-  // Trigger-Strip und Tab zeigen Panel
-  [panelTrigger, panelTab].forEach(el => {
-    el?.addEventListener('mouseenter', showPanel);
+  // Tab-Button: Klick togglet Panel auf/zu
+  panelTab?.addEventListener('click', e => {
+    e.stopPropagation();
+    leftPanel.classList.contains('-translate-x-full') ? showPanel() : hidePanel();
   });
 
-  // Panel offenhalten solange Maus drauf ist
-  leftPanel.addEventListener('mouseenter', () => clearTimeout(hideTimer));
-  leftPanel.addEventListener('mouseleave', scheduleHide);
-  panelTrigger?.addEventListener('mouseleave', scheduleHide);
+  // Außerhalb klicken → Panel schließen
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#left-panel') &&
+        !e.target.closest('#panel-tab') &&
+        !leftPanel.classList.contains('-translate-x-full')) {
+      hidePanel();
+    }
+  });
 
   // ─── MinZoom dynamisch berechnen (kein grauer Rand beim Rauszoomen) ────────
   function updateMinZoom() {

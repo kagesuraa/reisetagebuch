@@ -31,7 +31,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -59,6 +59,7 @@
     .scroll-thin::-webkit-scrollbar { width: 4px; }
     .scroll-thin::-webkit-scrollbar-track { background: transparent; }
     .scroll-thin::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+    html.dark .scroll-thin::-webkit-scrollbar-thumb { background: #475569; }
 
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { animation: spin .7s linear infinite; }
@@ -134,6 +135,9 @@
     #mobile-nav {
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
+    #mobile-nav button { transition: transform .12s ease, background .15s ease; border-radius: .75rem; }
+    #mobile-nav button:active { transform: scale(.91); }
+    #mobile-nav button.nav-active { background: rgba(249,115,22,.12); }
     #mobile-nav button.nav-active svg { color: #f97316; }
     #mobile-nav button.nav-active span { color: #f97316; }
 
@@ -252,6 +256,24 @@
 
     /* ─ Toast ─ */
     html.dark #toast { background:#1e293b !important; color:var(--dk-txt) !important; border-color:var(--dk-brd) !important; }
+
+    /* ─ Dark Mobile Nav ─ */
+    html.dark #mobile-nav {
+      background: rgba(15,23,42,.96) !important;
+      border-color: var(--dk-brd) !important;
+    }
+    html.dark #mobile-nav button:not(.nav-active) svg,
+    html.dark #mobile-nav button:not(.nav-active) span { color: var(--dk-muted) !important; }
+    html.dark #mobile-nav button.nav-active { background: rgba(249,115,22,.18) !important; }
+    html.dark #mobile-nav .nav-cta-btn { background: #ea580c !important; }
+
+    /* ─ Toast slide-up ─ */
+    @keyframes toast-in  { from { opacity:0; transform:translateY(8px);  } to { opacity:1; transform:translateY(0); } }
+    @keyframes toast-out { from { opacity:1; transform:translateY(0);    } to { opacity:0; transform:translateY(-4px); } }
+
+    /* ─ Eintrags-Liste Eingangsanimation ─ */
+    @keyframes list-enter { from { opacity:0; transform:translateX(-8px); } to { opacity:1; transform:translateX(0); } }
+    .entry-appear { animation: list-enter .22s ease both; }
 
     /* ── PDF / Print ─────────────────────────────────────────────────────── */
     @media print {
@@ -1308,7 +1330,7 @@
     <button id="nav-map"
       onclick="mobileNavMap()"
       class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors relative">
-      <div class="absolute -top-4 w-14 h-14 bg-orange-500 rounded-2xl shadow-lg
+      <div class="nav-cta-btn absolute -top-4 w-14 h-14 bg-orange-500 rounded-2xl shadow-lg
                   flex items-center justify-center transition-colors hover:bg-orange-400">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
@@ -1775,12 +1797,14 @@
   function toast(msg, type = 'ok') {
     const bg = { ok: 'bg-emerald-600', err: 'bg-red-600', info: 'bg-orange-500' }[type];
     const el = document.createElement('div');
-    el.className = `${bg} text-white text-sm font-medium px-5 py-3 rounded-xl
-                    shadow-lg opacity-0 transition-opacity duration-300 pointer-events-auto`;
+    el.className = `${bg} text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg pointer-events-auto`;
+    el.style.cssText = 'animation: toast-in .28s ease both';
     el.textContent = msg;
     document.getElementById('toast-container').appendChild(el);
-    requestAnimationFrame(() => el.style.opacity = '1');
-    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 320); }, 3200);
+    setTimeout(() => {
+      el.style.animation = 'toast-out .25s ease forwards';
+      setTimeout(() => el.remove(), 260);
+    }, 3200);
   }
 
   // ─── Dashboard + Trip-Cards ───────────────────────────────────────────────
@@ -2353,9 +2377,10 @@
       return;
     }
 
-    list.innerHTML = entries.map(e => `
-      <div data-entry-id="${e.id}" class="flex items-center gap-2 rounded-lg px-3 py-2
-                  bg-white hover:bg-orange-100 transition-colors group">
+    list.innerHTML = entries.map((e, i) => `
+      <div data-entry-id="${e.id}" class="entry-appear flex items-center gap-2 rounded-lg px-3 py-2
+                  bg-white hover:bg-orange-100 transition-colors group"
+           style="animation-delay:${Math.min(i * 35, 350)}ms">
         ${hasPhoto(e)
           ? isVideoUrl(e.photos[0])
             ? `<div class="w-9 h-9 rounded-md bg-gray-800 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
@@ -3189,6 +3214,7 @@
       theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
     });
   }
+  window.onTurnstileLoad = function() { renderTurnstile(); };
 
   function showPanelAuth() {
     document.getElementById('panel-auth-section').classList.remove('hidden');

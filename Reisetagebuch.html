@@ -2886,8 +2886,14 @@
     setTimeout(() => {
       if (isVideoUrl(url)) {
         lbImg.classList.add('hidden');
-        lbVid.src = url;
         lbVid.classList.remove('hidden');
+        lbVid.src = ''; // alten Stream beenden
+        // Videos brauchen eine echte (signierte) URL — der Storage-Bucket ist
+        // privat, ein nackter Pfad würde 404en. getSignedUrl liest aus dem
+        // Cache oder signiert frisch.
+        getSignedUrl(url).then(signed => {
+          if (signed && lbPhotos[lbIdx] === url) lbVid.src = signed;
+        });
       } else {
         lbVid.classList.add('hidden');
         lbVid.pause?.();

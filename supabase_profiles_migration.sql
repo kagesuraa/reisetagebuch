@@ -11,15 +11,23 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email      text NOT NULL,
   username   text UNIQUE,
   avatar_url text,
+  color      text,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT profiles_email_lowercase CHECK (email = lower(email)),
   CONSTRAINT profiles_username_format CHECK (
     username IS NULL OR username ~ '^[a-zA-Z0-9_.-]{3,30}$'
+  ),
+  CONSTRAINT profiles_color_format CHECK (
+    color IS NULL OR color ~* '^#[0-9a-f]{6}$'
   )
 );
 
--- Falls Tabelle aus früherer Migration ohne avatar_url existiert
+-- Falls Tabelle aus früheren Migrationen ohne diese Spalten existiert
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url text;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS color      text;
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_color_format;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_color_format
+  CHECK (color IS NULL OR color ~* '^#[0-9a-f]{6}$');
 
 CREATE INDEX IF NOT EXISTS idx_profiles_email    ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username) WHERE username IS NOT NULL;

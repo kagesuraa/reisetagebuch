@@ -1892,10 +1892,10 @@
   const map = L.map('map', {
     zoomControl:          false,
     maxBounds:            worldBounds,
-    maxBoundsViscosity:   1.0,
-    minZoom:              1,
+    maxBoundsViscosity:   0.7,
+    minZoom:              2,        // Sicherheits-Floor; updateMinZoom kann höher gehen
     maxZoom:              19,
-    worldCopyJump:        false,
+    worldCopyJump:        true,     // Springt sauber über den Anti-Meridian
   }).setView([20, 10], 3);
 
   L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -1913,7 +1913,11 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
-  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 8, updateWhenZooming: true };
+  // noWrap+bounds entfernt: bei großen Viewports zeigte das blanke Streifen
+  // links/rechts, wenn die Welt schmaler als das Fenster ist. Stattdessen wickelt
+  // sich die Welt horizontal (Standard-Maps-Verhalten). Subdomains explizit auf
+  // a,b,c,d, damit Browser parallel über mehrere Carto-CDN-Hosts laden.
+  const TILE_BASE = { maxZoom: 19, keepBuffer: 8, updateWhenZooming: true, subdomains: 'abcd' };
   const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                      opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
   const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };

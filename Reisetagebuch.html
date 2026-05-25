@@ -12,7 +12,7 @@
     font-src    'self' https://fonts.gstatic.com;
     img-src     'self' data: blob: https:;
     media-src   'self' blob: https:;
-    connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://nominatim.openstreetmap.org https://api.open-meteo.com https://api.anthropic.com wss://*.supabase.co https://challenges.cloudflare.com;
+    connect-src 'self' https://*.supabase.co https://nominatim.openstreetmap.org https://api.open-meteo.com wss://*.supabase.co https://challenges.cloudflare.com;
     worker-src  'self';
     frame-src   https://challenges.cloudflare.com;
     object-src  'none';
@@ -1326,14 +1326,6 @@
                   d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4M12 3a4 4 0 014
                      4v4a4 4 0 01-8 0V7a4 4 0 014-4z"/>
               </svg>
-            </button>
-            <button id="btn-ai-format" type="button"
-              class="flex items-center gap-1.5 text-xs font-semibold text-orange-500
-                     hover:text-white hover:bg-orange-500 px-2.5 py-1 rounded-lg
-                     border border-orange-200 hover:border-transparent
-                     transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-              <span id="ai-fmt-icon">✨</span>
-              <span id="ai-fmt-lbl">KI-Formatierer</span>
             </button>
           </div>
         </div>
@@ -4908,128 +4900,8 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  //  KI-Formatierer (Google Gemini Flash – kostenlos, direkt im Browser)
+  //  KI-Formatierer — deaktiviert, wird vom Eigentümer später wieder eingebaut
   // ══════════════════════════════════════════════════════════════════════════
-  const GEMINI_KEY_LS   = 'reise_gemini_key';
-  const GEMINI_MODEL_LS = 'reise_gemini_model';
-
-  function getGeminiApiKey() {
-    // H-4: prefer sessionStorage (cleared when tab closes); fall back to localStorage for convenience
-    let key = sessionStorage.getItem(GEMINI_KEY_LS) || localStorage.getItem(GEMINI_KEY_LS);
-    if (!key) {
-      key = window.prompt(
-        'Google Gemini API-Key eingeben (kostenlos unter aistudio.google.com → "Get API key"):\n' +
-        'Wird nur für diese Browser-Sitzung gespeichert.'
-      );
-      if (key?.trim()) {
-        sessionStorage.setItem(GEMINI_KEY_LS, key.trim());
-        localStorage.removeItem(GEMINI_KEY_LS); // migrate away from localStorage
-      }
-    }
-    return key?.trim() || null;
-  }
-
-  // H-4: key in header, not URL
-  function geminiHeaders(apiKey) {
-    return { 'content-type': 'application/json', 'x-goog-api-key': apiKey };
-  }
-
-  async function callGemini(apiKey, body) {
-    const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-
-    const cached = localStorage.getItem(GEMINI_MODEL_LS);
-    if (cached) {
-      const r = await fetch(`${BASE}/${cached}:generateContent`,
-        { method: 'POST', headers: geminiHeaders(apiKey), body });
-      if (r.status === 403 || r.status === 401) {
-        sessionStorage.removeItem(GEMINI_KEY_LS);
-        localStorage.removeItem(GEMINI_KEY_LS);
-        throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
-      }
-      if (r.ok) return r;
-      localStorage.removeItem(GEMINI_MODEL_LS);
-    }
-
-    // Verfügbare Modelle abrufen
-    const listRes = await fetch(`${BASE}`, { headers: geminiHeaders(apiKey) });
-    if (listRes.status === 403 || listRes.status === 401) {
-      sessionStorage.removeItem(GEMINI_KEY_LS);
-      localStorage.removeItem(GEMINI_KEY_LS);
-      throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
-    }
-    if (!listRes.ok) throw new Error(`Modell-Liste nicht abrufbar (HTTP ${listRes.status})`);
-
-    const models = ((await listRes.json()).models || [])
-      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
-      .map(m => m.name.replace('models/', ''))
-      .sort((a, b) => b.localeCompare(a));
-
-    for (const model of models) {
-      const r = await fetch(`${BASE}/${model}:generateContent`,
-        { method: 'POST', headers: geminiHeaders(apiKey), body });
-      if (r.status === 403 || r.status === 401) {
-        sessionStorage.removeItem(GEMINI_KEY_LS);
-        localStorage.removeItem(GEMINI_KEY_LS);
-        throw new Error('Ungültiger API-Key – wurde zurückgesetzt. Bitte erneut eingeben.');
-      }
-      if (r.ok) {
-        localStorage.setItem(GEMINI_MODEL_LS, model);
-        return r;
-      }
-    }
-    throw new Error('Kein verfügbares Gemini-Modell gefunden. Bitte API-Key prüfen.');
-  }
-
-  async function formatNotesWithAI() {
-    const textarea = document.getElementById('inp-notes');
-    const text     = textarea.value.trim();
-    if (!text) { toast('Bitte zuerst Notizen schreiben.', 'info'); return; }
-
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) { toast('Kein API-Key angegeben.', 'err'); return; }
-
-    const btn   = document.getElementById('btn-ai-format');
-    const icon  = document.getElementById('ai-fmt-icon');
-    const lbl   = document.getElementById('ai-fmt-lbl');
-    btn.disabled    = true;
-    icon.textContent = '⏳';
-    lbl.textContent  = 'Formatiert …';
-
-    const prompt =
-      'Du formatierst Reisetagebuch-Einträge. ' +
-      'Strukturiere den folgenden Text mit passenden fetten Überschriften (Format: **Überschrift:**). ' +
-      'Mögliche Kategorien: **Highlights:**, **Essen & Trinken:**, **Unterkunft:**, ' +
-      '**Transport:**, **Kosten:**, **Tipps:**, **Stimmung:** – ' +
-      'wähle nur die, die inhaltlich passen. ' +
-      'Behalte die Originalsprache bei. Füge keinen neuen Inhalt hinzu. ' +
-      'Gib ausschließlich den formatierten Text zurück, keine Erklärungen.\n\n' +
-      'Original:\n' + text;
-
-    try {
-      const body = JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] });
-      const res  = await callGemini(apiKey, body);
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        throw new Error(e.error?.message || `HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const formatted = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (formatted) {
-        textarea.value = formatted;
-        toast('Notiz formatiert ✓', 'ok');
-      }
-    } catch (err) {
-      console.error('[KI-Formatierer]', err);
-      toast('KI-Fehler: ' + err.message, 'err');
-    } finally {
-      btn.disabled     = false;
-      icon.textContent = '✨';
-      lbl.textContent  = 'KI-Formatierer';
-    }
-  }
-
-  document.getElementById('btn-ai-format').addEventListener('click', formatNotesWithAI);
 
   // ══════════════════════════════════════════════════════════════════════════
   //  Bild-Editor (Cropper.js)

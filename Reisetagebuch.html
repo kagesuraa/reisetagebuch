@@ -38,7 +38,9 @@
 
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-    #map { height: 100dvh; width: 100%; }
+    /* Hintergrundfarbe maskiert kurzzeitig fehlende Kachel-Ladevorgänge beim Zoom */
+    #map { height: 100dvh; width: 100%; background: #aadaff; }
+    html.dark #map { background: #0d1b2a; }
 
     #sidebar {
       transition: transform 0.35s cubic-bezier(.4,0,.2,1);
@@ -1767,7 +1769,7 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
-  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 4, updateWhenZooming: false };
+  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 8, updateWhenZooming: true };
   const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                      opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
   const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };

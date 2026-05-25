@@ -38,9 +38,7 @@
 
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
-    /* Hintergrundfarbe maskiert kurzzeitig fehlende Kachel-Ladevorgänge beim Zoom */
-    #map { height: 100dvh; width: 100%; background: #aadaff; }
-    html.dark #map { background: #0d1b2a; }
+    #map { height: 100dvh; width: 100%; }
 
     /* iOS Safari zoomt automatisch auf Inputs mit font-size < 16px.
        Auf Mobile/Tablet alle Eingaben auf min. 16px hochziehen — das verhindert
@@ -1777,7 +1775,7 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
-  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 16, updateWhenZooming: true, updateWhenIdle: false, crossOrigin: true };
+  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 8, updateWhenZooming: true };
   const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                      opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
   const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };
@@ -1903,6 +1901,10 @@
       if (hp.classList.contains('hidden')) requestAnimationFrame(refreshMap);
     }).observe(hp, { attributes: true, attributeFilter: ['class'] });
   }
+
+  // Bei Zoom-Ende: nur eine Layout-Vermessung, KEIN tile.redraw (würde flackern).
+  // Leaflet lädt fehlende Kacheln für die neue View dann automatisch nach.
+  map.on('zoomend', () => map.invalidateSize());
 
   // ─── Marker-Icon ──────────────────────────────────────────────────────────
   function makeIcon(hasPhoto) {

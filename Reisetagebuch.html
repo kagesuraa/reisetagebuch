@@ -743,6 +743,7 @@
 
       <!-- Tag-Filter -->
       <div id="tag-filter-row" class="px-4 pt-2 pb-1 flex-shrink-0 flex flex-wrap gap-1.5 hidden"></div>
+      <div id="user-filter-row" class="px-4 pt-2 pb-1 flex-shrink-0 flex flex-wrap gap-1.5 hidden"></div>
 
       <!-- Tabs: Alle / Favoriten -->
       <div class="flex px-3 pt-3 pb-1 gap-1.5 flex-shrink-0">
@@ -2201,6 +2202,74 @@
     return info?.displayName || '';
   }
 
+  // ─── Filter nach Autor ────────────────────────────────────────────────────
+  // null = alle anzeigen; Set<uid> = nur diese User-Einträge anzeigen.
+  let filterUserIds  = null;
+  // Cache der SQL-gefilterten Einträge (text/year). null = kein SQL-Filter aktiv.
+  let _baseEntries   = null;
+
+  function rebuildEntriesFromFilters() {
+    const base = _baseEntries || allEntries;
+    entries = filterUserIds
+      ? base.filter(e => filterUserIds.has(e.userId))
+      : [...base];
+  }
+
+  async function refreshAfterFilterChange() {
+    // Marker neu zeichnen + Pre-Sign laufen lassen (URLs kommen aus dem Cache)
+    Object.keys(markerMap).forEach(id => {
+      clusterGroup.removeLayer(markerMap[id]);
+      delete markerMap[id];
+    });
+    await preSignEntries(entries);
+    entries.forEach(placeMarker);
+    renderList();
+    renderTripCards();
+    drawRoute();
+    renderUserFilterRow();
+  }
+
+  function renderUserFilterRow() {
+    const row = document.getElementById('user-filter-row');
+    if (!row) return;
+    const ids = [...new Set(allEntries.map(e => e.userId).filter(Boolean))];
+    // Nur sinnvoll, wenn mindestens zwei verschiedene Autoren existieren.
+    if (ids.length < 2) { row.classList.add('hidden'); row.innerHTML = ''; return; }
+    row.classList.remove('hidden');
+    const activeSet = filterUserIds; // null = alle aktiv
+    const chips = ids.map(uid => {
+      const name   = displayNameFor(uid) || '…';
+      const color  = colorForUser(uid);
+      const active = !activeSet || activeSet.has(uid);
+      const style  = active
+        ? `border-color:${color};color:${color};background:${color}22;`
+        : `border-color:${color}55;color:#9ca3af;background:transparent;`;
+      return `<span class="tag-chip" style="${style}" onclick="toggleUserFilter('${uid}')">
+        <span style="display:inline-block;width:.45rem;height:.45rem;border-radius:50%;background:${color};margin-right:.3rem;vertical-align:middle"></span>${esc(name)}
+      </span>`;
+    }).join('');
+    const reset = activeSet
+      ? `<span class="tag-chip ml-1" onclick="resetUserFilter()">✕ Reset</span>` : '';
+    row.innerHTML = `<span class="text-xs text-stone-400 self-center mr-0.5">👤</span>` + chips + reset;
+  }
+
+  function toggleUserFilter(uid) {
+    const allIds = [...new Set(allEntries.map(e => e.userId).filter(Boolean))];
+    if (!filterUserIds) filterUserIds = new Set(allIds);
+    if (filterUserIds.has(uid)) filterUserIds.delete(uid);
+    else filterUserIds.add(uid);
+    // Alle wieder drin → Filter aufheben (cleaner Zustand für drawRoute etc.)
+    if (filterUserIds.size === allIds.length) filterUserIds = null;
+    rebuildEntriesFromFilters();
+    refreshAfterFilterChange();
+  }
+
+  function resetUserFilter() {
+    filterUserIds = null;
+    rebuildEntriesFromFilters();
+    refreshAfterFilterChange();
+  }
+
   function makeIcon(hasPhoto, color = '#f97316') {
     const dot = hasPhoto
       ? `<div style="position:absolute;top:-5px;right:-5px;width:10px;height:10px;
@@ -3453,10 +3522,13 @@
 
     // Alle Marker entfernen und neu zeichnen
     Object.keys(markerMap).forEach(id => { clusterGroup.removeLayer(markerMap[id]); delete markerMap[id]; });
-    entries = data.map(rowToEntry);
+    _baseEntries = data.map(rowToEntry);
+    rebuildEntriesFromFilters(); // text/year SQL ∩ user filter
     await preSignEntries(entries);
     entries.forEach(placeMarker);
     renderList();
+    renderUserFilterRow();
+    drawRoute();
   }
 
   filterTextEl.addEventListener('input', () => {
@@ -5242,16 +5314,18 @@
 
     populateYearFilter(data);
     allEntries = data.map(rowToEntry);
-    entries    = [...allEntries];
+    _baseEntries = null; // kein SQL-Text-/Jahr-Filter mehr aktiv
     // Profil-Infos (Namen, Farben) für Co-Mitglieder laden, bevor Marker
     // und Trip-Cards gerendert werden.
     await loadUserInfosForEntries(allEntries);
+    rebuildEntriesFromFilters(); // wendet ggf. aktiven User-Filter an
     await preSignEntries(entries);
     entries.forEach(placeMarker);
     renderList();
     updateDashboard();
     renderTripCards();
     renderTagFilterRow();
+    renderUserFilterRow();
     // Wetter für alle vorhandenen Einträge nachladen (im Hintergrund)
     allEntries.forEach(e => fetchAndStoreWeather(e).catch(() => {}));
     if (toastOnDone && entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');

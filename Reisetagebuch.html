@@ -300,7 +300,8 @@
     html.dark [class~="hover:bg-white"]:hover       { background:#334155 !important; }
 
     /* ─ Karte: weiße schwebende Buttons ─ */
-    html.dark #style-btn, html.dark #lang-btn, html.dark #btn-darkmode, html.dark #btn-gps
+    html.dark #style-btn, html.dark #lang-btn, html.dark #btn-darkmode, html.dark #btn-gps,
+    html.dark #gallery-btn, html.dark #pinnwand-btn
       { background:rgba(30,41,59,.92) !important; border-color:var(--dk-brd) !important; color:var(--dk-txt) !important; }
     html.dark #btn-route, html.dark #hint-chip
       { background:rgba(30,41,59,.95) !important; color:var(--dk-txt) !important; }
@@ -817,45 +818,15 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- Ansichts-Buttons (oben rechts, Desktop only) -->
-  <button id="gallery-btn"
-    class="hidden lg:flex fixed top-16 right-4 z-[1000] w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl
-           shadow-lg items-center justify-center hover:bg-white transition-colors"
-    title="Galerie öffnen" onclick="openGallery('all')">
-    <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
-           0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-    </svg>
-  </button>
-
-  <button id="pinnwand-btn"
-    class="hidden lg:flex fixed top-[6.75rem] right-4 z-[1000] w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl
-           shadow-lg items-center justify-center hover:bg-white transition-colors"
-    title="Pinnwand" onclick="openPinnwand()">
-    <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012
-           2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0
-           01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-    </svg>
-  </button>
-
-  <!-- Sprach-Toggle -->
-  <button id="lang-btn" onclick="toggleLang()"
-    class="fixed top-[10.5rem] right-4 z-[1000] h-10 px-3.5
-           bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-orange-200
-           text-xs font-semibold text-stone-600 hover:bg-white transition-colors
-           flex items-center gap-1.5">
-    <span id="lang-flag">🇩🇪</span>
-    <span id="lang-code">DE</span>
-  </button>
-
   <!-- Dark Mode Toggle — entfernt; wird über Map-Style gesteuert -->
   <span id="dark-icon" class="hidden">🌙</span>
   <span id="dark-label" class="hidden">Dark</span>
 
-  <!-- Style-Switcher (oben rechts) -->
-  <div class="fixed top-4 right-4 z-[1000]">
+  <!-- ════ TOP-RIGHT STACK (Style, Galerie, Pinnwand, Sprache) ═════════════ -->
+  <div id="top-right-stack"
+    class="fixed top-4 right-4 z-[1000] flex flex-col gap-2 items-end">
+
+    <!-- Style-Switcher mit Dropdown -->
     <div class="relative">
       <button id="style-btn"
         class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
@@ -885,6 +856,40 @@
           <span id="style-opt-satellite">🛰️ Satellit</span></button></li>
       </ul>
     </div>
+
+    <!-- Galerie -->
+    <button id="gallery-btn"
+      class="hidden lg:flex w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
+             items-center justify-center hover:bg-white transition-colors"
+      title="Galerie öffnen" onclick="openGallery('all')">
+      <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828
+             0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+    </button>
+
+    <!-- Pinnwand -->
+    <button id="pinnwand-btn"
+      class="hidden lg:flex w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
+             items-center justify-center hover:bg-white transition-colors"
+      title="Pinnwand" onclick="openPinnwand()">
+      <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012
+             2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0
+             01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+      </svg>
+    </button>
+
+    <!-- Sprach-Toggle -->
+    <button id="lang-btn" onclick="toggleLang()"
+      class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
+             flex items-center justify-center hover:bg-white transition-colors"
+      title="Sprache wechseln">
+      <span id="lang-flag" class="text-xl leading-none">🇩🇪</span>
+      <span id="lang-code" class="sr-only">DE</span>
+    </button>
   </div>
 
   <!-- Toast -->

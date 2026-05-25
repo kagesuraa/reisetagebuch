@@ -83,8 +83,13 @@ DROP POLICY IF EXISTS "anyone create group"     ON reise_groups;
 DROP POLICY IF EXISTS "admins update group"     ON reise_groups;
 DROP POLICY IF EXISTS "admins delete group"     ON reise_groups;
 
+-- Creator muss die eigene Gruppe schon vor dem Membership-Insert lesen können,
+-- damit der INSERT ... RETURNING-Chain im Frontend funktioniert.
 CREATE POLICY "members read groups" ON reise_groups
-  FOR SELECT USING (public.is_group_member(id));
+  FOR SELECT USING (
+    public.is_group_member(id)
+    OR created_by = auth.uid()
+  );
 
 CREATE POLICY "anyone create group" ON reise_groups
   FOR INSERT WITH CHECK (auth.uid() = created_by);

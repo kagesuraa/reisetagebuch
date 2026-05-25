@@ -506,7 +506,7 @@
       <!-- Profil-Zeile (eingeloggt, anfangs versteckt) -->
       <div id="panel-profile-row" class="hidden flex items-center gap-3">
         <div id="profile-avatar"
-          class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-white text-xl
+          class="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center text-white text-xl
                  font-extrabold flex-shrink-0 transition-transform shadow-lg select-none"
           style="background:rgba(255,255,255,0.25)">?</div>
         <div class="flex-1 min-w-0">
@@ -949,7 +949,7 @@
         </p>
         <div class="flex items-center gap-4">
           <div id="settings-avatar-preview"
-            class="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center
+            class="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center
                    bg-orange-200 text-white text-2xl font-extrabold select-none"></div>
           <div class="flex-1 flex flex-col gap-2">
             <input id="avatar-file-input" type="file" accept="image/*" class="hidden" />
@@ -2145,29 +2145,27 @@
   map.on('zoomend', () => map.invalidateSize());
 
   // ─── Marker-Icon ──────────────────────────────────────────────────────────
-  // Palette für Per-User-Färbung (Marker + Route). Index 0 reserviert für
-  // den eingeloggten User; andere User werden deterministisch über ihre uid
-  // gehasht — gleicher User bekommt immer dieselbe Farbe.
+  // Acht maximal getrennte Hues (ca. 45° auseinander), keine Nachbarfarben
+  // wie Orange/Amber oder Green/Lime — damit zwei verschiedene User nie
+  // verwechselbar gefärbt werden. Zuweisung ist ein deterministischer
+  // Hash über die User-UID; jeder User hat damit überall dieselbe Farbe,
+  // unabhängig davon, wer gerade die Karte sieht.
   const USER_COLORS = [
-    '#f97316', // Orange (self / Brand)
-    '#8b5cf6', // Lila
-    '#06b6d4', // Cyan
-    '#10b981', // Grün
-    '#ef4444', // Rot
+    '#f97316', // Orange
     '#3b82f6', // Blau
+    '#10b981', // Smaragd
     '#ec4899', // Pink
-    '#84cc16', // Lime
-    '#f59e0b', // Amber
-    '#14b8a6', // Teal
+    '#8b5cf6', // Violett
+    '#06b6d4', // Cyan
+    '#dc2626', // Rot
+    '#78350f', // Braun
   ];
 
   function colorForUser(userId) {
     if (!userId) return USER_COLORS[0];
-    if (currentUser && userId === currentUser.id) return USER_COLORS[0];
     let h = 0;
     for (const c of userId) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
-    // Index 0 ist „self" — andere User wählen aus 1..N
-    return USER_COLORS[1 + (Math.abs(h) % (USER_COLORS.length - 1))];
+    return USER_COLORS[Math.abs(h) % USER_COLORS.length];
   }
 
   // Display-Name-Cache für Group-Co-Members (Lightbox „von xy", Pinnwand etc.)

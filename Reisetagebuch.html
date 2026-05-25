@@ -546,14 +546,6 @@
                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
           </button>
-          <button onclick="logout()" title="Abmelden"
-            class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
-                   flex items-center justify-center transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-          </button>
           <button id="left-panel-close-logged"
             class="lg:hidden w-7 h-7 rounded-full bg-white/25 hover:bg-white/40
                    text-white flex items-center justify-center text-base transition-colors">×</button>
@@ -961,6 +953,152 @@
               <span id="lbl-mfa-disable-confirm">Deaktivieren</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      <!-- ═══ GROUPS / GRUPPEN ═══════════════════════════════════════════════ -->
+      <div id="settings-groups-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-gray-800">
+            <span id="lbl-groups-title">Meine Gruppen</span>
+          </p>
+          <button onclick="openCreateGroup()"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white
+                   hover:bg-orange-600 transition-colors">
+            <span id="lbl-create-group">+ Erstellen</span>
+          </button>
+        </div>
+        <ul id="groups-list" class="space-y-1.5 text-sm">
+          <li class="text-xs text-gray-400 py-2">…</li>
+        </ul>
+      </div>
+
+      <!-- ═══ PENDING INVITATIONS ════════════════════════════════════════════ -->
+      <div id="settings-invites-section" class="px-5 py-4 border-t border-orange-100 space-y-3 hidden">
+        <p class="text-sm font-semibold text-gray-800">
+          <span id="lbl-invites-title">Einladungen</span>
+        </p>
+        <ul id="invites-list" class="space-y-2 text-sm"></ul>
+      </div>
+
+      <!-- ═══ LOGOUT ═════════════════════════════════════════════════════════ -->
+      <div class="px-5 py-4 border-t border-orange-100">
+        <button onclick="closeSettings(); logout();"
+          class="w-full py-2.5 rounded-xl border border-red-200 text-sm font-semibold
+                 text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+          <span id="lbl-settings-logout">Abmelden</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ════ GRUPPE ERSTELLEN MODAL ═══════════════════════════════════════════ -->
+  <div id="create-group-modal"
+    class="fixed inset-0 z-[5600] bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+      <div class="px-5 py-4 border-b border-orange-100 flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-800">
+          <span id="lbl-cg-title">Neue Gruppe</span>
+        </h3>
+        <button onclick="closeCreateGroup()"
+          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+                 flex items-center justify-center transition-colors">×</button>
+      </div>
+      <div class="px-5 py-4 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
+            <span id="lbl-cg-name">Gruppenname</span>
+          </label>
+          <input id="cg-name" type="text" maxlength="60" placeholder="z.B. Familie Müller"
+            class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
+        </div>
+        <label class="flex items-start gap-3 cursor-pointer select-none">
+          <input id="cg-include-old" type="checkbox"
+            class="mt-1 w-4 h-4 rounded border-orange-300 text-orange-500 focus:ring-orange-400" />
+          <span class="text-sm text-gray-700">
+            <span id="lbl-cg-include">Meine bisherigen Einträge in diese Gruppe übernehmen</span>
+            <span class="block text-xs text-gray-400 mt-0.5" id="lbl-cg-include-hint">
+              Andere Mitglieder können dann auch deine alten Einträge sehen.
+            </span>
+          </span>
+        </label>
+        <div id="cg-error" class="hidden text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600"></div>
+        <div class="flex gap-2 pt-2">
+          <button onclick="closeCreateGroup()"
+            class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold
+                   text-gray-600 hover:bg-gray-50 transition-colors">
+            <span id="lbl-cg-cancel">Abbrechen</span>
+          </button>
+          <button id="cg-confirm" onclick="confirmCreateGroup()"
+            class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white
+                   text-sm font-bold transition-colors disabled:opacity-50">
+            <span id="lbl-cg-confirm">Erstellen</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ GRUPPE DETAIL MODAL ══════════════════════════════════════════════ -->
+  <div id="group-detail-modal"
+    class="fixed inset-0 z-[5600] bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto scroll-thin">
+      <div class="px-5 py-4 border-b border-orange-100 flex items-center justify-between sticky top-0 bg-white">
+        <h3 id="gd-name" class="text-lg font-bold text-gray-800 truncate">Gruppe</h3>
+        <button onclick="closeGroupDetail()"
+          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+                 flex items-center justify-center transition-colors flex-shrink-0">×</button>
+      </div>
+      <div class="px-5 py-4 space-y-4">
+        <div>
+          <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+            <span id="lbl-gd-members">Mitglieder</span>
+          </p>
+          <ul id="gd-members" class="space-y-2"></ul>
+        </div>
+
+        <div id="gd-admin-actions" class="space-y-3 border-t border-orange-100 pt-4 hidden">
+          <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+            <span id="lbl-gd-invite">Per E-Mail einladen</span>
+          </p>
+          <div class="flex gap-2">
+            <input id="gd-invite-email" type="email" placeholder="name@example.com"
+              class="flex-1 rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm
+                     focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
+            <button onclick="sendInvite()"
+              class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors">
+              <span id="lbl-gd-invite-btn">Einladen</span>
+            </button>
+          </div>
+          <div id="gd-invite-error" class="hidden text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600"></div>
+
+          <div id="gd-pending-invites-wrap" class="hidden">
+            <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+              <span id="lbl-gd-pending">Offene Einladungen</span>
+            </p>
+            <ul id="gd-pending-list" class="space-y-1.5 text-sm"></ul>
+          </div>
+
+          <div class="pt-2">
+            <button onclick="confirmDeleteGroup()"
+              class="text-xs font-semibold text-red-500 hover:text-red-600 transition-colors">
+              <span id="lbl-gd-delete">Gruppe löschen</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="border-t border-orange-100 pt-4">
+          <button onclick="leaveGroup()"
+            class="w-full py-2 rounded-xl border border-gray-200 text-sm font-semibold
+                   text-gray-600 hover:bg-gray-50 transition-colors">
+            <span id="lbl-gd-leave">Gruppe verlassen</span>
+          </button>
         </div>
       </div>
     </div>
@@ -1962,6 +2100,8 @@
       date:         row.date || '',
       notes:        row.notes || '',
       photos:       parsePhotos(row),   // immer ein Array
+      groupId:      row.group_id || null,
+      userId:       row.user_id  || null,
     };
   }
 
@@ -2983,7 +3123,7 @@
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,created_at').single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       await preSignEntries([updated]);
@@ -3004,7 +3144,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,created_at').single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       await preSignEntries([entry]);
@@ -3141,7 +3281,7 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,created_at').order('created_at', { ascending: true });
+    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
     const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
@@ -3754,7 +3894,7 @@
     document.getElementById('mfa-enroll-error').classList.add('hidden');
     document.getElementById('mfa-disable-error').classList.add('hidden');
     document.getElementById('mfa-enroll-code').value = '';
-    await refreshMfaStatus();
+    await Promise.all([refreshMfaStatus(), loadGroupsAndInvites()]);
   }
 
   async function closeSettings() {
@@ -3995,6 +4135,324 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════════
+  //  Gruppen / Shared Diaries
+  // ══════════════════════════════════════════════════════════════════════════
+  let myGroups          = [];   // [{id, name, role, member_count}]
+  let pendingInvites    = [];   // invitations matching my email
+  let currentGroupId    = null; // open detail view
+
+  const userEmailLc = () => (currentUser?.email || '').toLowerCase();
+
+  function showModal(id, show) {
+    const m = document.getElementById(id);
+    if (!m) return;
+    if (show) { m.classList.remove('hidden'); m.style.display = 'flex'; }
+    else      { m.classList.add('hidden');    m.style.display = ''; }
+  }
+
+  function tG(de, en) { return currentLang === 'de' ? de : en; }
+
+  async function loadGroupsAndInvites() {
+    if (!currentUser) { myGroups = []; pendingInvites = []; renderGroupsList(); renderInvitesList(); return; }
+
+    // Eigene Mitgliedschaften + Gruppen-Name in einem Round-Trip
+    const { data: mems, error: e1 } = await sb
+      .from('reise_group_members')
+      .select('role, group_id, reise_groups(id,name)')
+      .eq('user_id', currentUser.id);
+    if (e1) { console.warn('groups load failed:', e1.message); }
+    myGroups = (mems || [])
+      .filter(m => m.reise_groups)
+      .map(m => ({ id: m.reise_groups.id, name: m.reise_groups.name, role: m.role }));
+
+    // Offene Einladungen für meine E-Mail
+    const { data: invs, error: e2 } = await sb
+      .from('reise_group_invitations')
+      .select('id, group_id, status, reise_groups(name)')
+      .eq('email', userEmailLc())
+      .eq('status', 'pending');
+    if (e2) { console.warn('invites load failed:', e2.message); }
+    pendingInvites = (invs || []).map(i => ({
+      id: i.id, group_id: i.group_id, groupName: i.reise_groups?.name || '?'
+    }));
+
+    renderGroupsList();
+    renderInvitesList();
+  }
+
+  function renderGroupsList() {
+    const ul = document.getElementById('groups-list');
+    if (!ul) return;
+    if (!myGroups.length) {
+      ul.innerHTML = `<li class="text-xs text-gray-400 py-2">${tG('Du bist noch in keiner Gruppe.','You’re not in any group yet.')}</li>`;
+      return;
+    }
+    ul.innerHTML = myGroups.map(g => `
+      <li>
+        <button onclick="openGroupDetail('${g.id}')"
+          class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl
+                 bg-orange-50 hover:bg-orange-100 transition-colors text-left">
+          <span class="text-sm font-medium text-gray-800 truncate">${esc(g.name)}</span>
+          <span class="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-md
+            ${g.role === 'admin' ? 'bg-orange-500 text-white' : 'bg-white text-orange-500 border border-orange-200'}">
+            ${g.role === 'admin' ? tG('Admin','Admin') : tG('Mitglied','Member')}
+          </span>
+        </button>
+      </li>`).join('');
+  }
+
+  function renderInvitesList() {
+    const wrap = document.getElementById('settings-invites-section');
+    const ul   = document.getElementById('invites-list');
+    if (!wrap || !ul) return;
+    if (!pendingInvites.length) { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    ul.innerHTML = pendingInvites.map(i => `
+      <li class="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
+        <span class="flex-1 text-sm text-gray-800 truncate">${esc(i.groupName)}</span>
+        <button onclick="respondInvite('${i.id}', true)"
+          class="text-xs font-bold px-2.5 py-1 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors">
+          ${tG('Annehmen','Accept')}
+        </button>
+        <button onclick="respondInvite('${i.id}', false)"
+          class="text-xs font-bold px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+          ${tG('Ablehnen','Decline')}
+        </button>
+      </li>`).join('');
+  }
+
+  function openCreateGroup() {
+    document.getElementById('cg-name').value = '';
+    document.getElementById('cg-include-old').checked = false;
+    document.getElementById('cg-error').classList.add('hidden');
+    showModal('create-group-modal', true);
+    setTimeout(() => document.getElementById('cg-name').focus(), 80);
+  }
+  function closeCreateGroup() { showModal('create-group-modal', false); }
+
+  async function confirmCreateGroup() {
+    const name = document.getElementById('cg-name').value.trim();
+    const incl = document.getElementById('cg-include-old').checked;
+    const errEl = document.getElementById('cg-error');
+    const btn = document.getElementById('cg-confirm');
+    errEl.classList.add('hidden');
+    if (name.length < 1 || name.length > 60) {
+      errEl.textContent = tG('Bitte einen Namen (max. 60 Zeichen) eingeben.','Please enter a name (max 60 chars).');
+      errEl.classList.remove('hidden');
+      return;
+    }
+    btn.disabled = true;
+    try {
+      const { data: grp, error: e1 } = await sb
+        .from('reise_groups').insert({ name, created_by: currentUser.id })
+        .select('id,name').single();
+      if (e1) throw e1;
+      const { error: e2 } = await sb
+        .from('reise_group_members')
+        .insert({ group_id: grp.id, user_id: currentUser.id, role: 'admin' });
+      if (e2) throw e2;
+      if (incl) {
+        // Eigene Einträge ohne Gruppe in die neue Gruppe übernehmen
+        const { error: e3 } = await sb.from(TABLE)
+          .update({ group_id: grp.id })
+          .eq('user_id', currentUser.id).is('group_id', null);
+        if (e3) console.warn('move entries failed:', e3.message);
+      }
+      closeCreateGroup();
+      await loadGroupsAndInvites();
+      toast(tG(`Gruppe „${grp.name}" erstellt ✓`, `Group "${grp.name}" created ✓`));
+      // Einträge neu laden, damit der group_id-Wert in der lokalen Liste landet
+      reloadEntries().catch(() => {});
+    } catch (e) {
+      errEl.textContent = e.message || 'Fehler';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function respondInvite(id, accept) {
+    const inv = pendingInvites.find(i => i.id === id);
+    if (!inv) return;
+    try {
+      if (accept) {
+        const { error: e1 } = await sb
+          .from('reise_group_members')
+          .insert({ group_id: inv.group_id, user_id: currentUser.id, role: 'member' });
+        if (e1) throw e1;
+        const { error: e2 } = await sb
+          .from('reise_group_invitations')
+          .update({ status: 'accepted' }).eq('id', id);
+        if (e2) throw e2;
+        toast(tG(`„${inv.groupName}" beigetreten ✓`, `Joined "${inv.groupName}" ✓`));
+        reloadEntries().catch(() => {});
+      } else {
+        const { error } = await sb
+          .from('reise_group_invitations')
+          .update({ status: 'declined' }).eq('id', id);
+        if (error) throw error;
+        toast(tG('Einladung abgelehnt', 'Invitation declined'));
+      }
+      await loadGroupsAndInvites();
+    } catch (e) {
+      toast('Fehler: ' + (e.message || e), 'err');
+    }
+  }
+
+  // ─── Gruppe Detail ────────────────────────────────────────────────────────
+  async function openGroupDetail(groupId) {
+    currentGroupId = groupId;
+    const g = myGroups.find(g => g.id === groupId);
+    if (!g) return;
+    document.getElementById('gd-name').textContent = g.name;
+    document.getElementById('gd-admin-actions').classList.toggle('hidden', g.role !== 'admin');
+    document.getElementById('gd-invite-email').value = '';
+    document.getElementById('gd-invite-error').classList.add('hidden');
+    showModal('group-detail-modal', true);
+    await refreshGroupDetail();
+  }
+  function closeGroupDetail() {
+    currentGroupId = null;
+    showModal('group-detail-modal', false);
+  }
+
+  async function refreshGroupDetail() {
+    if (!currentGroupId) return;
+    const g = myGroups.find(g => g.id === currentGroupId);
+    if (!g) return;
+
+    // Mitglieder laden
+    const { data: members } = await sb
+      .from('reise_group_members')
+      .select('user_id, role, joined_at')
+      .eq('group_id', currentGroupId)
+      .order('joined_at', { ascending: true });
+
+    const ul = document.getElementById('gd-members');
+    const isAdmin = g.role === 'admin';
+    const meId    = currentUser.id;
+    ul.innerHTML = (members || []).map(m => {
+      const isMe = m.user_id === meId;
+      const roleBadge = m.role === 'admin'
+        ? `<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-orange-500 text-white">${tG('Admin','Admin')}</span>`
+        : `<span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white text-orange-500 border border-orange-200">${tG('Mitglied','Member')}</span>`;
+      const actions = (isAdmin && !isMe) ? `
+        ${m.role === 'admin'
+          ? `<button onclick="setMemberRole('${m.user_id}','member')" class="text-xs text-gray-500 hover:text-gray-800 px-1.5">${tG('Demoten','Demote')}</button>`
+          : `<button onclick="setMemberRole('${m.user_id}','admin')" class="text-xs text-orange-500 hover:text-orange-700 px-1.5">${tG('Admin geben','Promote')}</button>`}
+        <button onclick="removeMember('${m.user_id}')" class="text-xs text-red-400 hover:text-red-600 px-1.5">${tG('Entfernen','Remove')}</button>
+      ` : '';
+      return `
+        <li class="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
+          <span class="flex-1 text-sm text-gray-800 truncate">${isMe ? tG('Du','You') : `<span class="font-mono text-xs text-gray-500">${esc(m.user_id.slice(0,8))}…</span>`}</span>
+          ${roleBadge}
+          ${actions}
+        </li>`;
+    }).join('');
+
+    // Offene Einladungen (nur für Admin sichtbar)
+    if (isAdmin) {
+      const { data: invs } = await sb
+        .from('reise_group_invitations')
+        .select('id, email, status')
+        .eq('group_id', currentGroupId)
+        .eq('status', 'pending');
+      const wrap = document.getElementById('gd-pending-invites-wrap');
+      const list = document.getElementById('gd-pending-list');
+      if (invs && invs.length) {
+        wrap.classList.remove('hidden');
+        list.innerHTML = invs.map(i => `
+          <li class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+            <span class="flex-1 truncate text-gray-700">${esc(i.email)}</span>
+            <button onclick="cancelInvite('${i.id}')" class="text-xs text-red-400 hover:text-red-600">${tG('Zurückziehen','Cancel')}</button>
+          </li>`).join('');
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+  }
+
+  async function sendInvite() {
+    if (!currentGroupId) return;
+    const emailEl = document.getElementById('gd-invite-email');
+    const errEl   = document.getElementById('gd-invite-error');
+    errEl.classList.add('hidden');
+    const email = emailEl.value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = tG('Ungültige E-Mail.', 'Invalid email.');
+      errEl.classList.remove('hidden');
+      return;
+    }
+    try {
+      const { error } = await sb
+        .from('reise_group_invitations')
+        .insert({ group_id: currentGroupId, email, invited_by: currentUser.id, status: 'pending' });
+      if (error) {
+        if (error.code === '23505') throw new Error(tG('Diese Person wurde bereits eingeladen.', 'This person was already invited.'));
+        throw error;
+      }
+      emailEl.value = '';
+      toast(tG(`Einladung an ${email} versendet ✓`, `Invitation sent to ${email} ✓`));
+      await refreshGroupDetail();
+    } catch (e) {
+      errEl.textContent = e.message || 'Fehler';
+      errEl.classList.remove('hidden');
+    }
+  }
+
+  async function cancelInvite(id) {
+    const { error } = await sb.from('reise_group_invitations').delete().eq('id', id);
+    if (error) { toast('Fehler: ' + error.message, 'err'); return; }
+    await refreshGroupDetail();
+  }
+
+  async function setMemberRole(userId, role) {
+    const { error } = await sb.from('reise_group_members')
+      .update({ role }).eq('group_id', currentGroupId).eq('user_id', userId);
+    if (error) { toast('Fehler: ' + error.message, 'err'); return; }
+    await refreshGroupDetail();
+  }
+
+  async function removeMember(userId) {
+    if (!confirm(tG('Diesen Nutzer wirklich entfernen?', 'Really remove this member?'))) return;
+    const { error } = await sb.from('reise_group_members')
+      .delete().eq('group_id', currentGroupId).eq('user_id', userId);
+    if (error) { toast('Fehler: ' + error.message, 'err'); return; }
+    await refreshGroupDetail();
+  }
+
+  async function leaveGroup() {
+    if (!currentGroupId || !currentUser) return;
+    if (!confirm(tG('Gruppe wirklich verlassen?', 'Really leave the group?'))) return;
+    const { error } = await sb.from('reise_group_members')
+      .delete().eq('group_id', currentGroupId).eq('user_id', currentUser.id);
+    if (error) { toast('Fehler: ' + error.message, 'err'); return; }
+    closeGroupDetail();
+    await loadGroupsAndInvites();
+    reloadEntries().catch(() => {});
+  }
+
+  async function confirmDeleteGroup() {
+    if (!currentGroupId) return;
+    const g = myGroups.find(g => g.id === currentGroupId);
+    if (!g) return;
+    if (!confirm(tG(`Gruppe „${g.name}" und alle Mitgliedschaften wirklich löschen? Einträge bleiben erhalten.`,
+                    `Really delete group "${g.name}" and all memberships? Entries themselves are kept.`))) return;
+    const { error } = await sb.from('reise_groups').delete().eq('id', currentGroupId);
+    if (error) { toast('Fehler: ' + error.message, 'err'); return; }
+    closeGroupDetail();
+    await loadGroupsAndInvites();
+    reloadEntries().catch(() => {});
+  }
+
+  // ─── Hilfs: alle Einträge neu laden (nach Gruppen-Änderung) ──────────────
+  async function reloadEntries() {
+    if (typeof loadEntries === 'function') {
+      try { await loadEntries(); } catch {}
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   //  Sprachsystem (DE / EN)
   // ══════════════════════════════════════════════════════════════════════════
   const tr = {
@@ -4216,16 +4674,25 @@
     applyLang(currentLang === 'de' ? 'en' : 'de');
   }
 
-  async function init() {
+  async function init() { await loadEntries({ toastOnDone: true }); }
+
+  // Lädt Einträge neu (z.B. nach Gruppen-Beitritt/-Austritt)
+  async function loadEntries({ toastOnDone = false } = {}) {
+    // Bestehende Marker entfernen, damit nichts doppelt landet
+    Object.keys(markerMap).forEach(id => {
+      clusterGroup.removeLayer(markerMap[id]);
+      delete markerMap[id];
+    });
+
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,created_at')
+      .select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id')
       .order('created_at', { ascending: true });
 
     if (error) {
       toast(t('errSupabase') + error.message, 'err');
       const loader = document.getElementById('list-loader');
-      loader.textContent = t('errConn');
+      if (loader) loader.textContent = t('errConn');
       return;
     }
 
@@ -4240,7 +4707,7 @@
     renderTagFilterRow();
     // Wetter für alle vorhandenen Einträge nachladen (im Hintergrund)
     allEntries.forEach(e => fetchAndStoreWeather(e).catch(() => {}));
-    if (entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
+    if (toastOnDone && entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
     applyLang(currentLang);
     checkAnniversaries();
   }

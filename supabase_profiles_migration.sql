@@ -66,3 +66,13 @@ RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_t
 $$;
 
 GRANT EXECUTE ON FUNCTION public.find_user_email_by_identifier(text) TO authenticated;
+
+-- my_email(): kanonische E-Mail des aktuellen Users; stabiler als
+-- auth.jwt() ->> 'email' (Mail-Claim ist nicht immer im Token).
+-- Wird von Gruppen-Policies (RLS) gebraucht.
+CREATE OR REPLACE FUNCTION public.my_email()
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
+  SELECT email FROM public.profiles WHERE user_id = auth.uid();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.my_email() TO authenticated;

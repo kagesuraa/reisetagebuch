@@ -85,10 +85,18 @@ DROP POLICY IF EXISTS "admins delete group"     ON reise_groups;
 
 -- Creator muss die eigene Gruppe schon vor dem Membership-Insert lesen können,
 -- damit der INSERT ... RETURNING-Chain im Frontend funktioniert.
+-- Eingeladene Nutzer können die Gruppe ebenfalls lesen — sonst kann das
+-- Invite-Popup den Gruppennamen nicht anzeigen.
 CREATE POLICY "members read groups" ON reise_groups
   FOR SELECT USING (
     public.is_group_member(id)
     OR created_by = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM reise_group_invitations i
+      WHERE i.group_id = reise_groups.id
+        AND i.email    = public.my_email()
+        AND i.status   = 'pending'
+    )
   );
 
 CREATE POLICY "anyone create group" ON reise_groups
@@ -128,7 +136,7 @@ CREATE POLICY "invitee self-join" ON reise_group_members
     AND EXISTS (
       SELECT 1 FROM reise_group_invitations i
       WHERE i.group_id = reise_group_members.group_id
-        AND i.email   = lower(auth.jwt() ->> 'email')
+        AND i.email   = public.my_email()
         AND i.status  = 'pending'
     )
   );
@@ -151,7 +159,7 @@ DROP POLICY IF EXISTS "invitee or admin delete" ON reise_group_invitations;
 CREATE POLICY "invitee or admin read" ON reise_group_invitations
   FOR SELECT USING (
     public.is_group_admin(group_id)
-    OR email = lower(auth.jwt() ->> 'email')
+    OR email = public.my_email()
   );
 
 CREATE POLICY "admins create invites" ON reise_group_invitations
@@ -160,13 +168,13 @@ CREATE POLICY "admins create invites" ON reise_group_invitations
 CREATE POLICY "invitee or admin update" ON reise_group_invitations
   FOR UPDATE USING (
     public.is_group_admin(group_id)
-    OR email = lower(auth.jwt() ->> 'email')
+    OR email = public.my_email()
   );
 
 CREATE POLICY "invitee or admin delete" ON reise_group_invitations
   FOR DELETE USING (
     public.is_group_admin(group_id)
-    OR email = lower(auth.jwt() ->> 'email')
+    OR email = public.my_email()
   );
 
 -- ────────────────────────────────────────────────────────────────

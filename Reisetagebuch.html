@@ -4521,19 +4521,33 @@
     showModal('invite-popup', true);
   }
 
+  // Direkter Accept/Decline ohne Umweg über respondInvite (dort early-return
+  // wenn pendingInvites leer ist; beim Login-Popup ist pendingInvites noch
+  // nicht geladen, was zum Endlos-Popup führte).
   async function acceptInvitePopup() {
     if (!currentInvitePopup) return;
+    const inv   = currentInvitePopup;
     const errEl = document.getElementById('invite-popup-error');
     const aBtn  = document.getElementById('invite-popup-accept-btn');
     const dBtn  = document.getElementById('invite-popup-decline-btn');
     errEl.classList.add('hidden');
     aBtn.disabled = dBtn.disabled = true;
     try {
-      // respondInvite kümmert sich um member-insert + status-update
-      await respondInvite(currentInvitePopup.id, true);
+      const { error: e1 } = await sb
+        .from('reise_group_members')
+        .insert({ group_id: inv.group_id, user_id: currentUser.id, role: 'member' });
+      if (e1) throw e1;
+      const { error: e2 } = await sb
+        .from('reise_group_invitations')
+        .update({ status: 'accepted' }).eq('id', inv.id);
+      if (e2) throw e2;
       currentInvitePopup = null;
       showModal('invite-popup', false);
-      // Wenn weitere Einladungen offen sind, nächste anzeigen
+      toast(tG(`„${inv.groupName}" beigetreten ✓`, `Joined "${inv.groupName}" ✓`));
+      reloadEntries().catch(() => {});
+      // Sidebar-Settings (falls offen) frisch laden
+      loadGroupsAndInvites().catch(() => {});
+      // Weitere offene Einladungen?
       setTimeout(() => checkPendingInvitesPopup(), 600);
     } catch (e) {
       errEl.textContent = e.message || 'Fehler';
@@ -4545,15 +4559,21 @@
 
   async function declineInvitePopup() {
     if (!currentInvitePopup) return;
+    const inv   = currentInvitePopup;
     const errEl = document.getElementById('invite-popup-error');
     const aBtn  = document.getElementById('invite-popup-accept-btn');
     const dBtn  = document.getElementById('invite-popup-decline-btn');
     errEl.classList.add('hidden');
     aBtn.disabled = dBtn.disabled = true;
     try {
-      await respondInvite(currentInvitePopup.id, false);
+      const { error } = await sb
+        .from('reise_group_invitations')
+        .update({ status: 'declined' }).eq('id', inv.id);
+      if (error) throw error;
       currentInvitePopup = null;
       showModal('invite-popup', false);
+      toast(tG('Einladung abgelehnt', 'Invitation declined'));
+      loadGroupsAndInvites().catch(() => {});
       setTimeout(() => checkPendingInvitesPopup(), 600);
     } catch (e) {
       errEl.textContent = e.message || 'Fehler';

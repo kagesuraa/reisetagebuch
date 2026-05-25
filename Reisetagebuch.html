@@ -1066,6 +1066,40 @@
     </div>
   </div>
 
+  <!-- ════ EINGEHENDE EINLADUNG POPUP ══════════════════════════════════════ -->
+  <div id="invite-popup"
+    class="fixed inset-0 z-[5700] bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+      <div class="px-5 py-4 border-b border-orange-100 flex items-center gap-2">
+        <span class="text-2xl">📬</span>
+        <h3 class="text-lg font-bold text-gray-800">
+          <span id="lbl-invite-popup-title">Neue Einladung</span>
+        </h3>
+      </div>
+      <div class="px-5 py-4 space-y-4">
+        <p class="text-sm text-gray-700">
+          <span id="lbl-invite-popup-body">Du wurdest zur Gruppe</span>
+          <span id="invite-popup-group-name" class="font-bold text-orange-500"></span>
+          <span id="lbl-invite-popup-suffix">eingeladen. Möchtest du beitreten?</span>
+        </p>
+        <div id="invite-popup-error" class="hidden text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600"></div>
+        <div class="flex gap-2">
+          <button id="invite-popup-decline-btn" onclick="declineInvitePopup()"
+            class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold
+                   text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50">
+            <span id="lbl-invite-popup-decline">Ablehnen</span>
+          </button>
+          <button id="invite-popup-accept-btn" onclick="acceptInvitePopup()"
+            class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white
+                   text-sm font-bold transition-colors disabled:opacity-50">
+            <span id="lbl-invite-popup-accept">Annehmen</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+
   <!-- ════ GRUPPE DETAIL MODAL ══════════════════════════════════════════════ -->
   <div id="group-detail-modal"
     class="fixed inset-0 z-[5600] bg-black/60 hidden items-center justify-center p-4">
@@ -3779,6 +3813,9 @@
     const savedStyle = currentUser.user_metadata?.map_style;
     if (savedStyle && savedStyle !== activeStyle) setTileStyle(savedStyle);
     init();
+    // Offene Gruppen-Einladungen → Popup anzeigen (nach kurzer Verzögerung,
+    // damit der Login-Flash zuerst durchläuft)
+    setTimeout(() => checkPendingInvitesPopup().catch(() => {}), 800);
   }
 
   async function logout() {
@@ -4415,12 +4452,39 @@
         return;
       }
       const email = String(foundEmail).toLowerCase();
-      const { error } = await sb
+      // Self-Invite blockieren
+      if (email === userEmailLc()) {
+        errEl.textContent = tG('Du kannst dich nicht selbst einladen.', 'You can\'t invite yourself.');
+        errEl.classList.remove('hidden');
+        return;
+      }
+      // Prüfen, ob bereits eine Invitation existiert; bei accepted/declined
+      // reaktivieren wir sie statt erneut zu inserten (UNIQUE Conflict).
+      const { data: existing } = await sb
         .from('reise_group_invitations')
-        .insert({ group_id: currentGroupId, email, invited_by: currentUser.id, status: 'pending' });
-      if (error) {
-        if (error.code === '23505') throw new Error(tG('Diese Person wurde bereits eingeladen.', 'This person was already invited.'));
-        throw error;
+        .select('id, status')
+        .eq('group_id', currentGroupId)
+        .eq('email', email)
+        .maybeSingle();
+      if (existing) {
+        if (existing.status === 'pending') {
+          errEl.textContent = tG('Diese Person wurde bereits eingeladen.', 'This person was already invited.');
+          errEl.classList.remove('hidden');
+          return;
+        }
+        const { error } = await sb
+          .from('reise_group_invitations')
+          .update({ status: 'pending', invited_by: currentUser.id, created_at: new Date().toISOString() })
+          .eq('id', existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await sb
+          .from('reise_group_invitations')
+          .insert({ group_id: currentGroupId, email, invited_by: currentUser.id, status: 'pending' });
+        if (error) {
+          if (error.code === '23505') throw new Error(tG('Diese Person wurde bereits eingeladen.', 'This person was already invited.'));
+          throw error;
+        }
       }
       inputEl.value = '';
       toast(tG(`Einladung an ${email} versendet ✓`, `Invitation sent to ${email} ✓`));
@@ -4428,6 +4492,74 @@
     } catch (e) {
       errEl.textContent = e.message || 'Fehler';
       errEl.classList.remove('hidden');
+    }
+  }
+
+  // ─── Eingehende Einladung Popup ──────────────────────────────────────────
+  let currentInvitePopup = null;
+
+  async function checkPendingInvitesPopup() {
+    if (!currentUser || currentInvitePopup) return;
+    const myEmail = userEmailLc();
+    if (!myEmail) return;
+    const { data, error } = await sb
+      .from('reise_group_invitations')
+      .select('id, group_id, reise_groups(name)')
+      .eq('email', myEmail)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(1);
+    if (error || !data?.length) return;
+    const inv = data[0];
+    currentInvitePopup = {
+      id: inv.id,
+      group_id: inv.group_id,
+      groupName: inv.reise_groups?.name || '?'
+    };
+    document.getElementById('invite-popup-group-name').textContent = ` „${currentInvitePopup.groupName}" `;
+    document.getElementById('invite-popup-error').classList.add('hidden');
+    showModal('invite-popup', true);
+  }
+
+  async function acceptInvitePopup() {
+    if (!currentInvitePopup) return;
+    const errEl = document.getElementById('invite-popup-error');
+    const aBtn  = document.getElementById('invite-popup-accept-btn');
+    const dBtn  = document.getElementById('invite-popup-decline-btn');
+    errEl.classList.add('hidden');
+    aBtn.disabled = dBtn.disabled = true;
+    try {
+      // respondInvite kümmert sich um member-insert + status-update
+      await respondInvite(currentInvitePopup.id, true);
+      currentInvitePopup = null;
+      showModal('invite-popup', false);
+      // Wenn weitere Einladungen offen sind, nächste anzeigen
+      setTimeout(() => checkPendingInvitesPopup(), 600);
+    } catch (e) {
+      errEl.textContent = e.message || 'Fehler';
+      errEl.classList.remove('hidden');
+    } finally {
+      aBtn.disabled = dBtn.disabled = false;
+    }
+  }
+
+  async function declineInvitePopup() {
+    if (!currentInvitePopup) return;
+    const errEl = document.getElementById('invite-popup-error');
+    const aBtn  = document.getElementById('invite-popup-accept-btn');
+    const dBtn  = document.getElementById('invite-popup-decline-btn');
+    errEl.classList.add('hidden');
+    aBtn.disabled = dBtn.disabled = true;
+    try {
+      await respondInvite(currentInvitePopup.id, false);
+      currentInvitePopup = null;
+      showModal('invite-popup', false);
+      setTimeout(() => checkPendingInvitesPopup(), 600);
+    } catch (e) {
+      errEl.textContent = e.message || 'Fehler';
+      errEl.classList.remove('hidden');
+    } finally {
+      aBtn.disabled = dBtn.disabled = false;
     }
   }
 
@@ -4794,6 +4926,8 @@
     if (toastOnDone && entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
     applyLang(currentLang);
     checkAnniversaries();
+    // Offene Gruppen-Einladungen → Popup
+    setTimeout(() => checkPendingInvitesPopup().catch(() => {}), 800);
   }
 
   // ─── DOM-safe Markdown-Bold für Lightbox ─────────────────────────────────

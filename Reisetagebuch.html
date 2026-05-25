@@ -1777,7 +1777,7 @@
   map.addLayer(clusterGroup);
 
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
-  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 8, updateWhenZooming: true };
+  const TILE_BASE = { maxZoom: 19, noWrap: true, bounds: worldBounds, keepBuffer: 16, updateWhenZooming: true, updateWhenIdle: false, crossOrigin: true };
   const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                      opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
   const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };
@@ -1889,6 +1889,20 @@
 
   updateMinZoom();
   window.addEventListener('resize', () => { map.invalidateSize(); updateMinZoom(); });
+
+  // Karte sofort beim Start vollständig laden — wenn das Container-Element
+  // initial verdeckt war (Homepage-Overlay), rechnet Leaflet die Maße erst nach
+  // einem invalidateSize() korrekt aus und lädt dann auch die Kacheln nach.
+  const refreshMap = () => { map.invalidateSize(); updateMinZoom(); };
+  if (document.readyState === 'complete') refreshMap();
+  else window.addEventListener('load', refreshMap);
+  // Sobald das Homepage-Overlay verschwindet, Layout neu vermessen
+  const hp = document.getElementById('homepage');
+  if (hp) {
+    new MutationObserver(() => {
+      if (hp.classList.contains('hidden')) requestAnimationFrame(refreshMap);
+    }).observe(hp, { attributes: true, attributeFilter: ['class'] });
+  }
 
   // ─── Marker-Icon ──────────────────────────────────────────────────────────
   function makeIcon(hasPhoto) {

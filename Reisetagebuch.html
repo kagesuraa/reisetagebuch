@@ -512,6 +512,21 @@
                    flex items-center justify-center text-sm transition-colors">
             <span id="panel-lang-flag2">🇩🇪</span>
           </button>
+          <button id="settings-btn" onclick="openSettings()" title="Einstellungen"
+            class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
+                   flex items-center justify-center transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826
+                   2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0
+                   00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426
+                   1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724
+                   1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31
+                   2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </button>
           <button onclick="logout()" title="Abmelden"
             class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/40 text-white
                    flex items-center justify-center transition-colors">
@@ -540,7 +555,7 @@
     <div id="panel-auth-section" class="flex-1 overflow-y-auto scroll-thin px-5 py-5 space-y-4">
 
       <!-- Tabs -->
-      <div class="flex gap-1 bg-orange-100 rounded-xl p-1">
+      <div id="auth-tabs-row" class="flex gap-1 bg-orange-100 rounded-xl p-1">
         <button id="auth-tab-login"
           class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-orange-500 shadow-sm transition-all">
           <span id="lbl-auth-login">Anmelden</span>
@@ -601,6 +616,21 @@
         <input id="auth-new-password" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen"
           class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
                  focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+      </div>
+
+      <!-- 2FA-Code (nur bei MFA-Challenge) -->
+      <div id="auth-mfa-field" class="hidden">
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">
+          <span id="lbl-auth-mfa">2FA-Code</span>
+        </label>
+        <input id="auth-mfa-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+          placeholder="123456" autocomplete="one-time-code"
+          class="w-full text-center tracking-[0.5em] font-mono text-lg
+                 rounded-xl border border-orange-200 bg-white px-3 py-2.5
+                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+        <p id="lbl-auth-mfa-hint" class="text-xs text-stone-400 mt-1.5">
+          6-stelligen Code aus deiner Authenticator-App eingeben.
+        </p>
       </div>
 
       <!-- Captcha (Cloudflare Turnstile — wird per JS gerendert wenn TURNSTILE_SITE_KEY gesetzt) -->
@@ -813,6 +843,107 @@
     <div id="pinnwand-grid"
       class="flex-1 overflow-y-auto p-4 sm:p-6
              grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 content-start">
+    </div>
+  </div>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+
+  <!-- ════ EINSTELLUNGEN MODAL (2FA) ═════════════════════════════════════════ -->
+  <div id="settings-modal"
+    class="fixed inset-0 z-[5500] bg-black/60 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto scroll-thin">
+      <!-- Header -->
+      <div class="px-5 py-4 border-b border-orange-100 flex items-center justify-between
+                  sticky top-0 bg-white z-10">
+        <h3 class="text-lg font-bold text-gray-800">
+          <span id="lbl-settings-title">Einstellungen</span>
+        </h3>
+        <button onclick="closeSettings()"
+          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+                 flex items-center justify-center transition-colors">×</button>
+      </div>
+
+      <!-- Body -->
+      <div class="px-5 py-4 space-y-4">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">
+            <span id="lbl-mfa-title">Zwei-Faktor-Authentifizierung</span>
+          </p>
+          <p class="text-xs text-gray-500 mt-1">
+            <span id="lbl-mfa-desc">Schütze dein Konto zusätzlich mit einer Authenticator-App.</span>
+          </p>
+        </div>
+
+        <!-- Status row -->
+        <div id="mfa-status-row" class="flex items-center justify-between bg-orange-50 rounded-xl px-3 py-2.5">
+          <div class="flex items-center gap-2">
+            <span id="mfa-status-dot" class="w-2 h-2 rounded-full bg-red-400"></span>
+            <span id="mfa-status-text" class="text-xs font-semibold text-stone-700">Deaktiviert</span>
+          </div>
+          <button id="mfa-toggle-btn" onclick="onMfaToggleClick()"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600
+                   transition-colors disabled:opacity-50">
+            <span id="mfa-toggle-label">Aktivieren</span>
+          </button>
+        </div>
+
+        <!-- Enrollment step (hidden initially) -->
+        <div id="mfa-enroll-step" class="hidden space-y-3 border-t border-orange-100 pt-4">
+          <p class="text-xs text-gray-600">
+            <span id="lbl-mfa-step1">1. Scanne den QR-Code mit deiner Authenticator-App
+              (z. B. Google Authenticator, Authy, 1Password).</span>
+          </p>
+          <div id="mfa-qr-box" class="bg-white border border-gray-200 rounded-xl p-3 flex justify-center"></div>
+          <div>
+            <p class="text-[10px] uppercase tracking-wider text-stone-500 font-semibold mb-1">
+              <span id="lbl-mfa-secret">Manueller Code</span>
+            </p>
+            <p id="mfa-secret-text" class="text-xs font-mono bg-gray-50 rounded-lg px-2.5 py-1.5
+                                            text-gray-700 break-all"></p>
+          </div>
+          <p class="text-xs text-gray-600">
+            <span id="lbl-mfa-step2">2. Gib den 6-stelligen Code aus der App ein:</span>
+          </p>
+          <input id="mfa-enroll-code" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+            placeholder="123456"
+            class="w-full text-center tracking-[0.5em] font-mono text-lg
+                   rounded-xl border border-orange-200 bg-white px-3 py-2.5
+                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
+          <div id="mfa-enroll-error" class="hidden text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600"></div>
+          <div class="flex gap-2">
+            <button onclick="cancelMfaEnroll()"
+              class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold
+                     text-gray-600 hover:bg-gray-50 transition-colors">
+              <span id="lbl-mfa-cancel">Abbrechen</span>
+            </button>
+            <button id="mfa-enroll-confirm-btn" onclick="confirmMfaEnroll()"
+              class="flex-1 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white
+                     text-sm font-bold transition-colors disabled:opacity-50">
+              <span id="lbl-mfa-verify">Bestätigen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Disable step (hidden initially) -->
+        <div id="mfa-disable-step" class="hidden space-y-3 border-t border-orange-100 pt-4">
+          <p class="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2.5">
+            <span id="lbl-mfa-disable-warn">Wenn du 2FA deaktivierst, wird dein Konto wieder nur durch
+              das Passwort geschützt.</span>
+          </p>
+          <div id="mfa-disable-error" class="hidden text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600"></div>
+          <div class="flex gap-2">
+            <button onclick="cancelMfaDisable()"
+              class="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold
+                     text-gray-600 hover:bg-gray-50 transition-colors">
+              <span id="lbl-mfa-cancel-d">Abbrechen</span>
+            </button>
+            <button id="mfa-disable-confirm-btn" onclick="confirmMfaDisable()"
+              class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white
+                     text-sm font-bold transition-colors disabled:opacity-50">
+              <span id="lbl-mfa-disable-confirm">Deaktivieren</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -3203,7 +3334,7 @@
     const isReg    = mode === 'register';
     const isForgot = mode === 'forgot';
     const isReset  = mode === 'reset';
-    const isNormal = !isForgot && !isReset;
+    const isMfa    = mode === 'mfa';
 
     document.getElementById('auth-tab-login').className =
       `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
@@ -3212,17 +3343,27 @@
       `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
         isReg ? 'bg-white text-orange-500 shadow-sm' : 'text-stone-400 hover:text-orange-400'}`;
 
+    // In MFA-Mode: nur das MFA-Feld zeigen; E-Mail/Passwort/Captcha/Tabs verstecken
+    document.getElementById('auth-tabs-row')?.classList.toggle('hidden', isMfa);
     document.getElementById('auth-name-field').classList.toggle('hidden', !isReg);
-    document.getElementById('auth-pw-field').classList.toggle('hidden', isForgot || isReset);
+    document.getElementById('auth-pw-field').classList.toggle('hidden', isForgot || isReset || isMfa);
     document.getElementById('auth-newpw-field').classList.toggle('hidden', !isReset);
-    document.getElementById('turnstile-widget').classList.toggle('hidden', isReset);
+    document.getElementById('auth-mfa-field')?.classList.toggle('hidden', !isMfa);
+    document.getElementById('turnstile-widget').classList.toggle('hidden', isReset || isMfa);
     document.getElementById('auth-info').classList.toggle('hidden', isForgot || isReset);
+    // E-Mail-Feld auch im MFA-Mode verstecken (User ist schon authentifiziert für AAL1)
+    const emailField = document.getElementById('auth-email')?.closest('div');
+    if (emailField) emailField.classList.toggle('hidden', isMfa);
 
     if (isForgot) {
       authBtnLbl.textContent = 'Reset-Link senden';
       document.getElementById('lbl-auth-info').textContent = '';
     } else if (isReset) {
       authBtnLbl.textContent = 'Passwort speichern';
+    } else if (isMfa) {
+      authBtnLbl.textContent = currentLang === 'en' ? 'Verify' : 'Bestätigen';
+      document.getElementById('lbl-auth-info').textContent   = currentLang === 'en' ? 'Lost access?' : 'Kein Zugriff?';
+      document.getElementById('lbl-auth-switch').textContent = currentLang === 'en' ? 'Cancel' : 'Abbrechen';
     } else {
       authBtnLbl.textContent = isReg ? 'Registrieren' : 'Anmelden';
       document.getElementById('lbl-auth-info').textContent   = isReg ? 'Schon ein Konto?' : 'Noch kein Konto?';
@@ -3232,9 +3373,12 @@
     authError.classList.add('hidden');
   }
 
-  document.getElementById('auth-tab-login').addEventListener('click',    () => setAuthMode('login'));
-  document.getElementById('auth-tab-register').addEventListener('click', () => setAuthMode('register'));
-  document.getElementById('auth-switch-link').addEventListener('click',  () => setAuthMode(authMode === 'login' ? 'register' : 'login'));
+  document.getElementById('auth-tab-login').addEventListener('click',    () => { if (authMode !== 'mfa') setAuthMode('login'); });
+  document.getElementById('auth-tab-register').addEventListener('click', () => { if (authMode !== 'mfa') setAuthMode('register'); });
+  document.getElementById('auth-switch-link').addEventListener('click',  () => {
+    if (authMode === 'mfa') { cancelMfaChallenge(); return; }
+    setAuthMode(authMode === 'login' ? 'register' : 'login');
+  });
   document.getElementById('auth-forgot-link').addEventListener('click',  () => setAuthMode('forgot'));
 
   function setAuthLoading(on) {
@@ -3257,8 +3401,9 @@
   }
 
   // Enter-Taste im Formular
-  [authEmail, authPassword, authNameInp].forEach(el => {
-    el.addEventListener('keydown', e => { if (e.key === 'Enter') authSubmit.click(); });
+  const authMfaCode = document.getElementById('auth-mfa-code');
+  [authEmail, authPassword, authNameInp, authMfaCode].forEach(el => {
+    el?.addEventListener('keydown', e => { if (e.key === 'Enter') authSubmit.click(); });
   });
 
   // M-1: Client-side login rate limiting
@@ -3266,6 +3411,12 @@
   let authLockedUntil = 0;
 
   authSubmit.addEventListener('click', async () => {
+    // 2FA-Challenge: TOTP-Code überprüfen
+    if (authMode === 'mfa') {
+      await verifyMfaChallenge();
+      return;
+    }
+
     // Passwort-Reset: neues Passwort speichern
     if (authMode === 'reset') {
       const newPw = document.getElementById('auth-new-password').value;
@@ -3383,6 +3534,8 @@
     }
 
     currentUser = result.data.user;
+    // 2FA: Wenn AAL2 erforderlich, MFA-Challenge anzeigen statt direkt fortzufahren
+    if (await checkAndHandleMfa()) return;
     onAuthSuccess();
   });
 
@@ -3515,6 +3668,8 @@
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
       currentUser = session.user;
+      // 2FA: AAL2-Challenge erzwingen, falls Faktor verifiziert aber Session erst AAL1
+      if (await checkAndHandleMfa()) return;
       document.getElementById('homepage').classList.add('hidden');
       showPanelMain();
       const authName = currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'Reisender';
@@ -3529,6 +3684,275 @@
       init();
     }
     // Sonst: Homepage bleibt, Panel zeigt Auth-Form nach "Start Your Journey"
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Zwei-Faktor-Authentifizierung (TOTP via Supabase Auth)
+  // ══════════════════════════════════════════════════════════════════════════
+  let mfaEnrollFactor  = null;   // {id} for in-progress enrollment, cleanup on cancel
+  let mfaChallengeData = null;   // {factorId} during login MFA challenge
+
+  function tMfa(deStr, enStr) { return currentLang === 'de' ? deStr : enStr; }
+
+  function showSettingsModal(show) {
+    const m = document.getElementById('settings-modal');
+    if (!m) return;
+    if (show) {
+      m.classList.remove('hidden');
+      m.style.display = 'flex';
+    } else {
+      m.classList.add('hidden');
+      m.style.display = '';
+    }
+  }
+
+  async function openSettings() {
+    if (!currentUser) return;
+    showSettingsModal(true);
+    document.getElementById('mfa-enroll-step').classList.add('hidden');
+    document.getElementById('mfa-disable-step').classList.add('hidden');
+    document.getElementById('mfa-status-row').classList.remove('opacity-50');
+    document.getElementById('mfa-enroll-error').classList.add('hidden');
+    document.getElementById('mfa-disable-error').classList.add('hidden');
+    document.getElementById('mfa-enroll-code').value = '';
+    await refreshMfaStatus();
+  }
+
+  async function closeSettings() {
+    // Wenn der User die Enrollment-Flow abbricht, müssen wir den unverified factor entfernen
+    if (mfaEnrollFactor) {
+      try { await sb.auth.mfa.unenroll({ factorId: mfaEnrollFactor.id }); } catch {}
+      mfaEnrollFactor = null;
+    }
+    showSettingsModal(false);
+  }
+
+  // Klick auf Backdrop schließt das Modal
+  document.addEventListener('click', e => {
+    const m = document.getElementById('settings-modal');
+    if (m && e.target === m && !m.classList.contains('hidden')) closeSettings();
+  });
+
+  async function getVerifiedTotpFactor() {
+    const { data, error } = await sb.auth.mfa.listFactors();
+    if (error) throw error;
+    return (data.totp || []).find(f => f.status === 'verified') || null;
+  }
+
+  async function refreshMfaStatus() {
+    const dot = document.getElementById('mfa-status-dot');
+    const txt = document.getElementById('mfa-status-text');
+    const lbl = document.getElementById('mfa-toggle-label');
+    if (!dot) return;
+    try {
+      const verified = await getVerifiedTotpFactor();
+      if (verified) {
+        dot.className = 'w-2 h-2 rounded-full bg-green-500';
+        txt.textContent = tMfa('Aktiv', 'Active');
+        lbl.textContent = tMfa('Deaktivieren', 'Disable');
+        document.getElementById('mfa-toggle-btn').className =
+          'text-xs font-bold px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-red-400';
+        txt.textContent = tMfa('Deaktiviert', 'Disabled');
+        lbl.textContent = tMfa('Aktivieren', 'Enable');
+        document.getElementById('mfa-toggle-btn').className =
+          'text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors disabled:opacity-50';
+      }
+    } catch (e) {
+      console.warn('MFA status check failed:', e);
+    }
+  }
+
+  async function onMfaToggleClick() {
+    if (!currentUser) return;
+    try {
+      const verified = await getVerifiedTotpFactor();
+      if (verified) showMfaDisable();
+      else await startMfaEnroll();
+    } catch (e) {
+      toast('MFA: ' + (e.message || e));
+    }
+  }
+
+  async function clearPendingUnverifiedFactors() {
+    try {
+      const { data } = await sb.auth.mfa.listFactors();
+      const unverified = (data?.totp || []).filter(f => f.status === 'unverified');
+      for (const f of unverified) {
+        await sb.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+      }
+    } catch {}
+  }
+
+  async function startMfaEnroll() {
+    const errEl = document.getElementById('mfa-enroll-error');
+    errEl.classList.add('hidden');
+    await clearPendingUnverifiedFactors();
+    const { data, error } = await sb.auth.mfa.enroll({ factorType: 'totp' });
+    if (error) {
+      errEl.textContent = error.message;
+      errEl.classList.remove('hidden');
+      document.getElementById('mfa-enroll-step').classList.remove('hidden');
+      return;
+    }
+    mfaEnrollFactor = { id: data.id };
+    document.getElementById('mfa-qr-box').innerHTML = data.totp.qr_code;
+    document.getElementById('mfa-secret-text').textContent = data.totp.secret;
+    document.getElementById('mfa-enroll-code').value = '';
+    document.getElementById('mfa-enroll-step').classList.remove('hidden');
+    document.getElementById('mfa-disable-step').classList.add('hidden');
+    document.getElementById('mfa-status-row').classList.add('opacity-50');
+    setTimeout(() => document.getElementById('mfa-enroll-code').focus(), 80);
+  }
+
+  async function confirmMfaEnroll() {
+    const codeEl = document.getElementById('mfa-enroll-code');
+    const errEl  = document.getElementById('mfa-enroll-error');
+    const btn    = document.getElementById('mfa-enroll-confirm-btn');
+    errEl.classList.add('hidden');
+    const code = codeEl.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      errEl.textContent = tMfa('Bitte einen 6-stelligen Code eingeben.', 'Please enter a 6-digit code.');
+      errEl.classList.remove('hidden');
+      return;
+    }
+    if (!mfaEnrollFactor) return;
+    btn.disabled = true;
+    try {
+      const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: mfaEnrollFactor.id, code });
+      if (error) throw error;
+      mfaEnrollFactor = null;
+      document.getElementById('mfa-enroll-step').classList.add('hidden');
+      document.getElementById('mfa-status-row').classList.remove('opacity-50');
+      codeEl.value = '';
+      toast(tMfa('2FA aktiviert ✓', '2FA enabled ✓'));
+      await refreshMfaStatus();
+    } catch (e) {
+      const msg = (e.message || '').toLowerCase();
+      errEl.textContent = msg.includes('invalid') || msg.includes('totp')
+        ? tMfa('Ungültiger Code. Bitte erneut versuchen.', 'Invalid code. Please try again.')
+        : (e.message || 'Fehler');
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function cancelMfaEnroll() {
+    if (mfaEnrollFactor) {
+      try { await sb.auth.mfa.unenroll({ factorId: mfaEnrollFactor.id }); } catch {}
+      mfaEnrollFactor = null;
+    }
+    document.getElementById('mfa-enroll-step').classList.add('hidden');
+    document.getElementById('mfa-status-row').classList.remove('opacity-50');
+    document.getElementById('mfa-enroll-code').value = '';
+    document.getElementById('mfa-enroll-error').classList.add('hidden');
+  }
+
+  function showMfaDisable() {
+    document.getElementById('mfa-disable-step').classList.remove('hidden');
+    document.getElementById('mfa-enroll-step').classList.add('hidden');
+    document.getElementById('mfa-disable-error').classList.add('hidden');
+    document.getElementById('mfa-status-row').classList.add('opacity-50');
+  }
+
+  function cancelMfaDisable() {
+    document.getElementById('mfa-disable-step').classList.add('hidden');
+    document.getElementById('mfa-status-row').classList.remove('opacity-50');
+  }
+
+  async function confirmMfaDisable() {
+    const errEl = document.getElementById('mfa-disable-error');
+    const btn   = document.getElementById('mfa-disable-confirm-btn');
+    errEl.classList.add('hidden');
+    btn.disabled = true;
+    try {
+      const verified = await getVerifiedTotpFactor();
+      if (!verified) { cancelMfaDisable(); await refreshMfaStatus(); return; }
+      const { error } = await sb.auth.mfa.unenroll({ factorId: verified.id });
+      if (error) throw error;
+      cancelMfaDisable();
+      toast(tMfa('2FA deaktiviert', '2FA disabled'));
+      await refreshMfaStatus();
+    } catch (e) {
+      errEl.textContent = e.message || 'Fehler';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Enter im Enrollment-Code triggert Verify
+  document.getElementById('mfa-enroll-code')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') confirmMfaEnroll();
+  });
+
+  // ─── Login MFA Challenge ──────────────────────────────────────────────────
+  // Returns true if AAL2 is required (caller should NOT proceed to onAuthSuccess)
+  async function checkAndHandleMfa() {
+    try {
+      const { data, error } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (error || !data) return false;
+      if (data.currentLevel === 'aal1' && data.nextLevel === 'aal2') {
+        const verified = await getVerifiedTotpFactor();
+        if (!verified) return false;
+        mfaChallengeData = { factorId: verified.id };
+        // Auth-Panel sichtbar machen + MFA-Modus aktivieren
+        document.getElementById('homepage')?.classList.add('hidden');
+        showPanel();
+        showPanelAuth();
+        setAuthMode('mfa');
+        setTimeout(() => document.getElementById('auth-mfa-code')?.focus(), 80);
+        return true;
+      }
+    } catch (e) {
+      console.warn('AAL check failed:', e);
+    }
+    return false;
+  }
+
+  async function verifyMfaChallenge() {
+    const codeEl = document.getElementById('auth-mfa-code');
+    const code   = codeEl.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      showAuthError(tMfa('Bitte einen 6-stelligen Code eingeben.', 'Please enter a 6-digit code.'));
+      return;
+    }
+    if (!mfaChallengeData) {
+      showAuthError(tMfa('MFA-Status ungültig. Bitte erneut anmelden.', 'Invalid MFA state. Please sign in again.'));
+      return;
+    }
+    setAuthLoading(true);
+    try {
+      const { error } = await sb.auth.mfa.challengeAndVerify({ factorId: mfaChallengeData.factorId, code });
+      setAuthLoading(false);
+      if (error) {
+        showAuthError(tMfa('Ungültiger Code. Bitte erneut versuchen.', 'Invalid code. Please try again.'));
+        return;
+      }
+      mfaChallengeData = null;
+      codeEl.value = '';
+      const { data: { session } } = await sb.auth.getSession();
+      if (session?.user) {
+        currentUser = session.user;
+        setAuthMode('login'); // Zurück in Standardzustand
+        onAuthSuccess();
+      } else {
+        showAuthError(tMfa('Sitzung verloren. Bitte erneut anmelden.', 'Session lost. Please sign in again.'));
+      }
+    } catch (e) {
+      setAuthLoading(false);
+      showAuthError(e.message || 'Fehler');
+    }
+  }
+
+  async function cancelMfaChallenge() {
+    mfaChallengeData = null;
+    document.getElementById('auth-mfa-code').value = '';
+    await sb.auth.signOut().catch(() => {});
+    currentUser = null;
+    setAuthMode('login');
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -3583,6 +4007,18 @@
       confirmDelete:'Diesen Eintrag wirklich löschen?',
       cardNoPhoto:'Noch keine Reisen gespeichert.',
       compressing: n => `Komprimiere ${n} Bild${n>1?'er':''} …`,
+      // Settings / 2FA
+      settingsTitle:'Einstellungen', settingsBtnTitle:'Einstellungen',
+      mfaTitle:'Zwei-Faktor-Authentifizierung',
+      mfaDesc:'Schütze dein Konto zusätzlich mit einer Authenticator-App.',
+      mfaStep1:'1. Scanne den QR-Code mit deiner Authenticator-App (z. B. Google Authenticator, Authy, 1Password).',
+      mfaSecret:'Manueller Code',
+      mfaStep2:'2. Gib den 6-stelligen Code aus der App ein:',
+      mfaCancel:'Abbrechen', mfaVerify:'Bestätigen',
+      mfaDisableWarn:'Wenn du 2FA deaktivierst, wird dein Konto wieder nur durch das Passwort geschützt.',
+      mfaDisableConfirm:'Deaktivieren',
+      authMfaLabel:'2FA-Code',
+      authMfaHint:'6-stelligen Code aus deiner Authenticator-App eingeben.',
     },
     en: {
       stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
@@ -3626,6 +4062,18 @@
       confirmDelete:'Really delete this entry?',
       cardNoPhoto:'No trips saved yet.',
       compressing: n => `Compressing ${n} image${n>1?'s':''} …`,
+      // Settings / 2FA
+      settingsTitle:'Settings', settingsBtnTitle:'Settings',
+      mfaTitle:'Two-Factor Authentication',
+      mfaDesc:'Add an extra layer of security with an authenticator app.',
+      mfaStep1:'1. Scan the QR code with your authenticator app (e.g. Google Authenticator, Authy, 1Password).',
+      mfaSecret:'Manual code',
+      mfaStep2:'2. Enter the 6-digit code from the app:',
+      mfaCancel:'Cancel', mfaVerify:'Verify',
+      mfaDisableWarn:'If you disable 2FA, your account will only be protected by the password.',
+      mfaDisableConfirm:'Disable',
+      authMfaLabel:'2FA code',
+      authMfaHint:'Enter the 6-digit code from your authenticator app.',
     }
   };
 
@@ -3677,6 +4125,24 @@
     s('lbl-my-trips',     T.myTrips);
     s('lbl-connecting',   T.connecting);
     s('lbl-lb-delete',    T.lbDelete);
+
+    // Settings / 2FA
+    s('lbl-settings-title',     T.settingsTitle);
+    s('lbl-mfa-title',          T.mfaTitle);
+    s('lbl-mfa-desc',           T.mfaDesc);
+    s('lbl-mfa-step1',          T.mfaStep1);
+    s('lbl-mfa-secret',         T.mfaSecret);
+    s('lbl-mfa-step2',          T.mfaStep2);
+    s('lbl-mfa-cancel',         T.mfaCancel);
+    s('lbl-mfa-cancel-d',       T.mfaCancel);
+    s('lbl-mfa-verify',         T.mfaVerify);
+    s('lbl-mfa-disable-warn',   T.mfaDisableWarn);
+    s('lbl-mfa-disable-confirm',T.mfaDisableConfirm);
+    s('lbl-auth-mfa',           T.authMfaLabel);
+    s('lbl-auth-mfa-hint',      T.authMfaHint);
+    st('settings-btn',          T.settingsBtnTitle);
+    // Refresh MFA status row labels (Aktiv/Deaktiviert + button label)
+    if (currentUser) refreshMfaStatus().catch(() => {});
 
     // Map controls
     st('style-btn',    T.styleTitle);

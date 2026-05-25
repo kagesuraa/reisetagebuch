@@ -833,7 +833,7 @@
         <p class="text-gray-400 text-xs mt-0.5 hidden sm:block" id="pinnwand-subtitle">Deine Erinnerungen</p>
       </div>
       <button id="pinnwand-close"
-        class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+        class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-stone-500/15 hover:bg-stone-500/30 text-stone-500 text-xl
                flex items-center justify-center transition-colors">×</button>
     </div>
 
@@ -856,7 +856,7 @@
           <span id="lbl-settings-title">Einstellungen</span>
         </h3>
         <button onclick="closeSettings()"
-          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+          class="w-8 h-8 rounded-full bg-stone-500/15 hover:bg-stone-500/30 text-stone-500 text-xl
                  flex items-center justify-center transition-colors">×</button>
       </div>
 
@@ -1060,7 +1060,7 @@
           <span id="lbl-cg-title">Neue Gruppe</span>
         </h3>
         <button onclick="closeCreateGroup()"
-          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+          class="w-8 h-8 rounded-full bg-stone-500/15 hover:bg-stone-500/30 text-stone-500 text-xl
                  flex items-center justify-center transition-colors">×</button>
       </div>
       <div class="px-5 py-4 space-y-4">
@@ -1150,7 +1150,7 @@
       <div class="px-5 py-4 border-b border-orange-100 flex items-center justify-between sticky top-0 bg-white">
         <h3 id="gd-name" class="text-lg font-bold text-gray-800 truncate">Gruppe</h3>
         <button onclick="closeGroupDetail()"
-          class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xl
+          class="w-8 h-8 rounded-full bg-stone-500/15 hover:bg-stone-500/30 text-stone-500 text-xl
                  flex items-center justify-center transition-colors flex-shrink-0">×</button>
       </div>
       <div class="px-5 py-4 space-y-4">
@@ -4836,15 +4836,19 @@
     const row = document.getElementById('color-swatches');
     if (!row) return;
     const current = profile.color || null;
+    // Active = brand orange (matching the other primary buttons). Inactive uses
+    // a stone tint that has enough contrast in both light and dark modes.
     const auto = `<button onclick="setMyColor(null)" type="button"
       class="px-3 h-8 rounded-lg text-xs font-bold transition-colors
-        ${current === null ? 'bg-stone-700 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'}">
+        ${current === null
+          ? 'bg-orange-500 text-white hover:bg-orange-600'
+          : 'bg-stone-500/15 text-stone-500 hover:bg-stone-500/30'}">
       Auto</button>`;
     const swatches = USER_COLORS.map(c => {
       const sel = current && current.toLowerCase() === c.toLowerCase();
       return `<button onclick="setMyColor('${c}')" type="button" title="${c}"
         class="w-8 h-8 rounded-full transition-transform hover:scale-110
-          ${sel ? 'ring-4 ring-stone-400' : 'ring-2 ring-white'}"
+          ${sel ? 'ring-4 ring-stone-400' : 'ring-2 ring-white/30'}"
         style="background:${c}"></button>`;
     }).join('');
     row.innerHTML = auto + swatches;

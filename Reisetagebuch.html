@@ -956,6 +956,27 @@
         </div>
       </div>
 
+      <!-- ═══ USERNAME ═══════════════════════════════════════════════════════ -->
+      <div id="settings-username-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+        <p class="text-sm font-semibold text-gray-800">
+          <span id="lbl-username-title">Benutzername</span>
+        </p>
+        <p class="text-xs text-gray-500" id="lbl-username-desc">
+          Andere können dich per Benutzername zu Gruppen einladen.
+        </p>
+        <div class="flex gap-2">
+          <input id="username-input" type="text" maxlength="30"
+            placeholder="z.B. anna_m"
+            class="flex-1 rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
+          <button id="username-save-btn" onclick="saveUsername()"
+            class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
+            <span id="lbl-username-save">Speichern</span>
+          </button>
+        </div>
+        <div id="username-msg" class="hidden text-xs px-3 py-2 rounded-lg"></div>
+      </div>
+
       <!-- ═══ GROUPS / GRUPPEN ═══════════════════════════════════════════════ -->
       <div id="settings-groups-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
         <div class="flex items-center justify-between">
@@ -1065,10 +1086,10 @@
 
         <div id="gd-admin-actions" class="space-y-3 border-t border-orange-100 pt-4 hidden">
           <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-            <span id="lbl-gd-invite">Per E-Mail einladen</span>
+            <span id="lbl-gd-invite">Benutzername oder E-Mail einladen</span>
           </p>
           <div class="flex gap-2">
-            <input id="gd-invite-email" type="email" placeholder="name@example.com"
+            <input id="gd-invite-email" type="text" placeholder="anna_m oder name@example.com"
               class="flex-1 rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm
                      focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
             <button onclick="sendInvite()"
@@ -3890,7 +3911,7 @@
     document.getElementById('mfa-enroll-error').classList.add('hidden');
     document.getElementById('mfa-disable-error').classList.add('hidden');
     document.getElementById('mfa-enroll-code').value = '';
-    await Promise.all([refreshMfaStatus(), loadGroupsAndInvites()]);
+    await Promise.all([refreshMfaStatus(), loadGroupsAndInvites(), loadUsername()]);
   }
 
   async function closeSettings() {
@@ -4370,16 +4391,30 @@
 
   async function sendInvite() {
     if (!currentGroupId) return;
-    const emailEl = document.getElementById('gd-invite-email');
+    const inputEl = document.getElementById('gd-invite-email');
     const errEl   = document.getElementById('gd-invite-error');
     errEl.classList.add('hidden');
-    const email = emailEl.value.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errEl.textContent = tG('Ungültige E-Mail.', 'Invalid email.');
+    const raw = inputEl.value.trim();
+    if (!raw) {
+      errEl.textContent = tG('Bitte Benutzername oder E-Mail eingeben.', 'Please enter a username or email.');
       errEl.classList.remove('hidden');
       return;
     }
     try {
+      // Pflicht: Konto muss existieren. Wir lookup'en die kanonische E-Mail
+      // serverseitig via SECURITY DEFINER RPC, sodass keine Adressliste leakt.
+      const { data: foundEmail, error: rpcErr } = await sb
+        .rpc('find_user_email_by_identifier', { identifier: raw });
+      if (rpcErr) throw rpcErr;
+      if (!foundEmail) {
+        errEl.textContent = tG(
+          'Dieser Benutzer existiert nicht. Bitte zuerst registrieren lassen.',
+          'No such user. They need to register first.'
+        );
+        errEl.classList.remove('hidden');
+        return;
+      }
+      const email = String(foundEmail).toLowerCase();
       const { error } = await sb
         .from('reise_group_invitations')
         .insert({ group_id: currentGroupId, email, invited_by: currentUser.id, status: 'pending' });
@@ -4387,12 +4422,65 @@
         if (error.code === '23505') throw new Error(tG('Diese Person wurde bereits eingeladen.', 'This person was already invited.'));
         throw error;
       }
-      emailEl.value = '';
+      inputEl.value = '';
       toast(tG(`Einladung an ${email} versendet ✓`, `Invitation sent to ${email} ✓`));
       await refreshGroupDetail();
     } catch (e) {
       errEl.textContent = e.message || 'Fehler';
       errEl.classList.remove('hidden');
+    }
+  }
+
+  // ─── Benutzername (eigenes Profil) ────────────────────────────────────────
+  async function loadUsername() {
+    if (!currentUser) return;
+    const { data, error } = await sb
+      .from('profiles')
+      .select('username')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (error) { console.warn('username load failed:', error.message); return; }
+    const inp = document.getElementById('username-input');
+    if (inp) inp.value = data?.username || '';
+  }
+
+  async function saveUsername() {
+    if (!currentUser) return;
+    const inp = document.getElementById('username-input');
+    const msg = document.getElementById('username-msg');
+    const btn = document.getElementById('username-save-btn');
+    msg.classList.add('hidden');
+    const raw = (inp.value || '').trim();
+    if (raw && !/^[a-zA-Z0-9_.-]{3,30}$/.test(raw)) {
+      msg.textContent = tG('3–30 Zeichen, nur Buchstaben/Zahlen/._-', '3–30 chars: letters, digits, dot, underscore, hyphen.');
+      msg.className = 'text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600';
+      return;
+    }
+    btn.disabled = true;
+    try {
+      // Falls noch kein Profil-Row existiert (Trigger hätte greifen sollen),
+      // versuchen wir upsert mit eigener E-Mail aus dem JWT.
+      const newUsername = raw || null;
+      let { error } = await sb.from('profiles')
+        .update({ username: newUsername, updated_at: new Date().toISOString() })
+        .eq('user_id', currentUser.id);
+      if (error && error.code === 'PGRST116') {
+        // kein Row → einfügen
+        ({ error } = await sb.from('profiles')
+          .insert({ user_id: currentUser.id, email: (currentUser.email || '').toLowerCase(), username: newUsername }));
+      }
+      if (error) {
+        if (error.code === '23505') throw new Error(tG('Dieser Benutzername ist schon vergeben.', 'That username is already taken.'));
+        if (error.code === '23514') throw new Error(tG('Ungültiges Format. 3–30 Zeichen, nur Buchstaben/Zahlen/._-', 'Invalid format. 3–30 chars: letters, digits, dot, underscore, hyphen.'));
+        throw error;
+      }
+      msg.textContent = tG('Gespeichert ✓', 'Saved ✓');
+      msg.className = 'text-xs px-3 py-2 rounded-lg bg-green-50 text-green-600';
+    } catch (e) {
+      msg.textContent = e.message || 'Fehler';
+      msg.className = 'text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600';
+    } finally {
+      btn.disabled = false;
     }
   }
 

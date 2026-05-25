@@ -860,8 +860,78 @@
                  flex items-center justify-center transition-colors">×</button>
       </div>
 
-      <!-- Body -->
-      <div class="px-5 py-4 space-y-4">
+      <!-- ═══ PROFILBILD (1) ═════════════════════════════════════════════════ -->
+      <div id="settings-avatar-section" class="px-5 py-4">
+        <p class="text-sm font-semibold text-gray-800 mb-3">
+          <span id="lbl-avatar-title">Profilbild</span>
+        </p>
+        <div class="flex items-center gap-4">
+          <div id="settings-avatar-preview"
+            class="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center
+                   bg-orange-200 text-white text-2xl font-extrabold select-none"></div>
+          <div class="flex-1 flex flex-col gap-2">
+            <input id="avatar-file-input" type="file" accept="image/*" class="hidden" />
+            <button id="avatar-pick-btn" onclick="document.getElementById('avatar-file-input').click()"
+              class="px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
+              <span id="lbl-avatar-pick">Bild ändern</span>
+            </button>
+            <button id="avatar-remove-btn" onclick="removeAvatar()"
+              class="hidden px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              <span id="lbl-avatar-remove">Bild entfernen</span>
+            </button>
+          </div>
+        </div>
+        <div id="avatar-msg" class="hidden text-xs px-3 py-2 rounded-lg mt-3"></div>
+      </div>
+
+      <!-- ═══ USERNAME ═══════════════════════════════════════════════════════ -->
+      <div id="settings-username-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+        <p class="text-sm font-semibold text-gray-800">
+          <span id="lbl-username-title">Benutzername</span>
+        </p>
+        <p class="text-xs text-gray-500" id="lbl-username-desc">
+          Andere können dich per Benutzername zu Gruppen einladen.
+        </p>
+        <div class="flex gap-2">
+          <input id="username-input" type="text" maxlength="30"
+            placeholder="z.B. anna_m"
+            class="flex-1 rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm
+                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
+          <button id="username-save-btn" onclick="saveUsername()"
+            class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
+            <span id="lbl-username-save">Speichern</span>
+          </button>
+        </div>
+        <div id="username-msg" class="hidden text-xs px-3 py-2 rounded-lg"></div>
+      </div>
+
+      <!-- ═══ GROUPS / GRUPPEN ═══════════════════════════════════════════════ -->
+      <div id="settings-groups-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+        <div class="flex items-center justify-between">
+          <p class="text-sm font-semibold text-gray-800">
+            <span id="lbl-groups-title">Meine Gruppen</span>
+          </p>
+          <button onclick="openCreateGroup()"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white
+                   hover:bg-orange-600 transition-colors">
+            <span id="lbl-create-group">+ Erstellen</span>
+          </button>
+        </div>
+        <ul id="groups-list" class="space-y-1.5 text-sm">
+          <li class="text-xs text-gray-400 py-2">…</li>
+        </ul>
+      </div>
+
+      <!-- ═══ PENDING INVITATIONS ════════════════════════════════════════════ -->
+      <div id="settings-invites-section" class="px-5 py-4 border-t border-orange-100 space-y-3 hidden">
+        <p class="text-sm font-semibold text-gray-800">
+          <span id="lbl-invites-title">Einladungen</span>
+        </p>
+        <ul id="invites-list" class="space-y-2 text-sm"></ul>
+      </div>
+
+      <!-- ═══ 2FA (4) ════════════════════════════════════════════════════════ -->
+      <div id="settings-mfa-section" class="px-5 py-4 border-t border-orange-100 space-y-4">
         <div>
           <p class="text-sm font-semibold text-gray-800">
             <span id="lbl-mfa-title">Zwei-Faktor-Authentifizierung</span>
@@ -941,76 +1011,6 @@
             </button>
           </div>
         </div>
-      </div>
-
-      <!-- ═══ PROFILBILD ═════════════════════════════════════════════════════ -->
-      <div id="settings-avatar-section" class="px-5 py-4 border-t border-orange-100">
-        <p class="text-sm font-semibold text-gray-800 mb-3">
-          <span id="lbl-avatar-title">Profilbild</span>
-        </p>
-        <div class="flex items-center gap-4">
-          <div id="settings-avatar-preview"
-            class="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center
-                   bg-orange-200 text-white text-2xl font-extrabold select-none"></div>
-          <div class="flex-1 flex flex-col gap-2">
-            <input id="avatar-file-input" type="file" accept="image/*" class="hidden" />
-            <button id="avatar-pick-btn" onclick="document.getElementById('avatar-file-input').click()"
-              class="px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
-              <span id="lbl-avatar-pick">Bild ändern</span>
-            </button>
-            <button id="avatar-remove-btn" onclick="removeAvatar()"
-              class="hidden px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-              <span id="lbl-avatar-remove">Bild entfernen</span>
-            </button>
-          </div>
-        </div>
-        <div id="avatar-msg" class="hidden text-xs px-3 py-2 rounded-lg mt-3"></div>
-      </div>
-
-      <!-- ═══ USERNAME ═══════════════════════════════════════════════════════ -->
-      <div id="settings-username-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
-        <p class="text-sm font-semibold text-gray-800">
-          <span id="lbl-username-title">Benutzername</span>
-        </p>
-        <p class="text-xs text-gray-500" id="lbl-username-desc">
-          Andere können dich per Benutzername zu Gruppen einladen.
-        </p>
-        <div class="flex gap-2">
-          <input id="username-input" type="text" maxlength="30"
-            placeholder="z.B. anna_m"
-            class="flex-1 rounded-xl border border-orange-200 bg-white px-3 py-2 text-sm
-                   focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent" />
-          <button id="username-save-btn" onclick="saveUsername()"
-            class="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
-            <span id="lbl-username-save">Speichern</span>
-          </button>
-        </div>
-        <div id="username-msg" class="hidden text-xs px-3 py-2 rounded-lg"></div>
-      </div>
-
-      <!-- ═══ GROUPS / GRUPPEN ═══════════════════════════════════════════════ -->
-      <div id="settings-groups-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-semibold text-gray-800">
-            <span id="lbl-groups-title">Meine Gruppen</span>
-          </p>
-          <button onclick="openCreateGroup()"
-            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white
-                   hover:bg-orange-600 transition-colors">
-            <span id="lbl-create-group">+ Erstellen</span>
-          </button>
-        </div>
-        <ul id="groups-list" class="space-y-1.5 text-sm">
-          <li class="text-xs text-gray-400 py-2">…</li>
-        </ul>
-      </div>
-
-      <!-- ═══ PENDING INVITATIONS ════════════════════════════════════════════ -->
-      <div id="settings-invites-section" class="px-5 py-4 border-t border-orange-100 space-y-3 hidden">
-        <p class="text-sm font-semibold text-gray-800">
-          <span id="lbl-invites-title">Einladungen</span>
-        </p>
-        <ul id="invites-list" class="space-y-2 text-sm"></ul>
       </div>
 
       <!-- ═══ LOGOUT ═════════════════════════════════════════════════════════ -->

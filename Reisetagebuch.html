@@ -48,6 +48,45 @@
       textarea, select { font-size: 16px !important; }
     }
 
+    /* ─── Responsive Anpassungen Modals & Settings ─────────────────────────── */
+    /* Phones: weniger horizontales Padding in Sections, damit mehr Inhalt
+       sichtbar ist, ohne Buttons abzuschneiden. */
+    @media (max-width: 480px) {
+      #settings-avatar-section,
+      #settings-username-section,
+      #settings-color-section,
+      #settings-groups-section,
+      #settings-invites-section,
+      #settings-mfa-section {
+        padding-left: 0.9rem !important;
+        padding-right: 0.9rem !important;
+      }
+      /* Modal Header etwas kompakter */
+      #settings-modal h3, #create-group-modal h3, #group-detail-modal h3,
+      #invite-popup h3 {
+        font-size: 1rem;
+      }
+      /* Profilbild-Vorschau leicht kleiner */
+      #settings-avatar-preview { width: 3.5rem; height: 3.5rem; }
+      /* Color-Swatches kompakter (passen so 1+8 in eine Zeile) */
+      #color-swatches button[style*="background:#"] {
+        width: 1.75rem; height: 1.75rem;
+      }
+    }
+
+    /* iPhone-Notch / Home-Indicator: bottom-safe-area auf full-screen Modals */
+    #settings-modal > div,
+    #create-group-modal > div,
+    #group-detail-modal > div,
+    #invite-popup > div {
+      margin-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* Touch-Targets: Cluster Marker etwas größer für Finger auf Mobile */
+    @media (max-width: 768px) and (pointer: coarse) {
+      .leaflet-marker-icon > div { transform: scale(1.05); transform-origin: center; }
+    }
+
     #sidebar {
       transition: transform 0.35s cubic-bezier(.4,0,.2,1);
       transform: translateX(100%);
@@ -4614,8 +4653,8 @@
         <button onclick="removeMember('${m.user_id}')" class="text-xs text-red-400 hover:text-red-600 px-1.5">${tG('Entfernen','Remove')}</button>
       ` : '';
       return `
-        <li class="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
-          <span class="flex-1 text-sm text-gray-800 truncate">${isMe ? tG('Du','You') : `<span class="font-mono text-xs text-gray-500">${esc(m.user_id.slice(0,8))}…</span>`}</span>
+        <li class="flex items-center flex-wrap gap-x-2 gap-y-1 bg-orange-50 rounded-xl px-3 py-2">
+          <span class="flex-1 min-w-0 text-sm text-gray-800 truncate">${isMe ? tG('Du','You') : `<span class="font-mono text-xs text-gray-500">${esc(m.user_id.slice(0,8))}…</span>`}</span>
           ${roleBadge}
           ${actions}
         </li>`;

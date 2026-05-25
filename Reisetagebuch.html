@@ -308,8 +308,12 @@
 
     /* ─ Karte: weiße schwebende Buttons ─ */
     html.dark #style-btn, html.dark #lang-btn, html.dark #btn-darkmode, html.dark #btn-gps,
-    html.dark #gallery-btn, html.dark #pinnwand-btn
+    html.dark #gallery-btn, html.dark #pinnwand-btn, html.dark #search-bar
       { background:rgba(30,41,59,.92) !important; border-color:var(--dk-brd) !important; color:var(--dk-txt) !important; }
+    html.dark #search-bar:focus-within { border-color:#f97316 !important; }
+    html.dark #search-results
+      { background:var(--dk-card) !important; border-color:var(--dk-brd) !important; }
+    html.dark #search-results li:hover { background:#334155 !important; }
     html.dark #btn-route, html.dark #hint-chip
       { background:rgba(30,41,59,.95) !important; color:var(--dk-txt) !important; }
     html.dark .leaflet-bar a
@@ -1039,7 +1043,8 @@
   <div class="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-sm px-4">
     <div class="relative">
       <!-- Eingabefeld -->
-      <div class="flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden
+      <div id="search-bar"
+        class="flex items-center bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden
                   border-2 border-transparent focus-within:border-orange-400 transition-colors">
         <svg class="w-4 h-4 text-gray-400 ml-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

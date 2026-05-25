@@ -50,8 +50,19 @@ DROP POLICY IF EXISTS "user reads own profile"    ON public.profiles;
 DROP POLICY IF EXISTS "user updates own profile"  ON public.profiles;
 DROP POLICY IF EXISTS "user inserts own profile"  ON public.profiles;
 
+-- Eigene Daten + Co-Mitglieder einer geteilten Gruppe (für Autor-Namen +
+-- per-User-Farbe auf der Karte).
 CREATE POLICY "user reads own profile" ON public.profiles
-  FOR SELECT TO authenticated USING (user_id = auth.uid());
+  FOR SELECT TO authenticated USING (
+    user_id = auth.uid()
+    OR EXISTS (
+      SELECT 1
+      FROM reise_group_members me
+      JOIN reise_group_members them ON me.group_id = them.group_id
+      WHERE me.user_id   = auth.uid()
+        AND them.user_id = public.profiles.user_id
+    )
+  );
 
 CREATE POLICY "user updates own profile" ON public.profiles
   FOR UPDATE TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());

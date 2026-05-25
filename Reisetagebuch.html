@@ -1614,6 +1614,12 @@
         <h2 id="lb-name"
           class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-1"></h2>
 
+        <!-- Author (nur in Gruppen-Einträgen anderer User sichtbar) -->
+        <p id="lb-author" class="hidden text-xs font-semibold mb-1 flex items-center gap-1.5">
+          <span class="inline-block w-2 h-2 rounded-full" id="lb-author-dot"></span>
+          <span id="lb-author-name"></span>
+        </p>
+
         <!-- Koordinaten -->
         <p id="lb-coords"
           class="text-gray-400 text-xs font-mono mb-5"></p>
@@ -1913,45 +1919,53 @@
     if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
     if (!showRoute || entries.length < 2) return;
 
-    // Chronologisch nach Datum sortieren; Einträge ohne Datum ans Ende
-    const sorted = [...entries].sort((a, b) => {
-      if (a.date && b.date) return a.date.localeCompare(b.date);
-      if (a.date)  return -1;
-      if (b.date)  return  1;
-      return 0;
-    });
+    // Nach Autor gruppieren, jede User-Route eigenständig zeichnen,
+    // damit Mitglieder einer Gruppe optisch unterscheidbar sind.
+    const byUser = new Map();
+    for (const e of entries) {
+      const key = e.userId || '__unknown__';
+      if (!byUser.has(key)) byUser.set(key, []);
+      byUser.get(key).push(e);
+    }
 
-    const coords = sorted.map(e => [e.lat, e.lng]);
+    const layers = [];
+    const animateLater = [];
 
-    // Leuchtender Glüh-Effekt: dicke halbtransparente Basis + animierte Strich-Linie
-    const glow = L.polyline(coords, {
-      color:     '#fb923c',
-      weight:    8,
-      opacity:   0.18,
-      lineCap:   'round',
-      lineJoin:  'round',
-    });
+    for (const [userId, es] of byUser) {
+      if (es.length < 2) continue;
+      const sorted = [...es].sort((a, b) => {
+        if (a.date && b.date) return a.date.localeCompare(b.date);
+        if (a.date)  return -1;
+        if (b.date)  return  1;
+        return 0;
+      });
+      const coords = sorted.map(e => [e.lat, e.lng]);
+      const color  = colorForUser(userId);
 
-    const line = L.polyline(coords, {
-      color:     '#f97316',
-      weight:    2.5,
-      opacity:   0.9,
-      dashArray: '10, 7',
-      lineCap:   'round',
-      lineJoin:  'round',
-    });
+      const glow = L.polyline(coords, {
+        color, weight: 8, opacity: 0.18,
+        lineCap: 'round', lineJoin: 'round',
+      });
+      const line = L.polyline(coords, {
+        color, weight: 2.5, opacity: 0.9, dashArray: '10, 7',
+        lineCap: 'round', lineJoin: 'round',
+      });
+      line.on('add', () => {
+        const el = line.getElement();
+        if (el) el.classList.add('route-animated');
+      });
+      animateLater.push(line);
+      layers.push(glow, line);
+    }
 
-    routeLayer = L.layerGroup([glow, line]).addTo(map);
-
-    // CSS-Animation auf den SVG-Pfad der gepunkteten Linie anwenden
-    line.on('add', () => {
-      const el = line.getElement();
-      if (el) el.classList.add('route-animated');
-    });
-    // Falls bereits geaddet (LayerGroup)
+    if (!layers.length) return;
+    routeLayer = L.layerGroup(layers).addTo(map);
+    // Falls 'add' im LayerGroup-Kontext nicht feuert
     setTimeout(() => {
-      const el = line.getElement();
-      if (el) el.classList.add('route-animated');
+      for (const l of animateLater) {
+        const el = l.getElement();
+        if (el) el.classList.add('route-animated');
+      }
     }, 50);
   }
 
@@ -2135,16 +2149,74 @@
   map.on('zoomend', () => map.invalidateSize());
 
   // ─── Marker-Icon ──────────────────────────────────────────────────────────
-  function makeIcon(hasPhoto) {
+  // Palette für Per-User-Färbung (Marker + Route). Index 0 reserviert für
+  // den eingeloggten User; andere User werden deterministisch über ihre uid
+  // gehasht — gleicher User bekommt immer dieselbe Farbe.
+  const USER_COLORS = [
+    '#f97316', // Orange (self / Brand)
+    '#8b5cf6', // Lila
+    '#06b6d4', // Cyan
+    '#10b981', // Grün
+    '#ef4444', // Rot
+    '#3b82f6', // Blau
+    '#ec4899', // Pink
+    '#84cc16', // Lime
+    '#f59e0b', // Amber
+    '#14b8a6', // Teal
+  ];
+
+  function colorForUser(userId) {
+    if (!userId) return USER_COLORS[0];
+    if (currentUser && userId === currentUser.id) return USER_COLORS[0];
+    let h = 0;
+    for (const c of userId) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+    // Index 0 ist „self" — andere User wählen aus 1..N
+    return USER_COLORS[1 + (Math.abs(h) % (USER_COLORS.length - 1))];
+  }
+
+  // Display-Name-Cache für Group-Co-Members (Lightbox „von xy", Pinnwand etc.)
+  const userInfoCache = new Map(); // userId → { username, email, displayName, avatarUrl }
+
+  async function loadUserInfosForEntries(es) {
+    if (!es?.length || !currentUser) return;
+    const ids = [...new Set(
+      es.map(e => e.userId).filter(id => id && id !== currentUser.id && !userInfoCache.has(id))
+    )];
+    if (!ids.length) return;
+    const { data, error } = await sb
+      .from('profiles')
+      .select('user_id, username, email, avatar_url')
+      .in('user_id', ids);
+    if (error) { console.warn('user info load failed:', error.message); return; }
+    for (const p of data || []) {
+      userInfoCache.set(p.user_id, {
+        username:    p.username,
+        email:       p.email,
+        avatarUrl:   p.avatar_url,
+        displayName: p.username || (p.email || '').split('@')[0] || '?',
+      });
+    }
+  }
+
+  function displayNameFor(userId) {
+    if (!userId) return '';
+    if (currentUser && userId === currentUser.id) {
+      return profile.name || (currentUser.email || '').split('@')[0] || (currentLang === 'en' ? 'You' : 'Du');
+    }
+    const info = userInfoCache.get(userId);
+    return info?.displayName || '';
+  }
+
+  function makeIcon(hasPhoto, color = '#f97316') {
     const dot = hasPhoto
       ? `<div style="position:absolute;top:-5px;right:-5px;width:10px;height:10px;
                      background:#10b981;border:2px solid white;border-radius:50%"></div>`
       : '';
     return L.divIcon({
       className: '',
-      html: `<div style="position:relative;width:18px;height:18px;background:#f97316;
+      html: `<div style="position:relative;width:18px;height:18px;background:${color};
                          border:3px solid white;border-radius:50%;
-                         box-shadow:0 2px 8px rgba(249,115,22,.5)">${dot}</div>`,
+                         box-shadow:0 2px 8px ${color}80">${dot}</div>`,
       iconSize:    [18, 18],
       iconAnchor:  [9,  9],
       popupAnchor: [0, -14],
@@ -2734,7 +2806,9 @@
 
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
-    const marker = L.marker([entry.lat, entry.lng], { icon: makeIcon(hasPhoto(entry)) });
+    const marker = L.marker([entry.lat, entry.lng], {
+      icon: makeIcon(hasPhoto(entry), colorForUser(entry.userId)),
+    });
     marker.on('click', () => openLightbox(entry));
     clusterGroup.addLayer(marker);
     markerMap[entry.id] = marker;
@@ -2804,6 +2878,20 @@
     lbName.textContent   = entry.locationName;
     renderMdBold(lbNotes, entry.notes || t('noNotes'));
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
+
+    // Autor anzeigen — nur wenn nicht eigener Eintrag (Gruppenbeitrag eines anderen)
+    const authorRow = document.getElementById('lb-author');
+    if (entry.userId && currentUser && entry.userId !== currentUser.id) {
+      const name  = displayNameFor(entry.userId);
+      const color = colorForUser(entry.userId);
+      document.getElementById('lb-author-name').textContent =
+        (currentLang === 'en' ? 'by ' : 'von ') + (name || '…');
+      document.getElementById('lb-author-name').style.color = color;
+      document.getElementById('lb-author-dot').style.background = color;
+      authorRow.classList.remove('hidden');
+    } else {
+      authorRow.classList.add('hidden');
+    }
 
     // Likes
     refreshLbLikeBtn(entry.id);
@@ -5138,6 +5226,9 @@
     populateYearFilter(data);
     allEntries = data.map(rowToEntry);
     entries    = [...allEntries];
+    // Profil-Infos (Namen, Farben) für Co-Mitglieder laden, bevor Marker
+    // und Trip-Cards gerendert werden.
+    await loadUserInfosForEntries(allEntries);
     await preSignEntries(entries);
     entries.forEach(placeMarker);
     renderList();

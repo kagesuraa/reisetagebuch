@@ -1158,7 +1158,12 @@
           </div>
         </div>
 
-        <div class="border-t border-orange-100 pt-4">
+        <div class="border-t border-orange-100 pt-4 space-y-2">
+          <button id="gd-share-entries-btn" onclick="shareMyEntriesWithGroup()"
+            class="w-full py-2 rounded-xl border border-orange-200 text-sm font-semibold
+                   text-orange-600 hover:bg-orange-50 transition-colors">
+            <span id="lbl-gd-share-entries">Meine privaten Einträge in diese Gruppe übernehmen</span>
+          </button>
           <button onclick="leaveGroup()"
             class="w-full py-2 rounded-xl border border-gray-200 text-sm font-semibold
                    text-gray-600 hover:bg-gray-50 transition-colors">
@@ -4529,7 +4534,7 @@
     document.getElementById('invite-popup-group-name').textContent = ` „${currentInvitePopup.groupName}" `;
     document.getElementById('invite-popup-error').classList.add('hidden');
     const share = document.getElementById('invite-popup-share-entries');
-    if (share) share.checked = false;
+    if (share) share.checked = true; // Default an: gemeinsame Reisetagebücher leben vom Teilen
     showModal('invite-popup', true);
   }
 
@@ -4676,6 +4681,36 @@
       .delete().eq('group_id', currentGroupId).eq('user_id', userId);
     if (error) { toast('Fehler: ' + error.message, 'err'); return; }
     await refreshGroupDetail();
+  }
+
+  // ─── Nachträglich eigene private Einträge in die aktuelle Gruppe verschieben
+  async function shareMyEntriesWithGroup() {
+    if (!currentGroupId || !currentUser) return;
+    const g = myGroups.find(g => g.id === currentGroupId);
+    if (!g) return;
+    if (!confirm(tG(
+      `Alle deine privaten Einträge in die Gruppe „${g.name}" übernehmen? Andere Mitglieder können sie dann sehen.`,
+      `Move all your private entries into group "${g.name}"? Other members will be able to see them.`
+    ))) return;
+    const btn = document.getElementById('gd-share-entries-btn');
+    btn.disabled = true;
+    try {
+      const { data, error } = await sb.from(TABLE)
+        .update({ group_id: currentGroupId })
+        .eq('user_id', currentUser.id)
+        .is('group_id', null)
+        .select('id');
+      if (error) throw error;
+      const n = (data || []).length;
+      toast(n
+        ? tG(`${n} Einträge in „${g.name}" übernommen ✓`, `Moved ${n} entries into "${g.name}" ✓`)
+        : tG('Keine privaten Einträge zum Teilen vorhanden.', 'No private entries to share.'));
+      await reloadEntries();
+    } catch (e) {
+      toast(tG('Fehler: ', 'Error: ') + (e.message || e), 'err');
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   async function leaveGroup() {

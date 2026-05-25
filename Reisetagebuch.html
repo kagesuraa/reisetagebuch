@@ -507,13 +507,11 @@
       <div id="panel-profile-row" class="hidden flex items-center gap-3">
         <div id="profile-avatar"
           class="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center text-white text-xl
-                 font-extrabold flex-shrink-0 cursor-pointer hover:scale-105 transition-transform
-                 shadow-lg select-none"
-          style="background:rgba(255,255,255,0.25)" onclick="toggleProfileEdit()">?</div>
+                 font-extrabold flex-shrink-0 transition-transform shadow-lg select-none"
+          style="background:rgba(255,255,255,0.25)">?</div>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
-            <span id="profile-name-display" class="text-white font-semibold text-sm truncate cursor-pointer"
-              onclick="toggleProfileEdit()">Reisender</span>
+            <span id="profile-name-display" class="text-white font-semibold text-sm truncate">Reisender</span>
           </div>
           <p id="profile-subtitle" class="text-stone-400 text-xs mt-0.5 truncate">Weltenbummler</p>
         </div>
@@ -548,14 +546,6 @@
         </div>
       </div>
 
-      <!-- Profil Inline-Edit -->
-      <div id="profile-edit" class="hidden mt-3 flex gap-2">
-        <input id="profile-name-input" type="text" placeholder="Dein Reisename …" maxlength="24"
-          class="flex-1 bg-white/10 text-white placeholder-white/50 rounded-xl px-3 py-1.5
-                 text-sm outline-none border border-white/20 focus:border-white/50 transition-colors" />
-        <button onclick="saveProfile()"
-          class="bg-white/20 hover:bg-white/35 text-white text-xs font-bold px-3 rounded-xl transition-colors">OK</button>
-      </div>
     </div>
 
     <!-- ── AUTH-SECTION (nicht eingeloggt) ──────────────────────────────── -->
@@ -1023,15 +1013,25 @@
       </div>
 
       <!-- ═══ LOGOUT ═════════════════════════════════════════════════════════ -->
-      <div class="px-5 py-4 border-t border-orange-100">
+      <div class="px-5 py-4 border-t border-orange-100 space-y-2">
         <button onclick="closeSettings(); logout();"
-          class="w-full py-2.5 rounded-xl border border-red-200 text-sm font-semibold
-                 text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+          class="w-full py-2.5 rounded-xl border border-stone-200 text-sm font-semibold
+                 text-stone-600 hover:bg-stone-50 transition-colors flex items-center justify-center gap-2">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
           </svg>
           <span id="lbl-settings-logout">Abmelden</span>
+        </button>
+        <button onclick="confirmDeleteAccount()"
+          class="w-full py-2.5 rounded-xl border border-red-300 text-sm font-semibold
+                 text-red-600 hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1
+                 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"/>
+          </svg>
+          <span id="lbl-settings-delete">Konto löschen</span>
         </button>
       </div>
     </div>
@@ -2523,24 +2523,6 @@
       av.style.background = nameToColor(name);
     }
   }
-
-  function toggleProfileEdit() {
-    const box = document.getElementById('profile-edit');
-    const inp = document.getElementById('profile-name-input');
-    const hidden = box.classList.toggle('hidden');
-    if (!hidden) { inp.value = profile.name || ''; inp.focus(); }
-  }
-
-  function saveProfile() {
-    const val = document.getElementById('profile-name-input').value.trim();
-    if (val) { profile.name = val; localStorage.setItem('reise_profile', JSON.stringify(profile)); applyProfile(); }
-    document.getElementById('profile-edit').classList.add('hidden');
-  }
-
-  document.getElementById('profile-name-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') saveProfile();
-    if (e.key === 'Escape') document.getElementById('profile-edit').classList.add('hidden');
-  });
 
   applyProfile();
 
@@ -4824,6 +4806,48 @@
     }
   }
 
+  // ─── Konto löschen ────────────────────────────────────────────────────────
+  async function confirmDeleteAccount() {
+    if (!currentUser) return;
+    const email = (currentUser.email || '').toLowerCase();
+    const warn = tG(
+      `Konto wirklich endgültig löschen?\n\nAlle deine Einträge, Gruppen, Bilder und das Profil werden unwiderruflich entfernt.\n\nZur Bestätigung gib deine E-Mail ein:\n${email}`,
+      `Really delete your account permanently?\n\nAll your entries, groups, photos and the profile will be removed irreversibly.\n\nTo confirm, type your email:\n${email}`
+    );
+    const typed = (window.prompt(warn) || '').trim().toLowerCase();
+    if (typed !== email) {
+      if (typed) toast(tG('E-Mail stimmt nicht überein — abgebrochen.', 'Email mismatch — aborted.'), 'err');
+      return;
+    }
+    closeSettings();
+    toast(tG('Konto wird gelöscht …', 'Deleting account …'), 'info');
+    try {
+      // Storage-Objekte des Users vorab löschen — CASCADE räumt nur DB-Zeilen
+      const uid = currentUser.id;
+      for (const bucket of ['avatars', 'trip-images']) {
+        try {
+          const { data: files } = await sb.storage.from(bucket).list(uid, { limit: 1000 });
+          if (files?.length) {
+            const paths = files.map(f => `${uid}/${f.name}`);
+            await sb.storage.from(bucket).remove(paths).catch(() => {});
+          }
+        } catch {}
+      }
+      // RPC ruft DELETE FROM auth.users WHERE id = auth.uid() — CASCADE
+      // räumt profile, groups, members, invites, eintraege.
+      const { error } = await sb.rpc('delete_my_account');
+      if (error) throw error;
+      // Lokale Session aufräumen, danach harter Reload
+      await sb.auth.signOut().catch(() => {});
+      localStorage.removeItem('reise_profile');
+      localStorage.removeItem('reise_favorites');
+      location.reload();
+    } catch (e) {
+      console.error('[delete-account]', e);
+      toast(tG('Fehler beim Löschen: ', 'Delete failed: ') + (e.message || e), 'err');
+    }
+  }
+
   async function removeAvatar() {
     if (!currentUser || !profile.avatarUrl) return;
     if (!confirm(tG('Profilbild wirklich entfernen?', 'Really remove your profile picture?'))) return;
@@ -5120,7 +5144,6 @@
     s('tab-favs',  T.tabFavs);
     s('lbl-loading', T.loading);
     s('profile-subtitle', T.profileSub);
-    sp('profile-name-input', T.profilePh);
     sp('filter-text', T.filterPh);
 
     // Gallery

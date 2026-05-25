@@ -956,6 +956,30 @@
         </div>
       </div>
 
+      <!-- ═══ PROFILBILD ═════════════════════════════════════════════════════ -->
+      <div id="settings-avatar-section" class="px-5 py-4 border-t border-orange-100">
+        <p class="text-sm font-semibold text-gray-800 mb-3">
+          <span id="lbl-avatar-title">Profilbild</span>
+        </p>
+        <div class="flex items-center gap-4">
+          <div id="settings-avatar-preview"
+            class="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center
+                   bg-orange-200 text-white text-2xl font-extrabold select-none"></div>
+          <div class="flex-1 flex flex-col gap-2">
+            <input id="avatar-file-input" type="file" accept="image/*" class="hidden" />
+            <button id="avatar-pick-btn" onclick="document.getElementById('avatar-file-input').click()"
+              class="px-3 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold transition-colors disabled:opacity-50">
+              <span id="lbl-avatar-pick">Bild ändern</span>
+            </button>
+            <button id="avatar-remove-btn" onclick="removeAvatar()"
+              class="hidden px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              <span id="lbl-avatar-remove">Bild entfernen</span>
+            </button>
+          </div>
+        </div>
+        <div id="avatar-msg" class="hidden text-xs px-3 py-2 rounded-lg mt-3"></div>
+      </div>
+
       <!-- ═══ USERNAME ═══════════════════════════════════════════════════════ -->
       <div id="settings-username-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
         <p class="text-sm font-semibold text-gray-800">
@@ -2422,8 +2446,14 @@
     const name = profile.name || 'Reisender';
     document.getElementById('profile-name-display').textContent = name;
     const av = document.getElementById('profile-avatar');
-    av.textContent  = name[0].toUpperCase();
-    av.style.background = nameToColor(name);
+    if (profile.avatarUrl) {
+      av.innerHTML = `<img src="${esc(profile.avatarUrl)}" alt=""
+        class="w-full h-full object-cover" />`;
+      av.style.background = 'transparent';
+    } else {
+      av.textContent      = name[0].toUpperCase();
+      av.style.background = nameToColor(name);
+    }
   }
 
   function toggleProfileEdit() {
@@ -4614,13 +4644,130 @@
     if (!currentUser) return;
     const { data, error } = await sb
       .from('profiles')
-      .select('username')
+      .select('username, avatar_url')
       .eq('user_id', currentUser.id)
       .maybeSingle();
-    if (error) { console.warn('username load failed:', error.message); return; }
+    if (error) { console.warn('profile load failed:', error.message); return; }
     const inp = document.getElementById('username-input');
     if (inp) inp.value = data?.username || '';
+    // Avatar-State in lokales profile object spiegeln + UI auffrischen
+    profile.avatarUrl = data?.avatar_url || null;
+    localStorage.setItem('reise_profile', JSON.stringify(profile));
+    applyProfile();
+    refreshAvatarPreview();
   }
+
+  // ─── Profilbild ──────────────────────────────────────────────────────────
+  function refreshAvatarPreview() {
+    const box = document.getElementById('settings-avatar-preview');
+    const remove = document.getElementById('avatar-remove-btn');
+    if (!box) return;
+    if (profile.avatarUrl) {
+      box.innerHTML = `<img src="${esc(profile.avatarUrl)}" class="w-full h-full object-cover" alt="" />`;
+      box.style.background = 'transparent';
+      remove?.classList.remove('hidden');
+    } else {
+      const initial = (profile.name || 'R')[0].toUpperCase();
+      box.textContent = initial;
+      box.style.background = nameToColor(profile.name || 'Reisender');
+      remove?.classList.add('hidden');
+    }
+  }
+
+  function showAvatarMsg(text, ok) {
+    const m = document.getElementById('avatar-msg');
+    m.textContent = text;
+    m.className = `text-xs px-3 py-2 rounded-lg mt-3 ${ok ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`;
+    m.classList.remove('hidden');
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    const [header, b64] = dataUrl.split(',');
+    const mime = /:(.*?);/.exec(header)[1];
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime });
+  }
+
+  async function uploadAvatar(file) {
+    if (!currentUser) return;
+    const pickBtn = document.getElementById('avatar-pick-btn');
+    const msgEl   = document.getElementById('avatar-msg');
+    msgEl.classList.add('hidden');
+    pickBtn.disabled = true;
+    try {
+      // 1. Quadratischen Crop über den vorhandenen Cropper-Modal
+      const dataUrl = await openImageEditor(file, 0, 1, { aspectRatio: 1 });
+      if (!dataUrl) return; // User hat abgebrochen
+      const blob = dataUrlToBlob(dataUrl);
+
+      // 2. Hochladen mit upsert (immer derselbe Pfad → überschreibt das alte Bild)
+      const path = `${currentUser.id}/avatar.jpg`;
+      const { error: upErr } = await sb.storage
+        .from('avatars')
+        .upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
+      if (upErr) throw upErr;
+
+      // 3. Public URL + Cache-Buster, damit das neue Bild sofort gezeigt wird
+      const { data: urlData } = sb.storage.from('avatars').getPublicUrl(path);
+      const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+
+      // 4. Profil-Row aktualisieren (oder anlegen, falls Trigger es verpasst hat)
+      let { error: dbErr } = await sb.from('profiles')
+        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq('user_id', currentUser.id);
+      if (dbErr && dbErr.code === 'PGRST116') {
+        ({ error: dbErr } = await sb.from('profiles')
+          .insert({ user_id: currentUser.id, email: (currentUser.email || '').toLowerCase(), avatar_url: publicUrl }));
+      }
+      if (dbErr) throw dbErr;
+
+      // 5. Lokales profile + UI aktualisieren
+      profile.avatarUrl = publicUrl;
+      localStorage.setItem('reise_profile', JSON.stringify(profile));
+      applyProfile();
+      refreshAvatarPreview();
+      showAvatarMsg(tG('Profilbild aktualisiert ✓', 'Profile picture updated ✓'), true);
+    } catch (e) {
+      console.error('[avatar upload]', e);
+      showAvatarMsg(e.message || 'Fehler', false);
+    } finally {
+      pickBtn.disabled = false;
+      // File-Input zurücksetzen, sonst feuert change beim erneuten Auswählen
+      // derselben Datei nicht.
+      document.getElementById('avatar-file-input').value = '';
+    }
+  }
+
+  async function removeAvatar() {
+    if (!currentUser || !profile.avatarUrl) return;
+    if (!confirm(tG('Profilbild wirklich entfernen?', 'Really remove your profile picture?'))) return;
+    const removeBtn = document.getElementById('avatar-remove-btn');
+    removeBtn.disabled = true;
+    try {
+      // Datei aus Storage löschen (Fehler hier nicht fatal; URL eh in DB zurückgesetzt)
+      await sb.storage.from('avatars').remove([`${currentUser.id}/avatar.jpg`]).catch(() => {});
+      const { error } = await sb.from('profiles')
+        .update({ avatar_url: null, updated_at: new Date().toISOString() })
+        .eq('user_id', currentUser.id);
+      if (error) throw error;
+      profile.avatarUrl = null;
+      localStorage.setItem('reise_profile', JSON.stringify(profile));
+      applyProfile();
+      refreshAvatarPreview();
+      showAvatarMsg(tG('Profilbild entfernt', 'Profile picture removed'), true);
+    } catch (e) {
+      showAvatarMsg(e.message || 'Fehler', false);
+    } finally {
+      removeBtn.disabled = false;
+    }
+  }
+
+  document.getElementById('avatar-file-input')?.addEventListener('change', e => {
+    const f = e.target.files?.[0];
+    if (f) uploadAvatar(f);
+  });
 
   async function saveUsername() {
     if (!currentUser) return;
@@ -5211,7 +5358,7 @@
   const editorImg     = document.getElementById('editor-img');
   const editorCounter = document.getElementById('editor-counter');
 
-  function openImageEditor(file, idx, total) {
+  function openImageEditor(file, idx, total, opts = {}) {
     return new Promise(resolve => {
       editorResolve = resolve;
       editorCounter.textContent = total > 1 ? `Bild ${idx + 1} von ${total}` : '';
@@ -5232,6 +5379,7 @@
               autoCropArea:     0.9,     // 90 % des Bildes vorauswählen
               responsive:       true,
               checkCrossOrigin: false,
+              aspectRatio:      opts.aspectRatio ?? NaN,
             });
           });
         };

@@ -10,12 +10,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   user_id    uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email      text NOT NULL,
   username   text UNIQUE,
+  avatar_url text,
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT profiles_email_lowercase CHECK (email = lower(email)),
   CONSTRAINT profiles_username_format CHECK (
     username IS NULL OR username ~ '^[a-zA-Z0-9_.-]{3,30}$'
   )
 );
+
+-- Falls Tabelle aus früherer Migration ohne avatar_url existiert
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS avatar_url text;
 
 CREATE INDEX IF NOT EXISTS idx_profiles_email    ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username) WHERE username IS NOT NULL;

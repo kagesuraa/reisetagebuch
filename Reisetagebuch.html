@@ -974,7 +974,7 @@
         class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
                flex items-center justify-center hover:bg-white transition-colors"
         title="Kartenstil wechseln">
-        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-5 h-5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0
                13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0
@@ -1027,10 +1027,11 @@
     <!-- Sprach-Toggle -->
     <button id="lang-btn" onclick="toggleLang()"
       class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
-             flex items-center justify-center hover:bg-white transition-colors"
+             flex items-center justify-center hover:bg-white transition-colors
+             text-stone-600 font-bold text-sm tracking-wider"
       title="Sprache wechseln">
-      <span id="lang-flag" class="text-xl leading-none">🇩🇪</span>
-      <span id="lang-code" class="sr-only">DE</span>
+      <span id="lang-flag" class="sr-only">🇩🇪</span>
+      <span id="lang-code">DE</span>
     </button>
   </div>
 
@@ -1559,19 +1560,6 @@
       <span class="text-xs text-gray-400 font-medium transition-colors">Reisen</span>
     </button>
 
-    <!-- Karte (Mitte – Haupt-CTA) -->
-    <button id="nav-map"
-      onclick="mobileNavMap()"
-      class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors relative">
-      <div class="nav-cta-btn absolute -top-4 w-14 h-14 bg-orange-500 rounded-2xl shadow-lg
-                  flex items-center justify-center transition-colors hover:bg-orange-400">
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-        </svg>
-      </div>
-      <span class="text-xs text-transparent font-medium mt-6">Pin</span>
-    </button>
-
     <!-- Galerie -->
     <button id="nav-gallery"
       onclick="openGallery('all'); setMobileNavActive('nav-gallery')"
@@ -1582,6 +1570,19 @@
              0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
       </svg>
       <span class="text-xs text-gray-400 font-medium transition-colors">Galerie</span>
+    </button>
+
+    <!-- Neuer Eintrag (Mitte – Haupt-CTA) -->
+    <button id="nav-map"
+      onclick="mobileNavMap()"
+      class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors relative">
+      <div class="nav-cta-btn absolute -top-4 w-14 h-14 bg-orange-500 rounded-2xl shadow-lg
+                  flex items-center justify-center transition-colors hover:bg-orange-400">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+        </svg>
+      </div>
+      <span class="text-xs text-transparent font-medium mt-6">Pin</span>
     </button>
 
     <!-- Pinnwand -->
@@ -4643,14 +4644,34 @@
   }
 
   function mobileNavMap() {
-    // Schließt alle Overlays → Nutzer kann Karte antippen
+    // Alle Overlays schließen, dann direkt das Eintrags-Formular öffnen
+    // (mit Kartenmittelpunkt als Standort — User kann durch Map-Tap verschieben).
     if (window.innerWidth < 1024) {
       hidePanel();
-      closeSidebar();
       closeGallery();
+      document.getElementById('pinnwand')?.classList.remove('open');
+      document.getElementById('nav-pinnwand')?.classList.remove('nav-active');
     }
     setMobileNavActive(null);
-    toast('Tippe auf die Karte, um einen Pin zu setzen.', 'info');
+    const center = map.getCenter();
+    pendingLat = center.lat;
+    pendingLng = center.lng;
+    showPreviewPin(pendingLat, pendingLng);
+    document.getElementById('coords-display').textContent =
+      `${pendingLat.toFixed(5)}°, ${pendingLng.toFixed(5)}°`;
+    if (editingId) {
+      editingId = null;
+      document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
+      document.getElementById('save-label').textContent    = 'Eintrag speichern';
+    }
+    document.getElementById('inp-location').value = '';
+    document.getElementById('inp-notes').value    = '';
+    document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
+    pendingTags = []; renderTagPicker();
+    resetPhoto();
+    openSidebar();
+    setTimeout(() => document.getElementById('inp-location').focus(), 360);
+    toast('Tippe auf die Karte, um den Pin zu verschieben.', 'info');
   }
 
   function mobileNavRoute() {

@@ -2002,10 +2002,20 @@
     maxClusterRadius: 60,
     spiderfyOnMaxZoom: true,
     showCoverageOnHover: false,
-    iconCreateFunction: count => L.divIcon({
-      html: `<div style="background:#f97316;color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 2px 8px rgba(249,115,22,.5);border:2px solid white">${count.getChildCount()}</div>`,
-      className: '', iconSize: [34, 34], iconAnchor: [17, 17],
-    }),
+    iconCreateFunction: cluster => {
+      // Cluster-Farbe an die User-Farben angleichen: enthält der Cluster nur
+      // Einträge eines Users → dessen Farbe. Mischcluster bleiben in der
+      // Brand-Farbe Orange, damit klar ist, dass mehrere Autoren drinstecken.
+      const children = cluster.getAllChildMarkers();
+      const uids = [...new Set(children.map(m => m.options?.userId).filter(Boolean))];
+      const color = uids.length === 1
+        ? (typeof colorForUser === 'function' ? colorForUser(uids[0]) : '#f97316')
+        : '#f97316';
+      return L.divIcon({
+        html: `<div style="background:${color};color:white;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;box-shadow:0 2px 8px ${color}80;border:2px solid white">${cluster.getChildCount()}</div>`,
+        className: '', iconSize: [34, 34], iconAnchor: [17, 17],
+      });
+    },
   });
   map.addLayer(clusterGroup);
 
@@ -2852,7 +2862,8 @@
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
     const marker = L.marker([entry.lat, entry.lng], {
-      icon: makeIcon(hasPhoto(entry), colorForUser(entry.userId)),
+      icon:   makeIcon(hasPhoto(entry), colorForUser(entry.userId)),
+      userId: entry.userId, // Cluster-Farbe ableiten zu können
     });
     marker.on('click', () => openLightbox(entry));
     clusterGroup.addLayer(marker);

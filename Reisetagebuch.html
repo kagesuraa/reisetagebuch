@@ -2706,15 +2706,25 @@
     }
 
     container.innerHTML = list.map(e => {
-      const src  = getPhotoSrc(e, 120);
+      const src   = getPhotoSrc(e, 120);
+      const isVid = e.photos?.length ? isVideoUrl(e.photos[0]) : false;
       const isFav = favorites.has(e.id);
+      const thumb = !src
+        ? `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`
+        : isVid
+          ? `<div class="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-gray-900">
+               <video src="${safeSrc(src)}" muted playsinline preload="metadata"
+                 class="absolute inset-0 w-full h-full object-cover"></video>
+               <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                 <span class="bg-black/55 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">▶</span>
+               </span>
+             </div>`
+          : `<img src="${safeSrc(src)}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`;
       return `
         <div class="group flex gap-3 bg-white hover:bg-orange-100 rounded-2xl p-3
                     transition-all border border-transparent hover:border-orange-200 hover:shadow-sm">
           <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
-            ${src
-              ? `<img src="${safeSrc(src)}" class="w-14 h-14 rounded-xl object-cover flex-shrink-0" loading="lazy"/>`
-              : `<div class="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-xl">📍</div>`}
+            ${thumb}
             <div class="min-w-0 flex-1">
               <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
               <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>

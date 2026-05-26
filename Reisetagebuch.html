@@ -1618,10 +1618,10 @@
       </div>
 
       <!-- Daily Streak Toggle -->
-      <label id="daily-toggle-row"
+      <div id="daily-toggle-row" onclick="toggleDailySwitch()"
         class="flex items-center gap-3 cursor-pointer select-none
                bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
-        <div class="relative flex-shrink-0" onclick="toggleDailySwitch()">
+        <div class="relative flex-shrink-0 pointer-events-none">
           <div id="daily-switch-track"
             class="w-10 h-5 rounded-full bg-gray-200 transition-colors duration-200"></div>
           <div id="daily-switch-thumb"
@@ -1629,20 +1629,20 @@
                    transition-transform duration-200"></div>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+          <p class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
             <span id="daily-toggle-flame" class="text-base">🔥</span>
             <span id="lbl-daily-checkin">Täglicher Check-in</span>
           </p>
-          <p id="lbl-daily-sub" class="text-xs text-stone-400 leading-tight mt-0.5">Zählt für deinen Streak</p>
+          <p id="lbl-daily-sub" class="text-xs text-orange-500 leading-tight mt-0.5">Zählt für deinen Streak</p>
         </div>
-        <input type="checkbox" id="inp-daily" class="hidden">
-      </label>
+        <input type="checkbox" id="inp-daily" class="hidden" onclick="event.stopPropagation()">
+      </div>
 
       <!-- Öffentlich Toggle -->
-      <label id="public-toggle-row"
+      <div id="public-toggle-row" onclick="togglePublicSwitch()"
         class="flex items-center gap-3 cursor-pointer select-none
                bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
-        <div class="relative flex-shrink-0" onclick="togglePublicSwitch()">
+        <div class="relative flex-shrink-0 pointer-events-none">
           <div id="public-switch-track"
             class="w-10 h-5 rounded-full bg-gray-200 transition-colors duration-200"></div>
           <div id="public-switch-thumb"
@@ -1650,14 +1650,14 @@
                    transition-transform duration-200"></div>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+          <p class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
             <span class="text-base">🌍</span>
             Öffentlich teilen
           </p>
-          <p class="text-xs text-stone-400 leading-tight mt-0.5">Im Entdecken-Feed für alle sichtbar</p>
+          <p class="text-xs text-sky-500 leading-tight mt-0.5">Im Entdecken-Feed für alle sichtbar</p>
         </div>
-        <input type="checkbox" id="inp-public" class="hidden">
-      </label>
+        <input type="checkbox" id="inp-public" class="hidden" onclick="event.stopPropagation()">
+      </div>
 
       <button id="btn-save"
         class="w-full flex items-center justify-center gap-2

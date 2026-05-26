@@ -518,8 +518,8 @@
       <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80')"></div>
       <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1920&q=80')"></div>
       <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80')"></div>
-      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1488085061851-07c3c6797be7?auto=format&fit=crop&w=1920&q=80')"></div>
-      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1530521954074-e0a103ceff92?auto=format&fit=crop&w=1920&q=80')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1920&q=80')"></div>
     </div>
 
     <!-- Gradient-Overlay: oben leicht, Mitte transparent, unten dunkel für Feature-Strip -->
@@ -558,7 +558,7 @@
           <div class="inline-flex items-center gap-2 hp-glass rounded-full px-4 py-1.5 mb-5
                       hp-animate hp-d2">
             <span class="w-1.5 h-1.5 rounded-full bg-orange-400 hp-pulse"></span>
-            <span class="text-orange-300 text-[11px] font-semibold tracking-[.22em] uppercase">Dein persönliches</span>
+            <span id="hp-lbl-tagline" class="text-orange-300 text-[11px] font-semibold tracking-[.22em] uppercase">Dein persönliches</span>
           </div>
 
           <!-- Headline -->
@@ -570,17 +570,17 @@
           </h1>
 
           <!-- Subtitel -->
-          <p class="text-white/60 text-base sm:text-xl leading-relaxed mb-8 hp-animate hp-d4">
+          <p id="hp-lbl-sub" class="text-white/60 text-base sm:text-xl leading-relaxed mb-8 hp-animate hp-d4">
             Pins auf der Karte. Fotos. Notizen.<br class="hidden sm:block"/>
             Alles was zählt — an einem Ort.
           </p>
 
           <!-- Feature-Badges -->
           <div class="flex flex-wrap justify-center lg:justify-start gap-2 mb-9 hp-animate hp-d5">
-            <span class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">🗺 Interaktive Karte</span>
-            <span class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">📸 Fotos &amp; Galerie</span>
-            <span class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">🔥 Daily Streak</span>
-            <span class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">👥 Gruppen</span>
+            <span id="hp-badge-1" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">🗺 Interaktive Karte</span>
+            <span id="hp-badge-2" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">📸 Fotos &amp; Galerie</span>
+            <span id="hp-badge-3" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">🔥 Daily Streak</span>
+            <span id="hp-badge-4" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">👥 Gruppen</span>
           </div>
 
           <!-- CTA -->
@@ -590,7 +590,7 @@
                      text-white font-bold px-8 py-4 rounded-2xl text-base
                      transition-all duration-300 hover:scale-105
                      shadow-2xl shadow-orange-500/40 hover:shadow-orange-400/50">
-              <span>Start Your Journey</span>
+              <span id="hp-lbl-cta">Start Your Journey</span>
               <svg class="w-5 h-5 transition-transform group-hover:translate-x-1"
                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -609,26 +609,26 @@
 
         <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
           <p class="text-xl sm:text-2xl mb-1.5 leading-none">🗺</p>
-          <p class="text-white font-semibold text-xs sm:text-sm leading-tight">Karte &amp; Pins</p>
-          <p class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Alle Orte auf einen Blick</p>
+          <p id="hp-fc1-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Karte &amp; Pins</p>
+          <p id="hp-fc1-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Alle Orte auf einen Blick</p>
         </div>
 
         <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
           <p class="text-xl sm:text-2xl mb-1.5 leading-none">📸</p>
-          <p class="text-white font-semibold text-xs sm:text-sm leading-tight">Fotos &amp; Galerie</p>
-          <p class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Erinnerungen festhalten</p>
+          <p id="hp-fc2-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Fotos &amp; Galerie</p>
+          <p id="hp-fc2-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Erinnerungen festhalten</p>
         </div>
 
         <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
           <p class="text-xl sm:text-2xl mb-1.5 leading-none">🔥</p>
-          <p class="text-white font-semibold text-xs sm:text-sm leading-tight">Daily Streak</p>
-          <p class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Täglich einchecken</p>
+          <p id="hp-fc3-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Daily Streak</p>
+          <p id="hp-fc3-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Täglich einchecken</p>
         </div>
 
         <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
           <p class="text-xl sm:text-2xl mb-1.5 leading-none">👥</p>
-          <p class="text-white font-semibold text-xs sm:text-sm leading-tight">Gruppen</p>
-          <p class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Gemeinsam reisen</p>
+          <p id="hp-fc4-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Gruppen</p>
+          <p id="hp-fc4-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Gemeinsam reisen</p>
         </div>
 
       </div>
@@ -5798,6 +5798,16 @@
       chartMonths:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
       chartEntryLabel: n => `Eintrag${n !== 1 ? 'e' : ''}`,
       chartTitle:'Aktivität', chartMonthsBtn:'Monate', chartYearsBtn:'Jahre',
+      // Homepage
+      hpTagline:'Dein persönliches',
+      hpSub:'Pins auf der Karte. Fotos. Notizen.<br class="hidden sm:block"/>Alles was zählt — an einem Ort.',
+      hpBadge1:'🗺 Interaktive Karte', hpBadge2:'📸 Fotos & Galerie',
+      hpBadge3:'🔥 Daily Streak',      hpBadge4:'👥 Gruppen',
+      hpCta:'Jetzt starten',
+      hpFc1Title:'Karte & Pins',       hpFc1Sub:'Alle Orte auf einen Blick',
+      hpFc2Title:'Fotos & Galerie',    hpFc2Sub:'Erinnerungen festhalten',
+      hpFc3Title:'Daily Streak',       hpFc3Sub:'Täglich einchecken',
+      hpFc4Title:'Gruppen',            hpFc4Sub:'Gemeinsam reisen',
       // Auth
       authLogin:'Anmelden', authRegister:'Registrieren',
       authName:'Name', authNamePh:'Dein Reisename',
@@ -5910,6 +5920,16 @@
       chartMonths:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
       chartEntryLabel: n => `entr${n !== 1 ? 'ies' : 'y'}`,
       chartTitle:'Activity', chartMonthsBtn:'Months', chartYearsBtn:'Years',
+      // Homepage
+      hpTagline:'Your personal',
+      hpSub:'Pins on the map. Photos. Notes.<br class="hidden sm:block"/>Everything that matters — in one place.',
+      hpBadge1:'🗺 Interactive Map',  hpBadge2:'📸 Photos & Gallery',
+      hpBadge3:'🔥 Daily Streak',     hpBadge4:'👥 Groups',
+      hpCta:'Start Your Journey',
+      hpFc1Title:'Map & Pins',        hpFc1Sub:'All places at a glance',
+      hpFc2Title:'Photos & Gallery',  hpFc2Sub:'Capture memories',
+      hpFc3Title:'Daily Streak',      hpFc3Sub:'Check in every day',
+      hpFc4Title:'Groups',            hpFc4Sub:'Travel together',
       // Auth
       authLogin:'Sign In', authRegister:'Register',
       authName:'Name', authNamePh:'Your travel name',
@@ -6130,6 +6150,20 @@
     s('lbl-chart-months', T.chartMonthsBtn);
     s('lbl-chart-years',  T.chartYearsBtn);
     renderChart();
+
+    // Homepage
+    s('hp-lbl-tagline', T.hpTagline);
+    s('hp-lbl-cta',     T.hpCta);
+    s('hp-badge-1',     T.hpBadge1);
+    s('hp-badge-2',     T.hpBadge2);
+    s('hp-badge-3',     T.hpBadge3);
+    s('hp-badge-4',     T.hpBadge4);
+    s('hp-fc1-title',   T.hpFc1Title); s('hp-fc1-sub', T.hpFc1Sub);
+    s('hp-fc2-title',   T.hpFc2Title); s('hp-fc2-sub', T.hpFc2Sub);
+    s('hp-fc3-title',   T.hpFc3Title); s('hp-fc3-sub', T.hpFc3Sub);
+    s('hp-fc4-title',   T.hpFc4Title); s('hp-fc4-sub', T.hpFc4Sub);
+    const hpSub = document.getElementById('hp-lbl-sub');
+    if (hpSub) hpSub.innerHTML = T.hpSub;
 
     // Switch map tile language (only affects standard style)
     setMapLang(lang);

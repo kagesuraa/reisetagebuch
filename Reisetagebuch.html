@@ -407,22 +407,6 @@
       padding-top: 1.25rem; padding-bottom: 1.25rem;
     }
 
-    /* ── Stimmungs-Picker ─────────────────────────────────────────────────── */
-    .mood-opt.selected {
-      background:#fff7ed !important; border-color:#f97316 !important;
-      box-shadow: 0 0 0 3px rgba(249,115,22,.18);
-      transform: scale(1.08);
-    }
-    html.dark .mood-opt {
-      background: var(--dk-input, #1a2235);
-      border-color: var(--dk-border, #2a3548) !important;
-      color: var(--dk-text, #e6e8ee);
-    }
-    html.dark .mood-opt.selected {
-      background:#3a2a14 !important; border-color:#fb923c !important;
-      box-shadow: 0 0 0 3px rgba(251,146,60,.25);
-    }
-
     /* ══ Dark Mode — vollständig ═══════════════════════════════════════════ */
     :root {
       --dk-bg:    #0f172a;
@@ -1861,43 +1845,6 @@
           <div id="tag-picker" class="flex flex-wrap gap-1.5"></div>
         </div>
 
-        <!-- Stimmung / Mood -->
-        <div class="mt-3">
-          <p id="lbl-mood" class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Stimmung</p>
-          <div id="mood-picker" class="flex flex-wrap gap-1.5">
-            <button type="button" data-mood="😊" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😊</button>
-            <button type="button" data-mood="😍" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😍</button>
-            <button type="button" data-mood="🥹" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🥹</button>
-            <button type="button" data-mood="🤩" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🤩</button>
-            <button type="button" data-mood="😌" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😌</button>
-            <button type="button" data-mood="🧘" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🧘</button>
-            <button type="button" data-mood="😴" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😴</button>
-            <button type="button" data-mood="😤" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😤</button>
-            <button type="button" data-mood="🥶" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🥶</button>
-            <button type="button" data-mood="🥵" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🥵</button>
-            <button type="button" data-mood="🤔" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🤔</button>
-            <button type="button" data-mood="😢" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😢</button>
-          </div>
-          <input type="hidden" id="inp-mood" value="" />
-        </div>
-
-        <!-- Bucket-List Toggle -->
-        <div class="mt-3">
-          <label class="flex items-start gap-2.5 cursor-pointer select-none p-3 rounded-xl
-                        border border-orange-200 hover:border-orange-400 hover:bg-orange-50/60 transition-all">
-            <input type="checkbox" id="inp-wishlist"
-              class="mt-0.5 w-4 h-4 accent-orange-500 cursor-pointer flex-shrink-0" />
-            <div class="min-w-0">
-              <p id="lbl-wishlist" class="text-sm font-semibold text-stone-700 leading-tight">
-                📍 Bucket-List: noch nicht besucht
-              </p>
-              <p id="lbl-wishlist-sub" class="text-xs text-stone-400 mt-0.5 leading-snug">
-                Markiere diesen Ort als Wunsch. Fotos sind dann optional.
-              </p>
-            </div>
-          </label>
-        </div>
-
         <!-- Sprachnotiz-Recorder -->
         <div class="mt-2 flex flex-col gap-2">
           <div class="flex items-center gap-2">
@@ -2120,17 +2067,10 @@
         <!-- Datum + Koordinaten -->
         <p id="lb-date"
           class="text-orange-500 text-xs font-bold uppercase tracking-widest mb-3"></p>
-        <span id="lb-wishlist-badge"
-          class="hidden inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider
-                 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full mb-2">
-          ★ Bucket-List
-        </span>
 
-        <!-- Ortsname + Mood -->
+        <!-- Ortsname -->
         <h2 id="lb-name"
-          class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-1">
-          <span id="lb-mood" class="mr-1.5 align-middle text-2xl hidden"></span><span id="lb-name-text"></span>
-        </h2>
+          class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-1"></h2>
 
         <!-- Author (nur in Gruppen-Einträgen anderer User sichtbar) -->
         <p id="lb-author" class="hidden text-xs font-semibold mb-1 flex items-center gap-1.5">
@@ -2584,7 +2524,7 @@
   function renderCountryStats() {
     const wrap = document.getElementById('country-stats');
     if (!wrap) return;
-    const list = (allEntries || []).filter(e => !e.isWishlist);
+    const list = (allEntries || []);
     if (!list.length) { wrap.classList.add('hidden'); return; }
     const codes = new Set();
     for (const e of list) {
@@ -2666,10 +2606,8 @@
 
     // Nach Autor gruppieren, jede User-Route eigenständig zeichnen,
     // damit Mitglieder einer Gruppe optisch unterscheidbar sind.
-    // Wunsch-Orte (Bucket-List) gehören nicht zur tatsächlichen Reiseroute.
     const byUser = new Map();
     for (const e of entries) {
-      if (e.isWishlist) continue;
       const key = e.userId || '__unknown__';
       if (!byUser.has(key)) byUser.set(key, []);
       byUser.get(key).push(e);
@@ -2737,7 +2675,7 @@
   let heatLayer = null;
   function buildHeatPoints() {
     return (allEntries || [])
-      .filter(e => !e.isWishlist && Number.isFinite(e.lat) && Number.isFinite(e.lng))
+      .filter(e => Number.isFinite(e.lat) && Number.isFinite(e.lng))
       .map(e => [e.lat, e.lng, 0.6]);
   }
   function toggleHeatmap() {
@@ -2774,7 +2712,6 @@
 
   function computeRecapStats(year) {
     const inYear = (allEntries || []).filter(e => {
-      if (e.isWishlist) return false;
       if (!e.date) return false;
       return new Date(e.date).getFullYear() === year;
     });
@@ -2785,11 +2722,6 @@
       if (cc) countryCount[cc] = (countryCount[cc] || 0) + 1;
     });
     const topCountry = Object.entries(countryCount).sort((a,b) => b[1] - a[1])[0];
-
-    // Top Mood
-    const moodCount = {};
-    inYear.forEach(e => { if (e.mood) moodCount[e.mood] = (moodCount[e.mood] || 0) + 1; });
-    const topMood = Object.entries(moodCount).sort((a,b) => b[1] - a[1])[0];
 
     // Monate
     const monthCount = new Array(12).fill(0);
@@ -2820,7 +2752,6 @@
       count: inYear.length,
       countries: Object.keys(countryCount).length,
       topCountry: topCountry ? { cc: topCountry[0], n: topCountry[1] } : null,
-      topMood:    topMood    ? { mood: topMood[0],   n: topMood[1] }   : null,
       photos:    photoCount,
       topMonth,
       kmTotal: Math.round(totalKm),
@@ -2832,7 +2763,7 @@
   function recapAvailableYears() {
     const ys = new Set();
     (allEntries || []).forEach(e => {
-      if (e.date && !e.isWishlist) ys.add(new Date(e.date).getFullYear());
+      if (e.date) ys.add(new Date(e.date).getFullYear());
     });
     return [...ys].sort((a,b) => b - a);
   }
@@ -2904,13 +2835,6 @@
         <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Countries' : 'Länder'}</p>
         <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.countries}</p>
         ${s.topCountry ? `<p class="recap-anim text-3xl mt-6" style="animation-delay:.5s">${flagEmoji(s.topCountry.cc)} <span class="text-base text-white/80">${en ? 'most visits' : 'meiste Besuche'}</span></p>` : ''}`,
-    });
-    if (s.topMood) slides.push({
-      bg: gradients[3],
-      html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Top mood' : 'Top-Stimmung'}</p>
-        <p class="recap-anim text-[180px] leading-none mt-6" style="animation-delay:.25s">${s.topMood.mood}</p>
-        <p class="recap-anim text-base text-white/85 mt-6" style="animation-delay:.5s">${s.topMood.n}× ${en ? 'this year' : 'dieses Jahr'}</p>`,
     });
     slides.push({
       bg: gradients[4],
@@ -3063,14 +2987,6 @@
     g3.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = g3; ctx.fillRect(0, 0, W, H);
 
-    // Mood (Top-Right)
-    if (entry.mood) {
-      ctx.font = 'bold 130px "Inter", sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#fff';
-      ctx.fillText(entry.mood, W - 70, 200);
-    }
-
     // Datum (Top-Left)
     if (entry.date) {
       ctx.font = 'bold 38px "Inter", sans-serif';
@@ -3147,7 +3063,7 @@
 
   function openPlayback() {
     pbEntries = (entries || [])
-      .filter(e => !e.isWishlist && e.date && Number.isFinite(e.lat) && Number.isFinite(e.lng))
+      .filter(e => e.date && Number.isFinite(e.lat) && Number.isFinite(e.lng))
       .sort((a,b) => a.date.localeCompare(b.date));
     if (pbEntries.length < 2) {
       toast(currentLang === 'en'
@@ -3596,22 +3512,7 @@
     refreshAfterFilterChange();
   }
 
-  function makeIcon(hasPhoto, color = '#f97316', opts = {}) {
-    if (opts.wishlist) {
-      // Bucket-List: gestrichelter Rand, transparenter Hintergrund — klar abgesetzt
-      return L.divIcon({
-        className: '',
-        html: `<div style="position:relative;width:20px;height:20px;background:transparent;
-                           border:2.5px dashed ${color};border-radius:50%;
-                           display:flex;align-items:center;justify-content:center;
-                           box-shadow:0 0 0 3px ${color}22">
-                 <span style="font-size:10px;line-height:1;color:${color};font-weight:900">★</span>
-               </div>`,
-        iconSize:    [20, 20],
-        iconAnchor:  [10, 10],
-        popupAnchor: [0, -16],
-      });
-    }
+  function makeIcon(hasPhoto, color = '#f97316') {
     const dot = hasPhoto
       ? `<div style="position:absolute;top:-5px;right:-5px;width:10px;height:10px;
                      background:#10b981;border:2px solid white;border-radius:50%"></div>`
@@ -3668,8 +3569,6 @@
       photos:       parsePhotos(row),
       groupId:      row.group_id || null,
       userId:       row.user_id  || null,
-      mood:         row.mood     || '',
-      isWishlist:   !!row.is_wishlist,
       isDaily:      row.is_daily  || false,
       isPublic:     row.is_public || false,
     };
@@ -4137,12 +4036,9 @@
             ${thumb}
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 min-w-0">
-                <p class="text-sm font-bold text-gray-800 truncate flex-1">
-                  ${e.mood ? `<span class="mr-1 align-middle">${e.mood}</span>` : ''}${esc(e.locationName)}
-                </p>
-                ${e.isDaily   ? `<span title="Streak Check-in" class="flex-shrink-0 text-sm">🔥</span>` : ''}
-                ${e.isPublic  ? `<span title="Öffentlich" class="flex-shrink-0 text-sm">🌍</span>` : ''}
-                ${e.isWishlist ? `<span title="Bucket-List" class="flex-shrink-0 text-sm">⭐</span>` : ''}
+                <p class="text-sm font-bold text-gray-800 truncate flex-1">${esc(e.locationName)}</p>
+                ${e.isDaily  ? `<span title="Streak Check-in" class="flex-shrink-0 text-sm">🔥</span>` : ''}
+                ${e.isPublic ? `<span title="Öffentlich" class="flex-shrink-0 text-sm">🌍</span>` : ''}
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <p class="text-xs text-orange-500 font-medium">${fmtDate(e.date)}</p>
@@ -4379,17 +4275,12 @@
 
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
-    // Wunsch-Orte (Bucket-List) → eigenes Symbol; Streak-Einträge → Streak-Icon;
-    // sonst Standard mit Foto-Indikator.
-    const icon = entry.isWishlist
-      ? makeIcon(false, colorForUser(entry.userId), { wishlist: true })
-      : entry.isDaily
-        ? makeStreakIcon(entry.photos?.[0] ? toDisplayUrl(entry.photos[0], 80) : null)
-        : makeIcon(hasPhoto(entry), colorForUser(entry.userId));
+    const icon = entry.isDaily
+      ? makeStreakIcon(entry.photos?.[0] ? toDisplayUrl(entry.photos[0], 80) : null)
+      : makeIcon(hasPhoto(entry), colorForUser(entry.userId));
     const marker = L.marker([entry.lat, entry.lng], {
       icon,
       userId:       entry.userId,
-      wishlist:     entry.isWishlist,
       zIndexOffset: entry.isDaily ? 100 : 0,
     });
     marker.on('click', () => openLightbox(entry));
@@ -4406,8 +4297,6 @@
   const lbImg        = document.getElementById('lb-img');
   const lbDate       = document.getElementById('lb-date');
   const lbName       = document.getElementById('lb-name');
-  const lbNameText   = document.getElementById('lb-name-text');
-  const lbMoodEl     = document.getElementById('lb-mood');
   const lbNotes      = document.getElementById('lb-notes');
   const lbCoords     = document.getElementById('lb-coords');
   const lbPrev       = document.getElementById('lb-prev');
@@ -4485,14 +4374,7 @@
     }
 
     lbDate.textContent   = entry.date ? `📅  ${fmtDate(entry.date)}` : '';
-    if (lbNameText) lbNameText.textContent = entry.locationName;
-    else lbName.textContent = entry.locationName;
-    if (lbMoodEl) {
-      if (entry.mood) { lbMoodEl.textContent = entry.mood; lbMoodEl.classList.remove('hidden'); }
-      else            { lbMoodEl.textContent = '';        lbMoodEl.classList.add('hidden'); }
-    }
-    const wlBadge = document.getElementById('lb-wishlist-badge');
-    if (wlBadge) wlBadge.classList.toggle('hidden', !entry.isWishlist);
+    lbName.textContent   = entry.locationName;
     renderMdBold(lbNotes, entry.notes || t('noNotes'));
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
@@ -4598,29 +4480,11 @@
     document.getElementById('save-label').textContent    = t('saveChanges');
     setPublicSwitch(entry.isPublic || false);
 
-    setMood(entry.mood || '');
-    const wlEl = document.getElementById('inp-wishlist');
-    if (wlEl) wlEl.checked = !!entry.isWishlist;
     showPreviewPin(entry.lat, entry.lng);
     loadTagsForEntry(entry.id);
     renderThumbGrid();
     openSidebar();
   }
-
-  // ─── Mood-Picker (click → select) ────────────────────────────────────────
-  function setMood(value) {
-    const input = document.getElementById('inp-mood');
-    if (input) input.value = value || '';
-    document.querySelectorAll('#mood-picker .mood-opt').forEach(btn => {
-      btn.classList.toggle('selected', btn.dataset.mood === value);
-    });
-  }
-  document.addEventListener('click', e => {
-    const btn = e.target.closest('#mood-picker .mood-opt');
-    if (!btn) return;
-    const cur = document.getElementById('inp-mood')?.value || '';
-    setMood(btn.dataset.mood === cur ? '' : btn.dataset.mood);
-  });
 
   // ─── Liste rendern ────────────────────────────────────────────────────────
   function renderList() {
@@ -4937,8 +4801,6 @@
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
     document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
-    setMood('');
-    { const wl = document.getElementById('inp-wishlist'); if (wl) wl.checked = false; }
     pendingTags = []; renderTagPicker();
     resetPhoto();
     openSidebar();
@@ -4968,9 +4830,8 @@
       setTimeout(() => document.getElementById('inp-location').classList.remove('ring-2','ring-red-400','border-red-300'), 2000);
       return;
     }
-    const isWishlist = !!document.getElementById('inp-wishlist')?.checked;
     const hasMedia = existingPhotos.length > 0 || pendingPhotos.length > 0 || pendingVideos.length > 0;
-    if (!hasMedia && !isWishlist) {
+    if (!hasMedia) {
       document.getElementById('upload-area').classList.add('ring-2','ring-red-400');
       toast(tG('Mindestens ein Bild oder Video ist Pflicht.', 'At least one image or video is required.'), 'err');
       setTimeout(() => document.getElementById('upload-area').classList.remove('ring-2','ring-red-400'), 2000);
@@ -5002,10 +4863,6 @@
       image_url:     imageUrl,
       is_daily:      document.getElementById('inp-daily').checked,
       ...(hasPublicCol ? { is_public: document.getElementById('inp-public').checked } : {}),
-      ...(hasMoodCols  ? {
-        mood:        (document.getElementById('inp-mood')?.value || '') || null,
-        is_wishlist: !!document.getElementById('inp-wishlist')?.checked,
-      } : {}),
     };
 
     if (editingId) {
@@ -5396,11 +5253,8 @@
   let authMode      = 'login'; // 'login' | 'register' | 'forgot' | 'reset'
   let hasUserIdCol  = false;   // set true after running supabase_migration.sql
   let hasPublicCol  = false;   // set true after running migration_is_public.sql
-  let hasMoodCols   = false;   // set true after running supabase_mood_bucket_migration.sql
   const ENTRY_BASE  = 'id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id';
-  const entryCols   = () => ENTRY_BASE
-    + (hasPublicCol ? ',is_public'        : '')
-    + (hasMoodCols  ? ',mood,is_wishlist' : '');
+  const entryCols   = () => hasPublicCol ? ENTRY_BASE + ',is_public' : ENTRY_BASE;
 
   const authEmail    = document.getElementById('auth-email');
   const authPassword = document.getElementById('auth-password');
@@ -6891,7 +6745,6 @@
       // Left panel
       stats:'Statistiken', trips:'Reisen', north:'Nördlichst', last:'Letztes',
       countriesVisited:'Länder besucht', visitedPrefix:'Du hast', visitedSuffix:'Länder besucht',
-      lblMood:'Stimmung', lblWishlist:'Bucket-List (noch nicht besucht)',
       filterPh:'Orte filtern …', allYears:'Alle',
       tabAll:'🗺 Alle', tabFavs:'❤ Favoriten',
       loading:'Lädt …', profileSub:'Weltenbummler', profilePh:'Dein Reisename …',
@@ -7020,7 +6873,6 @@
     en: {
       stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
       countriesVisited:'countries visited', visitedPrefix:'You’ve visited', visitedSuffix:'countries',
-      lblMood:'Mood', lblWishlist:'Bucket list (not visited yet)',
       filterPh:'Filter places …', allYears:'All',
       tabAll:'🗺 All', tabFavs:'❤ Favorites',
       loading:'Loading …', profileSub:'World Traveler', profilePh:'Your travel name …',
@@ -7338,16 +7190,6 @@
     // Switch map tile language (only affects standard style)
     setMapLang(lang);
 
-    // Mood-Label
-    s('lbl-mood', T.lblMood);
-    // Wishlist-Label (gefolgt vom Sub-Text via dedizierter IDs)
-    const wlLbl = document.getElementById('lbl-wishlist');
-    if (wlLbl) wlLbl.innerHTML = lang === 'en' ? '📍 Bucket list: not visited yet' : '📍 Bucket-List: noch nicht besucht';
-    const wlSub = document.getElementById('lbl-wishlist-sub');
-    if (wlSub) wlSub.textContent = lang === 'en'
-      ? 'Mark this place as a wish. Photos become optional.'
-      : 'Markiere diesen Ort als Wunsch. Fotos sind dann optional.';
-
     // Lightbox extras
     s('lbl-lb-edit',   lang === 'en' ? 'Edit'  : 'Bearbeiten');
     s('lbl-lb-share',  lang === 'en' ? 'Share' : 'Teilen');
@@ -7398,14 +7240,8 @@
     const { error } = await sb.from(TABLE).select('is_public').limit(1);
     hasPublicCol = !error;
   }
-  async function probeMoodCols() {
-    const { error } = await sb.from(TABLE).select('mood,is_wishlist').limit(1);
-    hasMoodCols = !error;
-  }
-
   async function init() {
     await probePublicCol();
-    await probeMoodCols();
     await loadEntries({ toastOnDone: true });
   }
 
@@ -7784,8 +7620,6 @@
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
     document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
-    setMood('');
-    { const wl = document.getElementById('inp-wishlist'); if (wl) wl.checked = false; }
     pendingTags = []; renderTagPicker();
     resetPhoto();
     openSidebar();

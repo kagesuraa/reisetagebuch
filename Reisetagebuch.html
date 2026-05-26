@@ -3281,67 +3281,35 @@
   // ─── Tile-Layer-System ────────────────────────────────────────────────────
   // noWrap+bounds entfernt: bei großen Viewports zeigte das blanke Streifen
   // links/rechts, wenn die Welt schmaler als das Fenster ist. Stattdessen wickelt
-  // sich die Welt horizontal (Standard-Maps-Verhalten).
-  const TILE_BASE_CARTO = { maxZoom: 19, keepBuffer: 8, updateWhenZooming: true, subdomains: 'abcd' };
-
-  // MapTiler (optional, beste Sprach-Lokalisierung). Key in window.MAPTILER_KEY
-  // setzen für echtes Englisch (z.B. "Germany" statt "Deutschland").
-  //   window.MAPTILER_KEY = 'YOUR_KEY';   (Free tier: 100k tiles/month)
-  function mapTilerDef(lang) {
-    const k = window.MAPTILER_KEY;
-    if (!k) return null;
-    return {
-      url:  `https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${k}&lang=${lang}`,
-      opts: { maxZoom: 19, keepBuffer: 8,
-        attribution: '© <a href="https://www.maptiler.com/">MapTiler</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' },
-    };
-  }
-
-  // OSM-DE: echte deutsche Beschriftungen (Länder, Städte, Regionen).
-  const TILE_DE = {
-    url: 'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',
-    opts: { maxZoom: 18, keepBuffer: 8, updateWhenZooming: true, subdomains: 'abc',
-      attribution: '© <a href="https://www.openstreetmap.de/germanstyle.html">OSM Deutschland</a>' },
-  };
-  // Fallback für EN ohne API-Key: Carto Voyager (latinisiert, näher an Englisch).
-  const TILE_EN_FALLBACK = {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    opts: { ...TILE_BASE_CARTO,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' },
-  };
-  // Liefert das passende Standard-Tile-Set je Sprache (mit MapTiler-Vorrang).
-  function standardTileForLang(lang) {
-    const mt = mapTilerDef(lang);
-    if (mt) return mt;
-    return lang === 'de' ? TILE_DE : TILE_EN_FALLBACK;
-  }
+  // sich die Welt horizontal (Standard-Maps-Verhalten). Subdomains explizit auf
+  // a,b,c,d, damit Browser parallel über mehrere Carto-CDN-Hosts laden.
+  const TILE_BASE = { maxZoom: 19, keepBuffer: 8, updateWhenZooming: true, subdomains: 'abcd' };
+  const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                     opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
+  const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };
 
   const tileDefs = {
-    standard: standardTileForLang(currentLang || 'de'),
+    standard: TILE_STD,
     dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      opts: { ...TILE_BASE_CARTO, attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
+      opts: { ...TILE_BASE, attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
     satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      opts: { ...TILE_BASE_CARTO, attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
+      opts: { ...TILE_BASE, attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
   };
 
   let activeStyle = 'standard';
   let activeTile  = L.tileLayer(tileDefs.standard.url, tileDefs.standard.opts).addTo(map);
 
   function setMapLang(lang) {
-    // Bei Style „standard" Tiles sprachabhängig austauschen.
-    // Bei Dark/Satellit nur den Default-Stand des Standard-Layers aktualisieren,
-    // damit Rückwechsel auf Standard die korrekte Sprache nutzt.
-    tileDefs.standard = standardTileForLang(lang);
-    if (activeStyle !== 'standard') return;
+    if (activeStyle !== 'standard') return; // dark/satellite have no language variant
+    const def = TILE_STD_LANG[lang] || TILE_STD_LANG.de;
     map.removeLayer(activeTile);
-    activeTile = L.tileLayer(tileDefs.standard.url, tileDefs.standard.opts).addTo(map);
+    activeTile = L.tileLayer(def.url, def.opts).addTo(map);
+    tileDefs.standard = def;
   }
 
   function setTileStyle(name) {
     if (name === activeStyle) { closeStyleDrop(); return; }
     map.removeLayer(activeTile);
-    // „standard" immer mit aktueller Sprach-Variante verwenden
-    if (name === 'standard') tileDefs.standard = standardTileForLang(currentLang || 'de');
     activeTile  = L.tileLayer(tileDefs[name].url, tileDefs[name].opts).addTo(map);
     activeStyle = name;
     document.querySelectorAll('.style-opt').forEach(b => {

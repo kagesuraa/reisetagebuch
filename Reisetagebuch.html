@@ -207,11 +207,11 @@
       /* Floating Route-Button → Bottom Nav */
       #btn-route { display: none !important; }
 
-      /* DE + Dark Buttons auf Karte verstecken — zugänglich über Panel */
-      #lang-btn, #btn-darkmode { display: none !important; }
+      /* Dark-Button komplett verstecken */
+      #btn-darkmode { display: none !important; }
 
-      /* Style-Switcher kleiner + weiter nach oben */
-      #style-btn { width: 2.25rem !important; height: 2.25rem !important; }
+      /* Style- + Lang-Buttons kleiner auf Mobile */
+      #style-btn, #lang-btn { width: 2.25rem !important; height: 2.25rem !important; }
 
       /* Zoom-Buttons nicht überlappen lassen */
       .leaflet-bottom.leaflet-right { bottom: 72px !important; right: 12px !important; }
@@ -467,7 +467,7 @@
     <span class="text-2xl flex-shrink-0">🗺️</span>
     <div class="flex-1 min-w-0">
       <p id="anniversary-text" class="text-sm font-semibold text-gray-800 leading-snug"></p>
-      <p class="text-xs text-orange-400 font-medium mt-0.5">Jahrestag heute ✨</p>
+      <p id="lbl-anniversary-today" class="text-xs text-orange-400 font-medium mt-0.5">Jahrestag heute ✨</p>
     </div>
     <button onclick="document.getElementById('anniversary-banner').classList.add('hidden')"
       class="text-gray-300 hover:text-gray-500 text-xl leading-none flex-shrink-0">×</button>
@@ -791,27 +791,27 @@
               <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
               <div>
                 <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
-                <p class="text-orange-100 text-xs leading-tight">Tage Streak</p>
+                <p id="lbl-streak-days" class="text-orange-100 text-xs leading-tight">Tage Streak</p>
               </div>
             </div>
             <span id="streak-today-badge"
               class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
-              ✓ Heute gecheckt
+              <span id="lbl-streak-today">✓ Heute gecheckt</span>
             </span>
             <button id="streak-checkin-btn"
               onclick="openStreakCheckin()"
               class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
                      shadow-sm hover:bg-orange-50 active:scale-95 transition-all
                      whitespace-nowrap flex-shrink-0 min-h-[36px]">
-              🔥 Heute einchecken
+              <span id="lbl-streak-checkin">🔥 Heute einchecken</span>
             </button>
           </div>
           <!-- Zeile 2: 7-Tage-Verlauf -->
           <div id="streak-history" class="flex gap-1.5 mt-2.5 items-center"></div>
           <!-- Zeile 3: Best + Gesamt -->
           <div class="flex items-center justify-between mt-1.5">
-            <p class="text-orange-100 text-[10px]">Beste: <span id="dash-best-streak" class="font-bold text-white">0</span> Tage</p>
-            <p class="text-orange-100 text-[10px]">Gesamt: <span id="dash-total-checkins" class="font-bold text-white">0</span> Tage</p>
+            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-best">Beste</span>: <span id="dash-best-streak" class="font-bold text-white">0</span> <span id="lbl-streak-best-unit">Tage</span></p>
+            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-total">Gesamt</span>: <span id="dash-total-checkins" class="font-bold text-white">0</span> <span id="lbl-streak-total-unit">Tage</span></p>
           </div>
         </div>
       </div>
@@ -1404,12 +1404,12 @@
 
     <!-- Sprach-Toggle -->
     <button id="lang-btn" onclick="toggleLang()"
-      class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
-             flex items-center justify-center hover:bg-white transition-colors
+      class="h-10 w-10 lg:w-auto lg:px-3 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
+             flex items-center justify-center gap-1 hover:bg-white transition-colors
              text-stone-600 font-bold text-sm tracking-wider"
       title="Sprache wechseln">
-      <span id="lang-flag" class="sr-only">🇩🇪</span>
-      <span id="lang-code">DE</span>
+      <span id="lang-flag">🇩🇪</span>
+      <span id="lang-code" class="hidden lg:inline">DE</span>
     </button>
   </div>
 
@@ -1631,9 +1631,9 @@
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
             <span id="daily-toggle-flame" class="text-base">🔥</span>
-            Täglicher Check-in
+            <span id="lbl-daily-checkin">Täglicher Check-in</span>
           </p>
-          <p class="text-xs text-stone-400 leading-tight mt-0.5">Zählt für deinen Streak</p>
+          <p id="lbl-daily-sub" class="text-xs text-stone-400 leading-tight mt-0.5">Zählt für deinen Streak</p>
         </div>
         <input type="checkbox" id="inp-daily" class="hidden">
       </label>
@@ -2749,18 +2749,22 @@
     if (!hasToday && streak > 0) {
       // In-App Banner anzeigen
       if (dangerBanner) {
-        document.getElementById('streak-danger-text').textContent =
-          `🔥 ${streak} Tage Streak! Heute noch nicht eingecheckt.`;
+        const dangerText = document.getElementById('streak-danger-text');
+        dangerText.textContent = tr[currentLang].streakDangerFull(streak);
+        dangerText.dataset.live = '1';
         dangerBanner.classList.remove('hidden');
-        setTimeout(() => dangerBanner.classList.add('hidden'), 8000);
+        setTimeout(() => {
+          dangerBanner.classList.add('hidden');
+          delete dangerText.dataset.live;
+        }, 8000);
       }
       // Browser-Notification (einmal pro Tag)
       const today = todayISO();
       if (localStorage.getItem(NOTIF_DAY_KEY) !== today && 'Notification' in window) {
         if (Notification.permission === 'default') await Notification.requestPermission();
         if (Notification.permission === 'granted') {
-          new Notification('🔥 Streak in Gefahr!', {
-            body: `${streak} Tage Streak! Check heute noch ein, bevor er abbricht.`,
+          new Notification(tr[currentLang].streakNotifTitle, {
+            body: tr[currentLang].streakNotifBody(streak),
             tag: 'streak-reminder',
           });
           localStorage.setItem(NOTIF_DAY_KEY, today);
@@ -3831,8 +3835,8 @@
       if (entry.isDaily) {
         updateStreakUI();
         const s = calcStreak();
-        const milestones = { 3:'3 Tage 🔥', 7:'1 Woche 🔥🔥', 14:'2 Wochen 💪', 30:'1 Monat 🏆', 100:'100 Tage 🌟' };
-        if (milestones[s]) setTimeout(() => toast(`Streak: ${milestones[s]} — Weiter so!`, 'info'), 600);
+        const milestones = tr[currentLang].milestones;
+        if (milestones[s]) setTimeout(() => toast(tr[currentLang].streakMilestoneMsg(milestones[s]), 'info'), 600);
       }
       toast(`"${entry.locationName}" ${t('savedOk')}`);
     }
@@ -5675,6 +5679,18 @@
       mfaDisableConfirm:'Deaktivieren',
       authMfaLabel:'2FA-Code',
       authMfaHint:'6-stelligen Code aus deiner Authenticator-App eingeben.',
+      // Streak
+      streakDays:'Tage Streak', streakBest:'Beste', streakTotal:'Gesamt', streakDaysUnit:'Tage',
+      streakCheckedToday:'✓ Heute gecheckt', streakCheckinBtn:'🔥 Heute einchecken',
+      streakDangerText:'Streak in Gefahr! Jetzt einchecken.',
+      streakDangerFull: s => `🔥 ${s} Tage Streak! Heute noch nicht eingecheckt.`,
+      streakNotifTitle:'🔥 Streak in Gefahr!',
+      streakNotifBody: s => `${s} Tage Streak! Check heute noch ein.`,
+      dailyCheckinLabel:'Täglicher Check-in', dailyCheckinSub:'Zählt für deinen Streak',
+      milestones: { 3:'3 Tage 🔥', 7:'1 Woche 🔥🔥', 14:'2 Wochen 💪', 30:'1 Monat 🏆', 100:'100 Tage 🌟' },
+      streakMilestoneMsg: (label) => `Streak: ${label} — Weiter so!`,
+      anniversaryToday:'Jahrestag heute ✨',
+      anniversaryMsg: (years, place) => `Vor ${years} Jahr${years>1?'en':''} warst du in ${place}!`,
     },
     en: {
       stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
@@ -5730,12 +5746,27 @@
       mfaDisableConfirm:'Disable',
       authMfaLabel:'2FA code',
       authMfaHint:'Enter the 6-digit code from your authenticator app.',
+      // Streak
+      streakDays:'Day Streak', streakBest:'Best', streakTotal:'Total', streakDaysUnit:'days',
+      streakCheckedToday:'✓ Checked in today', streakCheckinBtn:'🔥 Check in today',
+      streakDangerText:'Streak at risk! Check in now.',
+      streakDangerFull: s => `🔥 ${s}-day streak! Not checked in yet today.`,
+      streakNotifTitle:'🔥 Streak at risk!',
+      streakNotifBody: s => `${s}-day streak! Check in today.`,
+      dailyCheckinLabel:'Daily Check-in', dailyCheckinSub:'Counts for your streak',
+      milestones: { 3:'3 days 🔥', 7:'1 week 🔥🔥', 14:'2 weeks 💪', 30:'1 month 🏆', 100:'100 days 🌟' },
+      streakMilestoneMsg: (label) => `Streak: ${label} — Keep it up!`,
+      anniversaryToday:'Anniversary today ✨',
+      anniversaryMsg: (years, place) => `${years} year${years>1?'s':''} ago you were in ${place}!`,
     }
   };
 
   let currentLang = localStorage.getItem('reise_lang') || 'de';
 
   function t(key) { return tr[currentLang][key] ?? tr.de[key] ?? key; }
+
+  // Apply language immediately so static HTML reflects saved preference before data loads
+  applyLang(currentLang);
 
   function applyLang(lang) {
     currentLang = lang;
@@ -5819,6 +5850,21 @@
     const pf2 = document.getElementById('panel-lang-flag2');
     if (pf)  pf.textContent  = flag;
     if (pf2) pf2.textContent = flag;
+
+    // Streak UI
+    s('lbl-streak-days',    T.streakDays);
+    s('lbl-streak-today',   T.streakCheckedToday);
+    s('lbl-streak-checkin', T.streakCheckinBtn);
+    s('lbl-streak-best',    T.streakBest);
+    s('lbl-streak-total',   T.streakTotal);
+    s('lbl-streak-best-unit',  T.streakDaysUnit);
+    s('lbl-streak-total-unit', T.streakDaysUnit);
+    s('lbl-daily-checkin',  T.dailyCheckinLabel);
+    s('lbl-daily-sub',      T.dailyCheckinSub);
+    s('lbl-anniversary-today', T.anniversaryToday);
+    // Danger banner default text (only if not currently showing a live streak message)
+    const dangerEl = document.getElementById('streak-danger-text');
+    if (dangerEl && !dangerEl.dataset.live) dangerEl.textContent = T.streakDangerText;
 
     // Switch map tile language (only affects standard style)
     setMapLang(lang);
@@ -6342,7 +6388,7 @@
     const years   = today.getFullYear() - new Date(e.date + 'T00:00:00').getFullYear();
     const banner  = document.getElementById('anniversary-banner');
     const text    = document.getElementById('anniversary-text');
-    text.textContent = `Vor ${years} Jahr${years > 1 ? 'en' : ''} warst du in ${e.locationName}!`;
+    text.textContent = tr[currentLang].anniversaryMsg(years, e.locationName);
     banner.classList.remove('hidden');
 
     banner.querySelector('button').addEventListener('click', () => {

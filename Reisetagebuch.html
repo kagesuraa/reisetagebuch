@@ -3289,7 +3289,7 @@
     maxBounds:            worldBounds,
     maxBoundsViscosity:   0.7,
     minZoom:              2,        // Sicherheits-Floor; updateMinZoom kann höher gehen
-    maxZoom:              19,
+    maxZoom:              22,        // visueller Max-Zoom; Tiles werden ab maxNativeZoom hochskaliert
     worldCopyJump:        true,     // Springt sauber über den Anti-Meridian
   }).setView([20, 10], 3);
 
@@ -3322,7 +3322,10 @@
   // links/rechts, wenn die Welt schmaler als das Fenster ist. Stattdessen wickelt
   // sich die Welt horizontal (Standard-Maps-Verhalten). Subdomains explizit auf
   // a,b,c,d, damit Browser parallel über mehrere Carto-CDN-Hosts laden.
-  const TILE_BASE = { maxZoom: 19, keepBuffer: 8, updateWhenZooming: true, subdomains: 'abcd' };
+  // maxNativeZoom: bis hierhin holt Leaflet echte Tiles vom Server.
+  // maxZoom > maxNativeZoom: Leaflet skaliert das letzte verfügbare Tile,
+  // statt eine „zoom level not supported"-Antwort vom Tile-Server zu rendern.
+  const TILE_BASE = { maxZoom: 22, maxNativeZoom: 19, keepBuffer: 8, updateWhenZooming: true, subdomains: 'abcd' };
   const TILE_STD = { url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
                      opts: { ...TILE_BASE, attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>' } };
   const TILE_STD_LANG = { de: TILE_STD, en: TILE_STD };
@@ -3331,8 +3334,10 @@
     standard: TILE_STD,
     dark: { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       opts: { ...TILE_BASE, attribution: '© OpenStreetMap © <a href="https://carto.com/">CARTO</a>' } },
+    // Esri World Imagery: native bis 19; höhere Stufen werden hochskaliert
     satellite: { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      opts: { ...TILE_BASE, attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
+      opts: { ...TILE_BASE, maxNativeZoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; Esri, USGS, USDA, AEX, GeoEye, Aerogrid, IGN' } },
   };
 
   let activeStyle = 'standard';

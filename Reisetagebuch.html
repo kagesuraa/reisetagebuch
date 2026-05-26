@@ -24,6 +24,7 @@
   <link rel="manifest" href="manifest.json" />
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>window.MAPTILER_KEY = 'l0aEzx5zHGNmKthOWNYW';</script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -912,6 +913,13 @@
         <span id="auth-btn-label">Anmelden</span>
       </button>
 
+      <!-- Trust Badges -->
+      <div class="flex items-center justify-center gap-5 py-0.5">
+        <span class="text-[10px] text-stone-400">🔒 <span id="auth-trust-1">Sicher</span></span>
+        <span class="text-[10px] text-stone-400">🌍 <span id="auth-trust-2">Überall</span></span>
+        <span class="text-[10px] text-stone-400">💫 <span id="auth-trust-3">Kostenlos</span></span>
+      </div>
+
       <!-- Switch-Link -->
       <p id="auth-info" class="text-center text-xs text-stone-400">
         <span id="lbl-auth-info">Noch kein Konto?</span>
@@ -947,7 +955,7 @@
             </button>
           </div>
         </div>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <div class="bg-white rounded-xl px-2 py-3 text-center">
             <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -955,6 +963,11 @@
             </svg>
             <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
             <p id="lbl-trips" class="text-xs text-stone-400 mt-0.5">Reisen</p>
+          </div>
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <span class="text-base leading-none block mb-1">🌍</span>
+            <p id="dash-countries" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
+            <p id="lbl-countries" class="text-xs text-stone-400 mt-0.5">Länder</p>
           </div>
           <div class="bg-white rounded-xl px-2 py-3 text-center">
             <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

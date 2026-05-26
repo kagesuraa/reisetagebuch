@@ -692,7 +692,7 @@
 
       <!-- Neues Passwort (nur bei Reset) -->
       <div id="auth-newpw-field" class="hidden">
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Neues Passwort</label>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5"><span id="lbl-auth-newpw">Neues Passwort</span></label>
         <input id="auth-new-password" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen"
           class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
                  focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
@@ -1652,9 +1652,9 @@
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
             <span class="text-base">🌍</span>
-            Öffentlich teilen
+            <span id="lbl-public-label">Öffentlich teilen</span>
           </p>
-          <p class="text-xs text-sky-500 leading-tight mt-0.5">Im Entdecken-Feed für alle sichtbar</p>
+          <p id="lbl-public-desc" class="text-xs text-sky-500 leading-tight mt-0.5">Im Entdecken-Feed für alle sichtbar</p>
         </div>
         <input type="checkbox" id="inp-public" class="hidden" onclick="event.stopPropagation()">
       </div>
@@ -3406,8 +3406,8 @@
     document.getElementById('coords-display').textContent =
       `${entry.lat.toFixed(5)}°, ${entry.lng.toFixed(5)}°`;
 
-    document.getElementById('sidebar-title').textContent = 'Eintrag bearbeiten';
-    document.getElementById('save-label').textContent    = 'Änderungen speichern';
+    document.getElementById('sidebar-title').textContent = t('editEntry');
+    document.getElementById('save-label').textContent    = t('saveChanges');
     setPublicSwitch(entry.isPublic || false);
 
     showPreviewPin(entry.lat, entry.lng);
@@ -3668,8 +3668,8 @@
     resetPhoto();
     clearPendingAudio();
     removePreviewPin();
-    document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
-    document.getElementById('save-label').textContent    = 'Eintrag speichern';
+    document.getElementById('sidebar-title').textContent = t('newEntry');
+    document.getElementById('save-label').textContent    = t('saveBtn');
     setDailySwitch(false);
     setPublicSwitch(false);
   }
@@ -4219,18 +4219,18 @@
     if (emailField) emailField.classList.toggle('hidden', isMfa);
 
     if (isForgot) {
-      authBtnLbl.textContent = 'Reset-Link senden';
+      authBtnLbl.textContent = t('authBtnForgot');
       document.getElementById('lbl-auth-info').textContent = '';
     } else if (isReset) {
-      authBtnLbl.textContent = 'Passwort speichern';
+      authBtnLbl.textContent = t('authBtnReset');
     } else if (isMfa) {
-      authBtnLbl.textContent = currentLang === 'en' ? 'Verify' : 'Bestätigen';
+      authBtnLbl.textContent = t('mfaVerify');
       document.getElementById('lbl-auth-info').textContent   = currentLang === 'en' ? 'Lost access?' : 'Kein Zugriff?';
-      document.getElementById('lbl-auth-switch').textContent = currentLang === 'en' ? 'Cancel' : 'Abbrechen';
+      document.getElementById('lbl-auth-switch').textContent = t('mfaCancel');
     } else {
-      authBtnLbl.textContent = isReg ? 'Registrieren' : 'Anmelden';
-      document.getElementById('lbl-auth-info').textContent   = isReg ? 'Schon ein Konto?' : 'Noch kein Konto?';
-      document.getElementById('lbl-auth-switch').textContent = isReg ? 'Jetzt anmelden' : 'Jetzt registrieren';
+      authBtnLbl.textContent = isReg ? t('authBtnRegister') : t('authBtnLogin');
+      document.getElementById('lbl-auth-info').textContent   = isReg ? t('authInfoExists') : t('authInfoNew');
+      document.getElementById('lbl-auth-switch').textContent = isReg ? t('authSwitchLogin') : t('authSwitchRegister');
       authPassword.autocomplete = isReg ? 'new-password' : 'current-password';
     }
     authError.classList.add('hidden');
@@ -5636,7 +5636,8 @@
       galNoPhotos:'Noch keine Fotos hochgeladen.',
       galNoFavPhotos:'Keine Favoriten mit Fotos vorhanden.',
       // Form sidebar
-      newEntry:'Neuer Eintrag', lblLocation:'Ortsname', locationPh:'Ort suchen oder eingeben …',
+      newEntry:'Neuer Eintrag', editEntry:'Eintrag bearbeiten', saveChanges:'Änderungen speichern',
+      lblLocation:'Ortsname', locationPh:'Ort suchen oder eingeben …',
       lblDate:'Datum', lblPhoto:'Foto',
       uploadMain:'Fotos auswählen oder hierher ziehen',
       uploadSub:'Mehrere Bilder möglich · JPG, PNG, WEBP',
@@ -5694,6 +5695,46 @@
       streakMilestoneMsg: (label) => `Streak: ${label} — Weiter so!`,
       anniversaryToday:'Jahrestag heute ✨',
       anniversaryMsg: (years, place) => `Vor ${years} Jahr${years>1?'en':''} warst du in ${place}!`,
+      // Auth
+      authLogin:'Anmelden', authRegister:'Registrieren',
+      authName:'Name', authNamePh:'Dein Reisename',
+      authPassword:'Passwort', authForgot:'Passwort vergessen?',
+      authNewPw:'Neues Passwort', authNewPwPh:'Mindestens 8 Zeichen',
+      authBtnLogin:'Anmelden', authBtnRegister:'Registrieren',
+      authBtnForgot:'Reset-Link senden', authBtnReset:'Passwort speichern',
+      authInfoNew:'Noch kein Konto?', authInfoExists:'Schon ein Konto?',
+      authSwitchRegister:'Jetzt registrieren', authSwitchLogin:'Jetzt anmelden',
+      authEmailTooltip:'Nutze eine echte E-Mail — sie ist dein einziger Weg zurück, falls du dein Passwort vergisst.',
+      // Settings
+      avatarTitle:'Profilbild', avatarPick:'Bild ändern', avatarRemove:'Bild entfernen',
+      usernameTitle:'Benutzername', usernameSave:'Speichern',
+      usernameDesc:'Andere können dich per Benutzername zu Gruppen einladen.',
+      usernamePh:'z.B. anna_m',
+      colorTitle:'Deine Farbe',
+      colorDesc:'Wird für deine Marker, Routenlinie und Cluster-Blasen verwendet.',
+      groupsTitle:'Meine Gruppen', createGroup:'+ Erstellen',
+      invitesTitle:'Einladungen',
+      settingsLogout:'Abmelden', settingsDelete:'Konto löschen',
+      // Group Create
+      cgTitle:'Neue Gruppe', cgName:'Gruppenname', cgNamePh:'z.B. Familie Müller',
+      cgInclude:'Meine bisherigen Einträge in diese Gruppe übernehmen',
+      cgIncludeHint:'Andere Mitglieder können dann auch deine alten Einträge sehen.',
+      cgCancel:'Abbrechen', cgConfirm:'Erstellen',
+      // Invite Popup
+      inviteTitle:'Neue Einladung',
+      inviteBody:'Du wurdest zur Gruppe', inviteSuffix:'eingeladen. Möchtest du beitreten?',
+      inviteShare:'Meine bisherigen Einträge in diese Gruppe übernehmen',
+      inviteShareHint:'Andere Mitglieder können dann auch deine bisherigen Einträge sehen.',
+      inviteDecline:'Ablehnen', inviteAccept:'Annehmen',
+      // Group Detail
+      gdMembers:'Mitglieder', gdInvite:'Benutzername oder E-Mail einladen',
+      gdInvitePh:'anna_m oder name@example.com', gdInviteBtn:'Einladen',
+      gdPending:'Offene Einladungen', gdDelete:'Gruppe löschen',
+      gdShareEntries:'Meine privaten Einträge in diese Gruppe übernehmen',
+      gdLeave:'Gruppe verlassen',
+      // Public / Entdecken
+      publicLabel:'Öffentlich teilen', publicDesc:'Im Entdecken-Feed für alle sichtbar',
+      tabDiscover:'🌍 Entdecken',
     },
     en: {
       stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
@@ -5706,7 +5747,8 @@
       galAll:'All', galFavs:'❤ Favorites',
       galNoPhotos:'No photos uploaded yet.',
       galNoFavPhotos:'No favorite entries with photos.',
-      newEntry:'New Entry', lblLocation:'Location', locationPh:'Search or enter a place …',
+      newEntry:'New Entry', editEntry:'Edit Entry', saveChanges:'Save Changes',
+      lblLocation:'Location', locationPh:'Search or enter a place …',
       lblDate:'Date', lblPhoto:'Photo',
       uploadMain:'Select photos or drag here',
       uploadSub:'Multiple images supported · JPG, PNG, WEBP',
@@ -5761,6 +5803,46 @@
       streakMilestoneMsg: (label) => `Streak: ${label} — Keep it up!`,
       anniversaryToday:'Anniversary today ✨',
       anniversaryMsg: (years, place) => `${years} year${years>1?'s':''} ago you were in ${place}!`,
+      // Auth
+      authLogin:'Sign In', authRegister:'Register',
+      authName:'Name', authNamePh:'Your travel name',
+      authPassword:'Password', authForgot:'Forgot password?',
+      authNewPw:'New Password', authNewPwPh:'At least 8 characters',
+      authBtnLogin:'Sign In', authBtnRegister:'Register',
+      authBtnForgot:'Send reset link', authBtnReset:'Save password',
+      authInfoNew:"Don't have an account?", authInfoExists:'Already have an account?',
+      authSwitchRegister:'Register now', authSwitchLogin:'Sign in now',
+      authEmailTooltip:"Use a real email — it's your only way back if you forget your password.",
+      // Settings
+      avatarTitle:'Profile Picture', avatarPick:'Change photo', avatarRemove:'Remove photo',
+      usernameTitle:'Username', usernameSave:'Save',
+      usernameDesc:'Others can invite you to groups using your username.',
+      usernamePh:'e.g. anna_m',
+      colorTitle:'Your Color',
+      colorDesc:'Used for your markers, route line and cluster bubbles.',
+      groupsTitle:'My Groups', createGroup:'+ Create',
+      invitesTitle:'Invitations',
+      settingsLogout:'Sign Out', settingsDelete:'Delete Account',
+      // Group Create
+      cgTitle:'New Group', cgName:'Group Name', cgNamePh:'e.g. Family Smith',
+      cgInclude:'Include my existing entries in this group',
+      cgIncludeHint:'Other members will then also be able to see your old entries.',
+      cgCancel:'Cancel', cgConfirm:'Create',
+      // Invite Popup
+      inviteTitle:'New Invitation',
+      inviteBody:'You were invited to join', inviteSuffix:'Would you like to join?',
+      inviteShare:'Include my existing entries in this group',
+      inviteShareHint:'Other members will then also be able to see your existing entries.',
+      inviteDecline:'Decline', inviteAccept:'Accept',
+      // Group Detail
+      gdMembers:'Members', gdInvite:'Invite by username or email',
+      gdInvitePh:'anna_m or name@example.com', gdInviteBtn:'Invite',
+      gdPending:'Pending Invitations', gdDelete:'Delete Group',
+      gdShareEntries:'Share my private entries with this group',
+      gdLeave:'Leave Group',
+      // Public / Discover
+      publicLabel:'Share publicly', publicDesc:'Visible to everyone in the Discover feed',
+      tabDiscover:'🌍 Discover',
     }
   };
 
@@ -5868,6 +5950,68 @@
     // Danger banner default text (only if not currently showing a live streak message)
     const dangerEl = document.getElementById('streak-danger-text');
     if (dangerEl && !dangerEl.dataset.live) dangerEl.textContent = T.streakDangerText;
+
+    // Auth panel
+    s('lbl-auth-login',    T.authLogin);
+    s('lbl-auth-register', T.authRegister);
+    s('lbl-auth-name',     T.authName);
+    s('lbl-auth-password', T.authPassword);
+    s('lbl-auth-newpw',    T.authNewPw);
+    s('auth-btn-label',    T.authBtnLogin);
+    s('lbl-auth-info',     T.authInfoNew);
+    s('lbl-auth-switch',   T.authSwitchRegister);
+    s('auth-forgot-link',  T.authForgot);
+    sp('auth-name',        T.authNamePh);
+    sp('auth-new-password',T.authNewPwPh);
+
+    // Settings modal
+    s('lbl-avatar-title',   T.avatarTitle);
+    s('lbl-avatar-pick',    T.avatarPick);
+    s('lbl-avatar-remove',  T.avatarRemove);
+    s('lbl-username-title', T.usernameTitle);
+    s('lbl-username-desc',  T.usernameDesc);
+    s('lbl-username-save',  T.usernameSave);
+    s('lbl-color-title',    T.colorTitle);
+    s('lbl-color-desc',     T.colorDesc);
+    s('lbl-groups-title',   T.groupsTitle);
+    s('lbl-create-group',   T.createGroup);
+    s('lbl-invites-title',  T.invitesTitle);
+    s('lbl-settings-logout',T.settingsLogout);
+    s('lbl-settings-delete',T.settingsDelete);
+    sp('username-input',    T.usernamePh);
+
+    // Group Create modal
+    s('lbl-cg-title',        T.cgTitle);
+    s('lbl-cg-name',         T.cgName);
+    s('lbl-cg-include',      T.cgInclude);
+    s('lbl-cg-include-hint', T.cgIncludeHint);
+    s('lbl-cg-cancel',       T.cgCancel);
+    s('lbl-cg-confirm',      T.cgConfirm);
+    sp('cg-name',            T.cgNamePh);
+
+    // Invite Popup
+    s('lbl-invite-popup-title',      T.inviteTitle);
+    s('lbl-invite-popup-body',       T.inviteBody);
+    s('lbl-invite-popup-suffix',     T.inviteSuffix);
+    s('lbl-invite-popup-share',      T.inviteShare);
+    s('lbl-invite-popup-share-hint', T.inviteShareHint);
+    s('lbl-invite-popup-decline',    T.inviteDecline);
+    s('lbl-invite-popup-accept',     T.inviteAccept);
+
+    // Group Detail modal
+    s('lbl-gd-members',      T.gdMembers);
+    s('lbl-gd-invite',       T.gdInvite);
+    s('lbl-gd-invite-btn',   T.gdInviteBtn);
+    s('lbl-gd-pending',      T.gdPending);
+    s('lbl-gd-delete',       T.gdDelete);
+    s('lbl-gd-share-entries',T.gdShareEntries);
+    s('lbl-gd-leave',        T.gdLeave);
+    sp('gd-invite-email',    T.gdInvitePh);
+
+    // Public toggle + Discover tab
+    s('lbl-public-label', T.publicLabel);
+    s('lbl-public-desc',  T.publicDesc);
+    s('tab-discover',     T.tabDiscover);
 
     // Switch map tile language (only affects standard style)
     setMapLang(lang);

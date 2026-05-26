@@ -558,7 +558,7 @@
       <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
       <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
       <!-- Chevron-Pfeil (Mobile/Tablet) -->
-      <svg class="lg:hidden w-7 h-7 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg class="lg:hidden w-7 h-7 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transition:transform 150ms ease">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
       </svg>
     </button>
@@ -4367,7 +4367,7 @@
     const closeLogged = document.getElementById('left-panel-close-logged');
     if (closeLogged && !closeLogged.dataset.listenerAttached) {
       closeLogged.dataset.listenerAttached = '1';
-      closeLogged.addEventListener('click', () => leftPanel.classList.add('-translate-x-full'));
+      closeLogged.addEventListener('click', () => hidePanel());
     }
   }
 
@@ -4403,7 +4403,13 @@
     authEmail.value = ''; authPassword.value = ''; authNameInp.value = '';
     authError.classList.add('hidden');
     setAuthMode('login');
-    showPanel();
+    // Flag löschen damit closeLogged-Listener bei Re-Login korrekt re-attached wird
+    const closeLogged = document.getElementById('left-panel-close-logged');
+    if (closeLogged) delete closeLogged.dataset.listenerAttached;
+    // Panel öffnen ohne hideTimer zu canceln (scheduleHide läuft weiter)
+    leftPanel.classList.remove('-translate-x-full');
+    panelBackdrop?.classList.add('active');
+    if (panelChevron) panelChevron.style.transform = 'rotate(180deg)';
   }
 
   // ─── Homepage Slider ──────────────────────────────────────────────────────

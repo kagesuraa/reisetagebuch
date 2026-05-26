@@ -822,15 +822,15 @@
       <!-- Aktivitäts-Diagramm -->
       <div class="px-4 pt-3 pb-3 flex-shrink-0 border-b border-orange-100">
         <div class="flex items-center justify-between mb-2">
-          <p class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
+          <p id="lbl-chart-title" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
           <div class="flex bg-orange-50 rounded-lg p-0.5 gap-0.5">
             <button id="chart-mode-month"
               class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors">
-              Monate
+              <span id="lbl-chart-months">Monate</span>
             </button>
             <button id="chart-mode-year"
               class="text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors">
-              Jahre
+              <span id="lbl-chart-years">Jahre</span>
             </button>
           </div>
         </div>
@@ -2829,7 +2829,7 @@
     const canvas = document.getElementById('stats-chart');
     if (!canvas || typeof Chart === 'undefined') return;
 
-    const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const MONTHS = tr[currentLang].chartMonths;
     let labels, data;
 
     if (chartMode === 'month') {
@@ -2871,7 +2871,7 @@
             titleFont: { size: 11 },
             bodyFont: { size: 11 },
             callbacks: {
-              label: ctx => ` ${ctx.parsed.y} Eintrag${ctx.parsed.y !== 1 ? 'e' : ''}`,
+              label: ctx => ` ${ctx.parsed.y} ${tr[currentLang].chartEntryLabel(ctx.parsed.y)}`,
             },
           },
         },
@@ -5698,6 +5698,10 @@
       streakMilestoneMsg: (label) => `Streak: ${label} — Weiter so!`,
       anniversaryToday:'Jahrestag heute ✨',
       anniversaryMsg: (years, place) => `Vor ${years} Jahr${years>1?'en':''} warst du in ${place}!`,
+      // Chart
+      chartMonths:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+      chartEntryLabel: n => `Eintrag${n !== 1 ? 'e' : ''}`,
+      chartTitle:'Aktivität', chartMonthsBtn:'Monate', chartYearsBtn:'Jahre',
       // Auth
       authLogin:'Anmelden', authRegister:'Registrieren',
       authName:'Name', authNamePh:'Dein Reisename',
@@ -5806,6 +5810,10 @@
       streakMilestoneMsg: (label) => `Streak: ${label} — Keep it up!`,
       anniversaryToday:'Anniversary today ✨',
       anniversaryMsg: (years, place) => `${years} year${years>1?'s':''} ago you were in ${place}!`,
+      // Chart
+      chartMonths:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      chartEntryLabel: n => `entr${n !== 1 ? 'ies' : 'y'}`,
+      chartTitle:'Activity', chartMonthsBtn:'Months', chartYearsBtn:'Years',
       // Auth
       authLogin:'Sign In', authRegister:'Register',
       authName:'Name', authNamePh:'Your travel name',
@@ -6015,6 +6023,12 @@
     s('lbl-public-label', T.publicLabel);
     s('lbl-public-desc',  T.publicDesc);
     s('tab-discover',     T.tabDiscover);
+
+    // Chart
+    s('lbl-chart-title',  T.chartTitle);
+    s('lbl-chart-months', T.chartMonthsBtn);
+    s('lbl-chart-years',  T.chartYearsBtn);
+    renderChart();
 
     // Switch map tile language (only affects standard style)
     setMapLang(lang);

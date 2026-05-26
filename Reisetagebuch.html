@@ -355,10 +355,9 @@
     html.dark .tag-chip.active { background:#1a2235; color:#fb923c; border-color:#fb923c; }
 
     /* ── Jahres-Recap ─────────────────────────────────────────────────────── */
-    .recap-slide-bg {
-      position: absolute; inset: 0;
-      transition: opacity 0.4s;
-    }
+    .recap-stage { transition: background 0.6s ease-out, transform .25s ease-out; }
+    .recap-stage.recap-paused { transform: scale(.985); }
+    #recap-slide { transition: opacity 0.25s ease-out; }
     .recap-progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 999px; overflow: hidden; }
     .recap-progress-fill { height: 100%; background: #fff; width: 0%; transition: width linear; border-radius: inherit; }
     .recap-progress-fill.done { width: 100%; transition: none; }
@@ -367,6 +366,19 @@
     .recap-anim { animation: recap-up 0.55s cubic-bezier(.2,.7,.3,1) both; }
     .recap-year-btn { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 999px; color: rgba(255,255,255,.7); }
     .recap-year-btn.active { background: rgba(255,255,255,.2); color: #fff; }
+    /* Foto-Collage */
+    .recap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: min(86vw, 360px); }
+    .recap-photo {
+      width: 100%; aspect-ratio: 1;
+      background-size: cover; background-position: center;
+      border-radius: 10px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.35);
+      animation: recap-photo-in 0.6s cubic-bezier(.2,.7,.3,1) both;
+    }
+    @keyframes recap-photo-in {
+      from { opacity: 0; transform: scale(.6) translateY(8px); }
+      to   { opacity: 1; transform: none; }
+    }
 
     /* ── Playback Speed Buttons ───────────────────────────────────────────── */
     .pb-speed-btn { color: #a8a29e; cursor: pointer; transition: all .12s; }
@@ -2715,25 +2727,38 @@
       if (!e.date) return false;
       return new Date(e.date).getFullYear() === year;
     });
-    // Länder zählen
+    // Länder zählen — Top-Liste statt nur Top-1
     const countryCount = {};
     inYear.forEach(e => {
       const cc = countryCache[coordKey(e.lat, e.lng)];
       if (cc) countryCount[cc] = (countryCount[cc] || 0) + 1;
     });
-    const topCountry = Object.entries(countryCount).sort((a,b) => b[1] - a[1])[0];
+    const topCountries = Object.entries(countryCount)
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([cc, n]) => ({ cc, n }));
 
-    // Monate
+    // Monate + Verteilung für mini-Chart
     const monthCount = new Array(12).fill(0);
     inYear.forEach(e => monthCount[new Date(e.date).getMonth()]++);
     const topMonthIdx = monthCount.indexOf(Math.max(...monthCount));
     const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
     const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const topMonth = (currentLang === 'en' ? MONTHS_EN : MONTHS_DE)[topMonthIdx];
+    const SHORT_DE  = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    const topMonth  = (currentLang === 'en' ? MONTHS_EN : MONTHS_DE)[topMonthIdx];
 
-    // Fotos
+    // Fotos: Anzahl + Galerie der bis zu 9 spannendsten Aufnahmen
     let photoCount = 0;
-    inYear.forEach(e => { photoCount += (e.photos || []).filter(p => !isVideoUrl(p)).length; });
+    const photoPool = [];
+    inYear.forEach(e => {
+      (e.photos || []).forEach(p => {
+        if (!isVideoUrl(p)) { photoCount++; photoPool.push(p); }
+      });
+    });
+    // Stichprobe gleichmäßig über das Jahr (jedes n-te Foto)
+    const collage = [];
+    const step = Math.max(1, Math.floor(photoPool.length / 9));
+    for (let i = 0; collage.length < 9 && i < photoPool.length; i += step) collage.push(photoPool[i]);
 
     // Distanz (km, Haversine)
     const sorted = [...inYear].sort((a,b) => a.date.localeCompare(b.date));
@@ -2746,17 +2771,24 @@
     }
     for (let i = 1; i < sorted.length; i++) totalKm += hav(sorted[i-1], sorted[i]);
 
-    // First & last entry
+    // Längster Aufenthalt am selben Ort? Eintrag mit den meisten Fotos
+    const mostPhotos = inYear.slice().sort((a,b) => (b.photos?.length||0) - (a.photos?.length||0))[0];
+
     return {
       year,
       count: inYear.length,
       countries: Object.keys(countryCount).length,
-      topCountry: topCountry ? { cc: topCountry[0], n: topCountry[1] } : null,
-      photos:    photoCount,
+      topCountries,
+      photos:        photoCount,
+      collage,
       topMonth,
+      topMonthCount: monthCount[topMonthIdx] || 0,
+      monthDist:     monthCount,
+      monthLabels:   SHORT_DE,
       kmTotal: Math.round(totalKm),
       first: sorted[0] || null,
       last:  sorted[sorted.length - 1] || null,
+      mostPhotos: mostPhotos && (mostPhotos.photos?.length || 0) > 1 ? mostPhotos : null,
     };
   }
 
@@ -2804,87 +2836,229 @@
 
   function buildRecapSlides(s) {
     const en = currentLang === 'en';
-    const gradients = [
-      'linear-gradient(135deg, #f97316, #f59e0b)',
-      'linear-gradient(135deg, #ec4899, #f97316)',
-      'linear-gradient(135deg, #6366f1, #ec4899)',
-      'linear-gradient(135deg, #10b981, #06b6d4)',
-      'linear-gradient(135deg, #8b5cf6, #6366f1)',
-      'linear-gradient(135deg, #f59e0b, #ef4444)',
-      'linear-gradient(135deg, #06b6d4, #6366f1)',
-      'linear-gradient(135deg, #0f172a, #1e293b)',
-    ];
+    const g = {
+      orange:  'linear-gradient(135deg, #f97316, #f59e0b)',
+      pink:    'linear-gradient(135deg, #ec4899, #f97316)',
+      purple:  'linear-gradient(135deg, #6366f1, #ec4899)',
+      teal:    'linear-gradient(135deg, #10b981, #06b6d4)',
+      indigo:  'linear-gradient(135deg, #8b5cf6, #6366f1)',
+      red:     'linear-gradient(135deg, #f59e0b, #ef4444)',
+      cyan:    'linear-gradient(135deg, #06b6d4, #6366f1)',
+      slate:   'linear-gradient(135deg, #0f172a, #1e293b)',
+      sunset:  'linear-gradient(160deg, #fb7185 0%, #f97316 50%, #fbbf24 100%)',
+      ocean:   'linear-gradient(160deg, #0891b2 0%, #6366f1 50%, #8b5cf6 100%)',
+    };
     const slides = [];
+    // Intro
     slides.push({
-      bg: gradients[0],
+      bg: g.sunset,
+      duration: 4200,
       html: `
-        <p class="recap-anim text-base font-bold tracking-widest uppercase text-white/85" style="animation-delay:.05s">${en ? 'Your travel year' : 'Dein Reisejahr'}</p>
-        <p class="recap-anim text-[120px] sm:text-[160px] font-black leading-none mt-3" style="animation-delay:.25s">${s.year}</p>
-        <p class="recap-anim text-sm text-white/80 mt-6 max-w-xs" style="animation-delay:.5s">${en ? 'Tap right to start.' : 'Tippe rechts, um zu starten.'}</p>`,
+        <p class="recap-anim text-sm sm:text-base font-bold tracking-[0.3em] uppercase text-white/85" style="animation-delay:.05s">${en ? 'Your travel year' : 'Dein Reisejahr'}</p>
+        <p class="recap-anim text-[140px] sm:text-[200px] font-black leading-none mt-4 drop-shadow-lg" style="animation-delay:.25s">${s.year}</p>
+        <p class="recap-anim text-sm text-white/90 mt-8 max-w-xs leading-relaxed" style="animation-delay:.6s">${en ? 'Tap right to advance · hold to pause' : 'Tippe rechts zum Weiterklicken · halten zum Pausieren'}</p>`,
     });
+    // Entries (animated count-up)
     slides.push({
-      bg: gradients[1],
+      bg: g.pink,
       html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Entries' : 'Einträge'}</p>
-        <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.count}</p>
-        <p class="recap-anim text-base text-white/85 mt-6 leading-snug" style="animation-delay:.5s">${en ? `moments you captured.` : `Momente festgehalten.`}</p>`,
+        <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/80" style="animation-delay:.05s">${en ? 'Entries' : 'Einträge'}</p>
+        <p class="recap-anim text-[150px] sm:text-[200px] font-black leading-none mt-3" style="animation-delay:.2s">
+          <span class="recap-count" data-to="${s.count}">0</span>
+        </p>
+        <p class="recap-anim text-base sm:text-lg text-white/90 mt-4 leading-snug" style="animation-delay:.5s">${en ? `moments you captured.` : `Momente festgehalten.`}</p>`,
     });
+    // Photo collage (only if at least 4 photos)
+    if (s.collage.length >= 4) {
+      const tiles = s.collage.slice(0, 9).map((src, i) => {
+        const url = safeSrc(toDisplayUrl(src, 300));
+        return `<div class="recap-photo" style="animation-delay:${0.08 + i * 0.06}s;background-image:url('${url}')"></div>`;
+      }).join('');
+      slides.push({
+        bg: g.slate,
+        duration: 5200,
+        html: `
+          <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/80 mb-4" style="animation-delay:.05s">${en ? 'Your year in pictures' : 'Dein Jahr in Bildern'}</p>
+          <div class="recap-grid">${tiles}</div>
+          <p class="recap-anim text-base text-white/85 mt-4" style="animation-delay:.7s"><span class="recap-count" data-to="${s.photos}">0</span> ${en ? 'photos' : 'Fotos'}</p>`,
+      });
+    }
+    // Countries — flag + top-3 list
+    if (s.countries > 0) {
+      const list = s.topCountries.map((c, i) =>
+        `<li class="recap-anim flex items-center justify-between text-white/95 text-base sm:text-lg" style="animation-delay:${0.4 + i*0.12}s">
+           <span class="flex items-center gap-3"><span class="text-2xl">${flagEmoji(c.cc)}</span><span class="font-semibold">${c.cc.toUpperCase()}</span></span>
+           <span class="text-white/70 text-sm">${c.n}×</span>
+         </li>`).join('');
+      slides.push({
+        bg: g.ocean,
+        html: `
+          <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/80" style="animation-delay:.05s">${en ? 'Countries visited' : 'Länder besucht'}</p>
+          <p class="recap-anim text-[150px] sm:text-[200px] font-black leading-none mt-2" style="animation-delay:.2s">
+            <span class="recap-count" data-to="${s.countries}">0</span>
+          </p>
+          <ul class="mt-6 w-full max-w-xs space-y-2.5">${list}</ul>`,
+      });
+    }
+    // Distance
+    if (s.kmTotal > 0) {
+      slides.push({
+        bg: g.red,
+        html: `
+          <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/80" style="animation-delay:.05s">${en ? 'Total distance' : 'Strecke gesamt'}</p>
+          <p class="recap-anim text-[110px] sm:text-[160px] font-black leading-none mt-3" style="animation-delay:.2s">
+            <span class="recap-count" data-to="${s.kmTotal}">0</span>
+          </p>
+          <p class="recap-anim text-2xl text-white/85 mt-1" style="animation-delay:.45s">km</p>
+          <p class="recap-anim text-sm text-white/80 mt-4 max-w-xs leading-relaxed" style="animation-delay:.6s">${en ? 'between your stops — that’s roughly ' : 'zwischen deinen Stationen — etwa '}<span class="font-bold">${Math.round(s.kmTotal/40075*100)}%</span> ${en ? 'around the Earth.' : 'einmal um die Erde.'}</p>`,
+      });
+    }
+    // Best month with mini bar-chart
+    if (s.topMonth) {
+      const maxM = Math.max(...s.monthDist);
+      const bars = s.monthDist.map((n, i) => {
+        const h = maxM ? Math.max(4, (n / maxM) * 100) : 4;
+        const hot = i === s.monthDist.indexOf(maxM);
+        return `<div class="flex flex-col items-center gap-1 flex-1">
+          <div class="w-full rounded-t" style="height:${h}px;background:${hot ? '#fff' : 'rgba(255,255,255,.4)'};transition:height .6s ease-out .${4+i}s"></div>
+          <span class="text-[10px] text-white/70 font-mono">${s.monthLabels[i]}</span>
+        </div>`;
+      }).join('');
+      slides.push({
+        bg: g.indigo,
+        duration: 5200,
+        html: `
+          <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/80" style="animation-delay:.05s">${en ? 'Best month' : 'Bester Monat'}</p>
+          <p class="recap-anim text-4xl sm:text-5xl font-black mt-3" style="animation-delay:.2s">${s.topMonth}</p>
+          <p class="recap-anim text-sm text-white/80 mt-1" style="animation-delay:.35s">${s.topMonthCount} ${en ? 'entries' : 'Einträge'}</p>
+          <div class="recap-anim mt-6 w-full max-w-sm flex items-end gap-1.5 h-32" style="animation-delay:.5s">${bars}</div>`,
+      });
+    }
+    // First & last
+    if (s.first && s.last && s.first !== s.last) {
+      const firstThumb = s.first.photos?.[0] ? safeSrc(toDisplayUrl(s.first.photos[0], 200)) : '';
+      const lastThumb  = s.last.photos?.[0]  ? safeSrc(toDisplayUrl(s.last.photos[0], 200))  : '';
+      slides.push({
+        bg: g.teal,
+        duration: 5200,
+        html: `
+          <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/80 mb-5" style="animation-delay:.05s">${en ? 'From start to finish' : 'Von Anfang bis Ende'}</p>
+          <div class="recap-anim w-full max-w-xs space-y-4" style="animation-delay:.25s">
+            <div class="bg-white/15 backdrop-blur rounded-2xl p-3 flex items-center gap-3">
+              ${firstThumb ? `<div class="w-14 h-14 rounded-xl bg-cover bg-center flex-shrink-0" style="background-image:url('${firstThumb}')"></div>` : '<div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 text-2xl">📍</div>'}
+              <div class="min-w-0 flex-1 text-left">
+                <p class="text-[10px] uppercase tracking-widest text-white/60">${en ? 'First trip' : 'Erster Eintrag'}</p>
+                <p class="font-bold truncate">${esc(s.first.locationName)}</p>
+                <p class="text-xs text-white/70">${fmtDate(s.first.date)}</p>
+              </div>
+            </div>
+            <div class="bg-white/15 backdrop-blur rounded-2xl p-3 flex items-center gap-3">
+              ${lastThumb ? `<div class="w-14 h-14 rounded-xl bg-cover bg-center flex-shrink-0" style="background-image:url('${lastThumb}')"></div>` : '<div class="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 text-2xl">📍</div>'}
+              <div class="min-w-0 flex-1 text-left">
+                <p class="text-[10px] uppercase tracking-widest text-white/60">${en ? 'Last trip' : 'Letzter Eintrag'}</p>
+                <p class="font-bold truncate">${esc(s.last.locationName)}</p>
+                <p class="text-xs text-white/70">${fmtDate(s.last.date)}</p>
+              </div>
+            </div>
+          </div>`,
+      });
+    }
+    // Outro with share + close
     slides.push({
-      bg: gradients[2],
+      bg: g.slate,
+      duration: 99999,           // bleibt stehen
+      noAutoAdvance: true,       // kein Auto-Vorschub
       html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Countries' : 'Länder'}</p>
-        <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.countries}</p>
-        ${s.topCountry ? `<p class="recap-anim text-3xl mt-6" style="animation-delay:.5s">${flagEmoji(s.topCountry.cc)} <span class="text-base text-white/80">${en ? 'most visits' : 'meiste Besuche'}</span></p>` : ''}`,
-    });
-    slides.push({
-      bg: gradients[4],
-      html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Best month' : 'Bester Monat'}</p>
-        <p class="recap-anim text-5xl sm:text-6xl font-black mt-6" style="animation-delay:.25s">${s.topMonth || '–'}</p>
-        <p class="recap-anim text-base text-white/80 mt-6" style="animation-delay:.5s">${en ? 'when you traveled most.' : 'der reisefreudigste Monat.'}</p>`,
-    });
-    slides.push({
-      bg: gradients[5],
-      html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Distance' : 'Strecke'}</p>
-        <p class="recap-anim text-[110px] sm:text-[150px] font-black leading-none mt-4" style="animation-delay:.25s">${s.kmTotal.toLocaleString(currentLang === 'en' ? 'en' : 'de')}</p>
-        <p class="recap-anim text-2xl text-white/85 mt-2" style="animation-delay:.4s">km</p>
-        <p class="recap-anim text-sm text-white/75 mt-4" style="animation-delay:.55s">${en ? 'between your stops' : 'zwischen deinen Stationen'}</p>`,
-    });
-    slides.push({
-      bg: gradients[6],
-      html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Photos' : 'Fotos'}</p>
-        <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.photos}</p>
-        <p class="recap-anim text-base text-white/85 mt-6" style="animation-delay:.5s">${en ? 'memories on camera.' : 'Erinnerungen in Bildern.'}</p>`,
-    });
-    slides.push({
-      bg: gradients[7],
-      html: `
-        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'That was your year' : 'Das war dein Jahr'}</p>
-        <p class="recap-anim text-6xl font-black mt-4" style="animation-delay:.2s">${s.year} ✨</p>
-        <p class="recap-anim text-sm text-white/75 mt-6 max-w-xs leading-relaxed" style="animation-delay:.5s">${en ? 'Thanks for traveling with us. Here’s to more in the year ahead.' : 'Danke, dass du mit uns reist. Auf viele weitere Wege im nächsten Jahr.'}</p>
-        <button onclick="closeRecap()" class="recap-anim mt-8 px-5 py-2.5 rounded-full bg-white text-stone-900 font-bold text-sm shadow-lg" style="animation-delay:.7s">${en ? 'Done' : 'Fertig'}</button>`,
+        <p class="recap-anim text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-white/70" style="animation-delay:.05s">${en ? 'That was' : 'Das war'}</p>
+        <p class="recap-anim text-7xl sm:text-8xl font-black mt-3" style="animation-delay:.2s">${s.year}</p>
+        <p class="recap-anim text-3xl mt-2" style="animation-delay:.35s">✨</p>
+        <p class="recap-anim text-sm text-white/75 mt-6 max-w-xs leading-relaxed" style="animation-delay:.55s">${en ? 'Thanks for traveling with us. Here’s to more in the year ahead.' : 'Danke, dass du mit uns reist. Auf viele weitere Wege im nächsten Jahr.'}</p>
+        <div class="recap-anim flex gap-2 mt-8" style="animation-delay:.75s">
+          <button onclick="recapRestart()" class="px-4 py-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold text-sm transition-colors">↺ ${en ? 'Replay' : 'Nochmal'}</button>
+          <button onclick="closeRecap()" class="px-5 py-2.5 rounded-full bg-white text-stone-900 font-bold text-sm shadow-lg hover:scale-105 active:scale-95 transition-transform">${en ? 'Done' : 'Fertig'}</button>
+        </div>`,
     });
     return slides;
+  }
+
+  function recapRestart() { recapIdx = 0; showRecapSlide(0); }
+
+  function animateCount(el, to, ms) {
+    const target = +to;
+    if (!Number.isFinite(target)) { el.textContent = to; return; }
+    const start = performance.now();
+    const fmt = v => Math.round(v).toLocaleString(currentLang === 'en' ? 'en' : 'de');
+    function tick(now) {
+      const p = Math.min(1, (now - start) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmt(target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   function showRecapSlide(i) {
     recapIdx = i;
     const slide = recapSlides[i];
     if (!slide) return;
-    const stage = document.querySelector('.recap-stage');
-    // Hintergrund umfärben
+    const stage     = document.querySelector('.recap-stage');
+    const slideEl   = document.getElementById('recap-slide');
+    // Hintergrund umfärben (eigener CSS-Transition kümmert sich)
     stage.style.background = slide.bg;
-    document.getElementById('recap-slide').innerHTML = slide.html;
+    // Sanftes Cross-Fade des Slide-Inhalts
+    slideEl.style.opacity = '0';
+    setTimeout(() => {
+      slideEl.innerHTML  = slide.html;
+      slideEl.style.opacity = '1';
+      // Animierte Zähler starten, wenn das Element sichtbar ist
+      slideEl.querySelectorAll('.recap-count').forEach(el => animateCount(el, el.dataset.to, 1400));
+    }, 200);
+
     // Fortschritts-Bars
+    const dur = slide.duration || RECAP_SLIDE_MS;
     const prog = document.getElementById('recap-progress');
-    prog.innerHTML = recapSlides.map((_, k) =>
-      `<div class="recap-progress-bar"><div class="recap-progress-fill ${k < i ? 'done' : (k === i ? 'active' : '')}"></div></div>`
-    ).join('');
+    prog.innerHTML = recapSlides.map((_, k) => {
+      const state = k < i ? 'done' : (k === i ? 'active' : '');
+      const styleDur = (k === i) ? `style="transition-duration:${dur}ms"` : '';
+      return `<div class="recap-progress-bar"><div class="recap-progress-fill ${state}" ${styleDur}></div></div>`;
+    }).join('');
+
     if (recapTimer) clearTimeout(recapTimer);
-    recapTimer = setTimeout(recapNext, RECAP_SLIDE_MS);
+    if (!slide.noAutoAdvance) recapTimer = setTimeout(recapNext, dur);
   }
+
+  // Pause-on-Hold (Spotify-Style)
+  function recapPause() {
+    if (recapTimer) { clearTimeout(recapTimer); recapTimer = null; }
+    document.querySelectorAll('#recap-progress .recap-progress-fill.active')
+      .forEach(el => { el.style.animationPlayState = 'paused'; el.style.transition = 'none'; });
+    document.querySelector('.recap-stage')?.classList.add('recap-paused');
+  }
+  function recapResume() {
+    document.querySelector('.recap-stage')?.classList.remove('recap-paused');
+    // Fortsetzen heißt: aktuellen Slide neu starten (einfach + robust)
+    showRecapSlide(recapIdx);
+  }
+  (function attachHoldToPause() {
+    const stage = () => document.querySelector('.recap-stage');
+    let downAt = 0, isPaused = false, holdTimer = null;
+    document.addEventListener('pointerdown', e => {
+      const st = stage();
+      if (!st || st.closest('#recap-overlay')?.classList.contains('hidden')) return;
+      if (!st.contains(e.target)) return;
+      downAt = Date.now();
+      isPaused = false;
+      holdTimer = setTimeout(() => { recapPause(); isPaused = true; }, 220);
+    });
+    document.addEventListener('pointerup', () => {
+      clearTimeout(holdTimer); holdTimer = null;
+      if (isPaused) { isPaused = false; recapResume(); }
+    });
+    document.addEventListener('pointercancel', () => {
+      clearTimeout(holdTimer); holdTimer = null;
+      if (isPaused) { isPaused = false; recapResume(); }
+    });
+  })();
   // Keyboard nav
   document.addEventListener('keydown', e => {
     if (document.getElementById('recap-overlay')?.classList.contains('hidden')) return;
@@ -3571,6 +3745,7 @@
       userId:       row.user_id  || null,
       isDaily:      row.is_daily  || false,
       isPublic:     row.is_public || false,
+      audioUrl:     row.audio_url || null,
     };
   }
 
@@ -3657,6 +3832,20 @@
     const path = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await sb.storage.from('trip-images').upload(path, blob, {
       contentType: blob.type || 'video/mp4', upsert: false,
+    });
+    if (error) throw error;
+    return path;
+  }
+
+  async function uploadAudio(blob) {
+    // MIME types: 'audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', …
+    const ext  = blob.type.includes('mp4')  ? 'm4a'
+              : blob.type.includes('mpeg') ? 'mp3'
+              : blob.type.includes('ogg')  ? 'ogg'
+              : 'webm';
+    const path = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await sb.storage.from('trip-images').upload(path, blob, {
+      contentType: blob.type || 'audio/webm', upsert: false,
     });
     if (error) throw error;
     return path;
@@ -4400,18 +4589,37 @@
     showLbWeather(entry.id);
     fetchAndStoreWeather(entry).then(() => showLbWeather(entry.id));
 
-    // Sprachnotiz laden
+    // Sprachnotiz laden — bevorzugt die geteilte audio_url (sichtbar in Gruppen),
+    // fällt sonst auf lokale IndexedDB-Kopie zurück (eigene Aufnahmen ohne Sync).
     const lbAudioWrap   = document.getElementById('lb-audio-wrap');
     const lbAudioPlayer = document.getElementById('lb-audio-player');
-    if (lbAudioPlayer.src) URL.revokeObjectURL(lbAudioPlayer.src);
+    // alte Object-URLs sauber freigeben
+    if (lbAudioPlayer.dataset.objUrl) {
+      try { URL.revokeObjectURL(lbAudioPlayer.dataset.objUrl); } catch {}
+      lbAudioPlayer.dataset.objUrl = '';
+    }
     lbAudioPlayer.src = '';
     lbAudioWrap.classList.add('hidden');
-    audioDB.get(entry.id).then(blob => {
-      if (blob) {
-        lbAudioPlayer.src = URL.createObjectURL(blob);
-        lbAudioWrap.classList.remove('hidden');
+    (async () => {
+      if (entry.audioUrl) {
+        const signed = await getSignedUrl(entry.audioUrl).catch(() => null);
+        if (signed) {
+          lbAudioPlayer.src = signed;
+          lbAudioWrap.classList.remove('hidden');
+          return;
+        }
       }
-    }).catch(() => {});
+      // Fallback: lokale Kopie (Pre-Migration-Einträge oder offline Aufnahme)
+      try {
+        const blob = await audioDB.get(entry.id);
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          lbAudioPlayer.src = url;
+          lbAudioPlayer.dataset.objUrl = url;
+          lbAudioWrap.classList.remove('hidden');
+        }
+      } catch {}
+    })();
 
     lightbox.classList.add('open');
     document.addEventListener('keydown', onLbKey);
@@ -4842,12 +5050,20 @@
 
     // Bilder + Videos hochladen → URLs als JSON-Array in image_url
     let imageUrl = null;
+    let audioPath = null;
     try {
       const imgUrls = await Promise.all(pendingPhotos.map(b64 => uploadPhoto(b64)));
       const vidUrls = await Promise.all(pendingVideos.map(v => uploadVideo(v.blob)));
       const allUrls = [...existingPhotos, ...imgUrls, ...vidUrls];
       if (allUrls.length) imageUrl = JSON.stringify(allUrls);
       else if (editingId) imageUrl = null; // Alle Fotos entfernt
+
+      // Audio: nur neu hochladen, wenn der User gerade aufgenommen hat.
+      // Beim Bearbeiten ohne neue Aufnahme bleibt der alte Pfad erhalten
+      // (nicht überschreiben → editAudio remains).
+      if (pendingAudioBlob && hasAudioCol) {
+        audioPath = await uploadAudio(pendingAudioBlob);
+      }
     } catch (e) {
       toast(t('errUpload') + e.message, 'err');
       setSaving(false);
@@ -4863,6 +5079,7 @@
       image_url:     imageUrl,
       is_daily:      document.getElementById('inp-daily').checked,
       ...(hasPublicCol ? { is_public: document.getElementById('inp-public').checked } : {}),
+      ...(hasAudioCol && audioPath ? { audio_url: audioPath } : {}),
     };
 
     if (editingId) {
@@ -5253,8 +5470,11 @@
   let authMode      = 'login'; // 'login' | 'register' | 'forgot' | 'reset'
   let hasUserIdCol  = false;   // set true after running supabase_migration.sql
   let hasPublicCol  = false;   // set true after running migration_is_public.sql
+  let hasAudioCol   = false;   // set true after running audio_url migration
   const ENTRY_BASE  = 'id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id';
-  const entryCols   = () => hasPublicCol ? ENTRY_BASE + ',is_public' : ENTRY_BASE;
+  const entryCols   = () => ENTRY_BASE
+    + (hasPublicCol ? ',is_public' : '')
+    + (hasAudioCol  ? ',audio_url' : '');
 
   const authEmail    = document.getElementById('auth-email');
   const authPassword = document.getElementById('auth-password');
@@ -7240,8 +7460,12 @@
     const { error } = await sb.from(TABLE).select('is_public').limit(1);
     hasPublicCol = !error;
   }
+  async function probeAudioCol() {
+    const { error } = await sb.from(TABLE).select('audio_url').limit(1);
+    hasAudioCol = !error;
+  }
   async function init() {
-    await probePublicCol();
+    await Promise.all([probePublicCol(), probeAudioCol()]);
     await loadEntries({ toastOnDone: true });
   }
 

@@ -1,4 +1,4 @@
-const CACHE = 'reisetagebuch-v5';
+const CACHE = 'reisetagebuch-v6';
 const CORE  = [
   './Reisetagebuch.html',
   'https://cdn.tailwindcss.com',

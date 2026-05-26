@@ -12,7 +12,7 @@
     font-src    'self' https://fonts.gstatic.com;
     img-src     'self' data: blob: https:;
     media-src   'self' blob: https:;
-    connect-src 'self' https://*.supabase.co https://nominatim.openstreetmap.org https://api.open-meteo.com wss://*.supabase.co https://challenges.cloudflare.com;
+    connect-src 'self' https://*.supabase.co https://nominatim.openstreetmap.org https://api.open-meteo.com https://api.rainviewer.com wss://*.supabase.co https://challenges.cloudflare.com;
     worker-src  'self';
     frame-src   https://challenges.cloudflare.com;
     object-src  'none';
@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -290,6 +291,75 @@
     html.dark .tag-chip:not(.active) { background:rgba(255,255,255,.08); color:#94a3b8; }
     html.dark .tag-chip.active { background:#1a2235; color:#fb923c; border-color:#fb923c; }
 
+    /* ── Jahres-Recap ─────────────────────────────────────────────────────── */
+    .recap-slide-bg {
+      position: absolute; inset: 0;
+      transition: opacity 0.4s;
+    }
+    .recap-progress-bar { flex: 1; height: 3px; background: rgba(255,255,255,0.3); border-radius: 999px; overflow: hidden; }
+    .recap-progress-fill { height: 100%; background: #fff; width: 0%; transition: width linear; border-radius: inherit; }
+    .recap-progress-fill.done { width: 100%; transition: none; }
+    .recap-progress-fill.active { width: 100%; transition: width 5s linear; }
+    @keyframes recap-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    .recap-anim { animation: recap-up 0.55s cubic-bezier(.2,.7,.3,1) both; }
+    .recap-year-btn { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 999px; color: rgba(255,255,255,.7); }
+    .recap-year-btn.active { background: rgba(255,255,255,.2); color: #fff; }
+
+    /* ── Playback Speed Buttons ───────────────────────────────────────────── */
+    .pb-speed-btn { color: #a8a29e; cursor: pointer; transition: all .12s; }
+    .pb-speed-btn:hover { color: #f97316; background: #fff7ed; }
+    .pb-speed-btn.active { color: #fff; background: #f97316; }
+
+    /* ── Map Layer Dock ───────────────────────────────────────────────────── */
+    .layer-btn.active {
+      background: linear-gradient(135deg, #f97316, #f59e0b) !important;
+      color: #fff;
+      border-color: rgba(249,115,22,.6) !important;
+      box-shadow: 0 6px 14px rgba(249,115,22,.4);
+    }
+    html.dark .layer-btn { background: rgba(26, 34, 53, 0.95) !important; color: var(--dk-text, #e6e8ee); }
+    /* Auf Mobil/Tablet: über Bottom-Nav schieben */
+    @media (max-width: 1023px) {
+      #layer-dock { bottom: 90px; }
+    }
+
+    /* ── Settings-Tabs ────────────────────────────────────────────────────── */
+    .settings-tab-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.45rem 0.85rem; border-radius: 9999px;
+      font-size: 12px; font-weight: 600;
+      color: #78716c; background: transparent;
+      transition: all .15s; cursor: pointer; user-select: none;
+      white-space: nowrap;
+    }
+    .settings-tab-btn:hover { background: #fff7ed; color: #f97316; }
+    .settings-tab-btn.active {
+      background: linear-gradient(135deg, #f97316, #f59e0b); color: #fff;
+      box-shadow: 0 2px 6px rgba(249,115,22,.35);
+    }
+    html.dark .settings-tab-btn { color: var(--dk-muted, #94a3b8); }
+    html.dark .settings-tab-btn:hover { background: rgba(251,146,60,.12); color:#fb923c; }
+    /* Section spacing: einheitliches Rhythm + Kartenoptik */
+    #settings-modal [id^="settings-"][id$="-section"] {
+      padding-top: 1.25rem; padding-bottom: 1.25rem;
+    }
+
+    /* ── Stimmungs-Picker ─────────────────────────────────────────────────── */
+    .mood-opt.selected {
+      background:#fff7ed !important; border-color:#f97316 !important;
+      box-shadow: 0 0 0 3px rgba(249,115,22,.18);
+      transform: scale(1.08);
+    }
+    html.dark .mood-opt {
+      background: var(--dk-input, #1a2235);
+      border-color: var(--dk-border, #2a3548) !important;
+      color: var(--dk-text, #e6e8ee);
+    }
+    html.dark .mood-opt.selected {
+      background:#3a2a14 !important; border-color:#fb923c !important;
+      box-shadow: 0 0 0 3px rgba(251,146,60,.25);
+    }
+
     /* ══ Dark Mode — vollständig ═══════════════════════════════════════════ */
     :root {
       --dk-bg:    #0f172a;
@@ -509,7 +579,7 @@
     style="width:min(80vw,300px)">
 
     <!-- Tab-Button am rechten Rand des Panels (bewegt sich mit) -->
-    <button id="panel-tab"
+    <button id="panel-tab" aria-label="Open side panel"
       class="absolute left-full top-1/2 -translate-y-1/2 flex
              flex-col items-center gap-1.5 py-5 px-2.5
              bg-white rounded-r-2xl shadow-md cursor-pointer
@@ -588,16 +658,31 @@
     </div>
 
     <!-- ── AUTH-SECTION (nicht eingeloggt) ──────────────────────────────── -->
-    <div id="panel-auth-section" class="flex-1 overflow-y-auto scroll-thin px-5 py-5 space-y-4">
+    <div id="panel-auth-section" class="flex-1 overflow-y-auto scroll-thin px-5 py-5 space-y-4 relative">
+      <!-- Dekorative Verlaufs-Akzente -->
+      <div class="auth-deco-1 pointer-events-none absolute -top-10 -right-10 w-40 h-40 rounded-full
+                  bg-gradient-to-br from-orange-300/40 to-amber-200/30 blur-2xl"></div>
+      <div class="auth-deco-2 pointer-events-none absolute bottom-10 -left-8 w-32 h-32 rounded-full
+                  bg-gradient-to-br from-pink-200/40 to-orange-200/30 blur-2xl"></div>
+
+      <!-- Hero-Icon + Willkommen -->
+      <div class="relative text-center pt-1 pb-1">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl text-3xl
+                    bg-gradient-to-br from-orange-500 to-amber-400 shadow-lg shadow-orange-300/40 mb-2">
+          <span>✈️</span>
+        </div>
+        <p id="auth-hero-title" class="text-base font-extrabold text-stone-800 leading-tight">Willkommen zurück</p>
+        <p id="auth-hero-subtitle" class="text-[11px] text-stone-500 mt-0.5">Dein Reisetagebuch wartet auf dich.</p>
+      </div>
 
       <!-- Tabs -->
-      <div id="auth-tabs-row" class="flex gap-1 bg-orange-100 rounded-xl p-1">
+      <div id="auth-tabs-row" class="relative flex gap-1 bg-white/70 backdrop-blur rounded-xl p-1 border border-orange-100 shadow-sm">
         <button id="auth-tab-login"
-          class="flex-1 py-2 rounded-lg text-xs font-bold bg-white text-orange-500 shadow-sm transition-all">
+          class="flex-1 py-2 rounded-lg text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm transition-all">
           <span id="lbl-auth-login">Anmelden</span>
         </button>
         <button id="auth-tab-register"
-          class="flex-1 py-2 rounded-lg text-xs font-bold text-stone-400 transition-all hover:text-orange-400">
+          class="flex-1 py-2 rounded-lg text-xs font-bold text-stone-400 transition-all hover:text-orange-500">
           <span id="lbl-auth-register">Registrieren</span>
         </button>
       </div>
@@ -611,8 +696,8 @@
           <span id="lbl-auth-name">Name</span>
         </label>
         <input id="auth-name" type="text" autocomplete="name" placeholder="Dein Reisename"
-          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+          class="w-full rounded-xl border border-orange-200 bg-white px-3.5 py-3 text-sm shadow-sm
+                 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
       </div>
 
       <!-- E-Mail -->
@@ -629,8 +714,8 @@
           </span>
         </label>
         <input id="auth-email" type="email" autocomplete="email" placeholder="name@example.com"
-          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+          class="w-full rounded-xl border border-orange-200 bg-white px-3.5 py-3 text-sm shadow-sm
+                 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
       </div>
 
       <!-- Passwort -->
@@ -639,8 +724,8 @@
           <span id="lbl-auth-password">Passwort</span>
         </label>
         <input id="auth-password" type="password" autocomplete="current-password" placeholder="••••••••"
-          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+          class="w-full rounded-xl border border-orange-200 bg-white px-3.5 py-3 text-sm shadow-sm
+                 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
         <div id="auth-forgot-wrap" class="text-right mt-1">
           <button id="auth-forgot-link" class="text-xs text-orange-400 hover:underline">Passwort vergessen?</button>
         </div>
@@ -650,8 +735,8 @@
       <div id="auth-newpw-field" class="hidden">
         <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Neues Passwort</label>
         <input id="auth-new-password" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen"
-          class="w-full rounded-xl border border-orange-200 bg-white px-3 py-2.5 text-sm
-                 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
+          class="w-full rounded-xl border border-orange-200 bg-white px-3.5 py-3 text-sm shadow-sm
+                 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
       </div>
 
       <!-- 2FA-Code (nur bei MFA-Challenge) -->
@@ -700,16 +785,24 @@
       <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-orange-100">
         <div class="flex items-center justify-between mb-3">
           <p id="lbl-stats" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Statistiken</p>
-          <button onclick="openSlideshow()"
-            class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Memories
-          </button>
+          <div class="flex items-center gap-3">
+            <button onclick="openRecap()"
+              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors"
+              title="Jahresrückblick">
+              <span class="text-sm">✨</span>
+              <span id="lbl-recap">Recap</span>
+            </button>
+            <button onclick="openSlideshow()"
+              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Memories
+            </button>
+          </div>
         </div>
         <div class="grid grid-cols-3 gap-2">
           <div class="bg-white rounded-xl px-2 py-3 text-center">
@@ -736,6 +829,16 @@
             <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
             <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
           </div>
+        </div>
+        <!-- Länder-Counter (mit Flaggen) -->
+        <div id="country-stats" class="mt-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl px-3 py-2.5 hidden">
+          <div class="flex items-baseline justify-between mb-1">
+            <p id="country-stats-title" class="text-xs font-semibold text-stone-600">
+              Du hast <span id="country-count" class="text-orange-600 text-sm font-extrabold">0</span> Länder besucht
+            </p>
+            <span id="country-stats-loader" class="text-[10px] text-stone-400 hidden">…</span>
+          </div>
+          <div id="country-flags" class="flex flex-wrap gap-1 text-lg leading-none"></div>
         </div>
       </div>
 
@@ -825,7 +928,7 @@
   </button>
 
   <!-- ════ GALERIE OVERLAY ════════════════════════════════════════════════════ -->
-  <div id="gallery"
+  <div id="gallery" role="dialog" aria-modal="true" aria-label="Photo gallery"
     class="fixed inset-0 z-[3500] bg-gray-950 opacity-0 pointer-events-none flex flex-col">
 
     <!-- Header -->
@@ -861,7 +964,7 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- ════ PINNWAND OVERLAY ═══════════════════════════════════════════════════ -->
-  <div id="pinnwand"
+  <div id="pinnwand" role="dialog" aria-modal="true" aria-label="Pinboard"
     class="fixed inset-0 z-[3500] bg-gray-50 opacity-0 pointer-events-none flex flex-col">
 
     <!-- Header -->
@@ -885,22 +988,33 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- ════ EINSTELLUNGEN MODAL (2FA) ═════════════════════════════════════════ -->
-  <div id="settings-modal"
+  <div id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="lbl-settings-title"
     class="fixed inset-0 z-[5500] bg-black/60 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto scroll-thin">
-      <!-- Header -->
-      <div class="px-5 py-4 border-b border-orange-100 flex items-center justify-between
-                  sticky top-0 bg-white z-10">
-        <h3 class="text-lg font-bold text-gray-800">
-          <span id="lbl-settings-title">Einstellungen</span>
-        </h3>
-        <button onclick="closeSettings()"
-          class="w-8 h-8 rounded-full bg-stone-500/15 hover:bg-stone-500/30 text-stone-500 text-xl
-                 flex items-center justify-center transition-colors">×</button>
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto scroll-thin">
+      <!-- Header (gradient) -->
+      <div class="px-6 py-5 flex items-center justify-between sticky top-0 z-20
+                  bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 text-white">
+        <div>
+          <h3 class="text-lg sm:text-xl font-extrabold tracking-tight">
+            <span id="lbl-settings-title">Einstellungen</span>
+          </h3>
+          <p class="text-xs text-white/75 mt-0.5" id="settings-subtitle">Profil, Sicherheit & Gruppen</p>
+        </div>
+        <button onclick="closeSettings()" aria-label="Close"
+          class="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xl
+                 flex items-center justify-center transition-all">×</button>
+      </div>
+      <!-- Tab bar -->
+      <div class="settings-tabs sticky top-[68px] sm:top-[78px] z-10 bg-white border-b border-orange-100
+                  flex gap-1 px-3 py-2 overflow-x-auto scroll-thin">
+        <button class="settings-tab-btn shrink-0" data-tab="profile">👤 <span data-tlbl="profile">Profil</span></button>
+        <button class="settings-tab-btn shrink-0" data-tab="map">🎨 <span data-tlbl="map">Karte</span></button>
+        <button class="settings-tab-btn shrink-0" data-tab="groups">👥 <span data-tlbl="groups">Gruppen</span></button>
+        <button class="settings-tab-btn shrink-0" data-tab="security">🔐 <span data-tlbl="security">Sicherheit</span></button>
       </div>
 
       <!-- ═══ PROFILBILD (1) ═════════════════════════════════════════════════ -->
-      <div id="settings-avatar-section" class="px-5 py-4">
+      <div id="settings-avatar-section" data-settings-tab="profile" class="px-5 py-4">
         <p class="text-sm font-semibold text-gray-800 mb-3">
           <span id="lbl-avatar-title">Profilbild</span>
         </p>
@@ -924,7 +1038,7 @@
       </div>
 
       <!-- ═══ USERNAME ═══════════════════════════════════════════════════════ -->
-      <div id="settings-username-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+      <div id="settings-username-section" data-settings-tab="profile" class="px-5 py-4 border-t border-orange-100 space-y-3">
         <p class="text-sm font-semibold text-gray-800">
           <span id="lbl-username-title">Benutzername</span>
         </p>
@@ -945,7 +1059,7 @@
       </div>
 
       <!-- ═══ FARBE ══════════════════════════════════════════════════════════ -->
-      <div id="settings-color-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+      <div id="settings-color-section" data-settings-tab="map" class="px-5 py-4 border-t border-orange-100 space-y-3">
         <p class="text-sm font-semibold text-gray-800">
           <span id="lbl-color-title">Deine Farbe</span>
         </p>
@@ -957,7 +1071,7 @@
       </div>
 
       <!-- ═══ GROUPS / GRUPPEN ═══════════════════════════════════════════════ -->
-      <div id="settings-groups-section" class="px-5 py-4 border-t border-orange-100 space-y-3">
+      <div id="settings-groups-section" data-settings-tab="groups" class="px-5 py-4 border-t border-orange-100 space-y-3">
         <div class="flex items-center justify-between">
           <p class="text-sm font-semibold text-gray-800">
             <span id="lbl-groups-title">Meine Gruppen</span>
@@ -974,7 +1088,7 @@
       </div>
 
       <!-- ═══ PENDING INVITATIONS ════════════════════════════════════════════ -->
-      <div id="settings-invites-section" class="px-5 py-4 border-t border-orange-100 space-y-3 hidden">
+      <div id="settings-invites-section" data-settings-tab="groups" class="px-5 py-4 border-t border-orange-100 space-y-3 hidden">
         <p class="text-sm font-semibold text-gray-800">
           <span id="lbl-invites-title">Einladungen</span>
         </p>
@@ -982,7 +1096,31 @@
       </div>
 
       <!-- ═══ 2FA (4) ════════════════════════════════════════════════════════ -->
-      <div id="settings-mfa-section" class="px-5 py-4 border-t border-orange-100 space-y-4">
+      <!-- ═══ PUSH NOTIFICATIONS ═════════════════════════════════════════════ -->
+      <div id="settings-push-section" data-settings-tab="security" class="px-5 py-4 border-t border-orange-100 space-y-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-800">
+            🔔 <span id="lbl-push-title">Push-Benachrichtigungen</span>
+          </p>
+          <p class="text-xs text-gray-500 mt-1">
+            <span id="lbl-push-desc">Erhalte Benachrichtigungen über neue Gruppen-Einträge und Einladungen.</span>
+          </p>
+        </div>
+        <div id="push-status-row" class="flex items-center justify-between bg-orange-50 rounded-xl px-3 py-2.5">
+          <div class="flex items-center gap-2">
+            <span id="push-status-dot" class="w-2 h-2 rounded-full bg-stone-300"></span>
+            <span id="push-status-text" class="text-xs font-semibold text-stone-700">Deaktiviert</span>
+          </div>
+          <button id="push-toggle-btn" onclick="togglePushSubscription()"
+            class="text-xs font-bold px-3 py-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600
+                   transition-colors disabled:opacity-50">
+            <span id="push-toggle-label">Aktivieren</span>
+          </button>
+        </div>
+        <p id="push-error" class="hidden text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600"></p>
+      </div>
+
+      <div id="settings-mfa-section" data-settings-tab="security" class="px-5 py-4 border-t border-orange-100 space-y-4">
         <div>
           <p class="text-sm font-semibold text-gray-800">
             <span id="lbl-mfa-title">Zwei-Faktor-Authentifizierung</span>
@@ -1065,7 +1203,7 @@
       </div>
 
       <!-- ═══ LOGOUT ═════════════════════════════════════════════════════════ -->
-      <div class="px-5 py-4 border-t border-orange-100 space-y-2">
+      <div data-settings-tab="profile" class="px-5 py-4 border-t border-orange-100 space-y-2">
         <button onclick="closeSettings(); logout();"
           class="w-full py-2.5 rounded-xl border border-stone-200 text-sm font-semibold
                  text-stone-600 hover:bg-stone-50 transition-colors flex items-center justify-center gap-2">
@@ -1356,7 +1494,7 @@
   </div>
 
   <!-- Seitenleiste -->
-  <aside id="sidebar"
+  <aside id="sidebar" role="dialog" aria-labelledby="sidebar-title"
     class="fixed top-0 right-0 h-full w-full sm:w-96 bg-orange-50 shadow-2xl z-[1001] flex flex-col select-none">
 
     <!-- Swipe-Handle (nur Mobile Bottom-Sheet) -->
@@ -1373,7 +1511,7 @@
           </svg>
           <h2 id="sidebar-title" class="text-lg font-bold tracking-tight">Neuer Eintrag</h2>
         </div>
-        <button id="btn-close"
+        <button id="btn-close" aria-label="Close entry form"
           class="w-8 h-8 rounded-full hover:bg-white/20 transition-colors
                  flex items-center justify-center text-xl leading-none">×</button>
       </div>
@@ -1482,6 +1620,43 @@
         <div class="mt-3">
           <p class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Tags</p>
           <div id="tag-picker" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- Stimmung / Mood -->
+        <div class="mt-3">
+          <p id="lbl-mood" class="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">Stimmung</p>
+          <div id="mood-picker" class="flex flex-wrap gap-1.5">
+            <button type="button" data-mood="😊" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😊</button>
+            <button type="button" data-mood="😍" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😍</button>
+            <button type="button" data-mood="🥹" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🥹</button>
+            <button type="button" data-mood="🤩" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🤩</button>
+            <button type="button" data-mood="😌" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😌</button>
+            <button type="button" data-mood="🧘" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🧘</button>
+            <button type="button" data-mood="😴" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😴</button>
+            <button type="button" data-mood="😤" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😤</button>
+            <button type="button" data-mood="🥶" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🥶</button>
+            <button type="button" data-mood="🥵" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🥵</button>
+            <button type="button" data-mood="🤔" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">🤔</button>
+            <button type="button" data-mood="😢" class="mood-opt w-9 h-9 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-lg leading-none flex items-center justify-center">😢</button>
+          </div>
+          <input type="hidden" id="inp-mood" value="" />
+        </div>
+
+        <!-- Bucket-List Toggle -->
+        <div class="mt-3">
+          <label class="flex items-start gap-2.5 cursor-pointer select-none p-3 rounded-xl
+                        border border-orange-200 hover:border-orange-400 hover:bg-orange-50/60 transition-all">
+            <input type="checkbox" id="inp-wishlist"
+              class="mt-0.5 w-4 h-4 accent-orange-500 cursor-pointer flex-shrink-0" />
+            <div class="min-w-0">
+              <p id="lbl-wishlist" class="text-sm font-semibold text-stone-700 leading-tight">
+                📍 Bucket-List: noch nicht besucht
+              </p>
+              <p id="lbl-wishlist-sub" class="text-xs text-stone-400 mt-0.5 leading-snug">
+                Markiere diesen Ort als Wunsch. Fotos sind dann optional.
+              </p>
+            </div>
+          </label>
         </div>
 
         <!-- Sprachnotiz-Recorder -->
@@ -1618,7 +1793,7 @@
   </div>
 
   <!-- ════ LIGHTBOX MODAL ════════════════════════════════════════════════════ -->
-  <div id="lightbox"
+  <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lb-name"
     class="fixed inset-0 z-[4000] flex items-center justify-center p-4 sm:p-8
            bg-black/65 backdrop-blur-sm opacity-0 pointer-events-none">
 
@@ -1629,24 +1804,31 @@
 
       <!-- Foto-Panel + Karussell -->
       <div id="lb-photo-panel"
-        class="sm:w-[45%] flex-shrink-0 bg-gray-900 hidden relative overflow-hidden">
-        <img id="lb-img" alt=""
+        class="sm:w-[45%] flex-shrink-0 bg-gray-900 hidden relative overflow-hidden"
+        aria-label="Photo carousel">
+        <img id="lb-img" alt="" decoding="async"
           class="w-full h-48 sm:h-full object-cover transition-opacity duration-300" />
         <video id="lb-vid" controls playsinline
           class="hidden w-full h-48 sm:h-full object-contain bg-black"></video>
         <!-- Pfeil-Buttons (nur bei > 1 Bild) -->
-        <button id="lb-prev"
+        <button id="lb-prev" aria-label="Previous photo"
           class="hidden absolute left-2 top-1/2 -translate-y-1/2 z-10
-                 w-9 h-9 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm
-                 text-white text-xl flex items-center justify-center transition-colors">‹</button>
-        <button id="lb-next"
+                 w-11 h-11 rounded-full bg-black/55 hover:bg-black/80 active:scale-95 backdrop-blur-md
+                 text-white text-2xl flex items-center justify-center transition-all shadow-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="lb-next" aria-label="Next photo"
           class="hidden absolute right-2 top-1/2 -translate-y-1/2 z-10
-                 w-9 h-9 rounded-full bg-black/40 hover:bg-black/65 backdrop-blur-sm
-                 text-white text-xl flex items-center justify-center transition-colors">›</button>
+                 w-11 h-11 rounded-full bg-black/55 hover:bg-black/80 active:scale-95 backdrop-blur-md
+                 text-white text-2xl flex items-center justify-center transition-all shadow-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </button>
+        <!-- Swipe-Dots (nur bei > 1 Bild) -->
+        <div id="lb-dots" class="hidden absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 pointer-events-auto"></div>
         <!-- Zähler -->
         <div id="lb-counter"
           class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-10
-                 bg-black/50 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">
+                 bg-black/55 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm tabular-nums">
           1 / 1
         </div>
       </div>
@@ -1657,10 +1839,17 @@
         <!-- Datum + Koordinaten -->
         <p id="lb-date"
           class="text-orange-500 text-xs font-bold uppercase tracking-widest mb-3"></p>
+        <span id="lb-wishlist-badge"
+          class="hidden inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider
+                 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full mb-2">
+          ★ Bucket-List
+        </span>
 
-        <!-- Ortsname -->
+        <!-- Ortsname + Mood -->
         <h2 id="lb-name"
-          class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-1"></h2>
+          class="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-1">
+          <span id="lb-mood" class="mr-1.5 align-middle text-2xl hidden"></span><span id="lb-name-text"></span>
+        </h2>
 
         <!-- Author (nur in Gruppen-Einträgen anderer User sichtbar) -->
         <p id="lb-author" class="hidden text-xs font-semibold mb-1 flex items-center gap-1.5">
@@ -1714,7 +1903,15 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
               </svg>
-              Bearbeiten
+              <span id="lbl-lb-edit">Bearbeiten</span>
+            </button>
+            <button id="lb-share" onclick="openShareCard()"
+              class="text-xs text-gray-400 hover:text-orange-500 transition-colors flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-8-7l-4-4m0 0L8 8m-4-4v12"/>
+              </svg>
+              <span id="lbl-lb-share">Teilen</span>
             </button>
           </div>
           <div class="flex items-center gap-2">
@@ -1728,7 +1925,7 @@
       </div>
 
       <!-- Schließen-Button -->
-      <button id="lb-close"
+      <button id="lb-close" aria-label="Close"
         class="absolute top-4 right-4 z-10 w-9 h-9 rounded-full
                bg-black/20 hover:bg-black/40 backdrop-blur-sm
                text-white flex items-center justify-center text-xl
@@ -1753,6 +1950,123 @@
       </div>
     </div>
   </button>
+
+  <!-- ════ JAHRES-RECAP (Spotify-Wrapped Style Stories) ═════════════════════ -->
+  <div id="recap-overlay" role="dialog" aria-modal="true" aria-label="Year in review"
+    class="hidden fixed inset-0 z-[7000] bg-black flex items-center justify-center select-none">
+    <div class="recap-stage relative w-full h-full sm:max-w-md sm:max-h-[95dvh] sm:rounded-2xl overflow-hidden shadow-2xl">
+      <!-- Progress-Bars -->
+      <div id="recap-progress" class="absolute top-3 left-3 right-3 z-20 flex gap-1.5"></div>
+      <!-- Close -->
+      <button onclick="closeRecap()" aria-label="Close recap"
+        class="absolute top-7 right-4 z-20 w-9 h-9 rounded-full bg-white/15 hover:bg-white/30 text-white text-xl flex items-center justify-center backdrop-blur-sm">×</button>
+      <!-- Year selector -->
+      <div id="recap-year-row" class="absolute top-7 left-4 z-20 flex items-center gap-1"></div>
+      <!-- Tap-Zones (prev/next) -->
+      <div onclick="recapPrev()"  class="absolute top-0 left-0 bottom-0 w-1/3 z-10 cursor-pointer"></div>
+      <div onclick="recapNext()"  class="absolute top-0 right-0 bottom-0 w-2/3 z-10 cursor-pointer"></div>
+      <!-- Slide -->
+      <div id="recap-slide" class="absolute inset-0 flex flex-col items-center justify-center px-8 text-white text-center"></div>
+    </div>
+  </div>
+
+  <!-- ════ SHARE-CARD MODAL ═════════════════════════════════════════════════ -->
+  <div id="share-modal" role="dialog" aria-modal="true" aria-label="Share card"
+    class="hidden fixed inset-0 z-[6000] bg-black/75 backdrop-blur-sm
+           flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+      <div class="px-5 py-3 flex items-center justify-between bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+        <h3 class="font-bold text-base">📸 <span id="lbl-share-title">Share-Card</span></h3>
+        <button onclick="closeShareCard()" aria-label="Close"
+          class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-lg">×</button>
+      </div>
+      <div class="p-4 bg-stone-50 max-h-[70vh] overflow-y-auto scroll-thin">
+        <div class="rounded-xl overflow-hidden shadow-lg bg-stone-900 flex items-center justify-center"
+             style="aspect-ratio:9/16; max-height:60vh">
+          <canvas id="share-canvas" class="w-full h-full" width="1080" height="1920"
+                  style="display:block;width:100%;height:100%;object-fit:contain"></canvas>
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-stone-200 flex flex-wrap gap-2 justify-end">
+        <button onclick="closeShareCard()"
+          class="px-4 py-2 rounded-xl border border-stone-200 text-sm font-semibold text-stone-600 hover:bg-stone-50 transition-colors">
+          <span id="lbl-share-cancel">Schließen</span>
+        </button>
+        <button id="share-download-btn" onclick="downloadShareCard()"
+          class="px-4 py-2 rounded-xl bg-stone-700 hover:bg-stone-800 text-white text-sm font-semibold transition-colors">
+          <span id="lbl-share-download">Download</span>
+        </button>
+        <button id="share-native-btn" onclick="nativeShareCard()"
+          class="hidden px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white text-sm font-semibold shadow-md transition-all">
+          <span id="lbl-share-native">Teilen…</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ROUTE PLAYBACK OVERLAY ═══════════════════════════════════════════ -->
+  <div id="playback-overlay" role="dialog" aria-modal="true" aria-label="Route playback"
+    class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-[3000] w-[min(94vw,420px)]
+           bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-orange-100
+           overflow-hidden">
+    <div class="px-4 py-3 bg-gradient-to-br from-orange-500 to-amber-500 text-white flex items-center justify-between">
+      <div class="min-w-0">
+        <p class="text-[10px] uppercase tracking-widest opacity-80">Route-Playback</p>
+        <p id="pb-location" class="font-bold text-sm truncate">–</p>
+      </div>
+      <button onclick="closePlayback()" aria-label="Close playback"
+        class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-lg">×</button>
+    </div>
+    <div class="px-4 pt-3 pb-4">
+      <div class="flex items-baseline justify-between mb-2">
+        <span id="pb-date" class="text-xs font-bold text-orange-500">–</span>
+        <span id="pb-progress" class="text-[10px] text-stone-400 tabular-nums">0 / 0</span>
+      </div>
+      <div class="relative h-1.5 rounded-full bg-orange-100 overflow-hidden mb-3">
+        <div id="pb-bar" class="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-300" style="width:0%"></div>
+      </div>
+      <div class="flex items-center justify-center gap-3">
+        <button onclick="pbStep(-1)" aria-label="Previous"
+          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-600">«</button>
+        <button id="pb-play-btn" onclick="pbTogglePlay()" aria-label="Play / pause"
+          class="w-11 h-11 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white
+                 flex items-center justify-center text-lg shadow-md active:scale-95 transition-all">▶</button>
+        <button onclick="pbStep(1)" aria-label="Next"
+          class="w-9 h-9 rounded-full bg-stone-100 hover:bg-stone-200 flex items-center justify-center text-stone-600">»</button>
+        <div class="ml-3 flex items-center gap-1 text-xs">
+          <span class="text-stone-400">×</span>
+          <button data-pb-speed="1" class="pb-speed-btn px-1.5 py-0.5 rounded font-mono active">1</button>
+          <button data-pb-speed="2" class="pb-speed-btn px-1.5 py-0.5 rounded font-mono">2</button>
+          <button data-pb-speed="4" class="pb-speed-btn px-1.5 py-0.5 rounded font-mono">4</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MAP LAYER DOCK (Heatmap, Wetter, Playback) ════════════════════════ -->
+  <div id="layer-dock" class="fixed bottom-20 left-5 z-[1000] flex flex-col gap-2">
+    <button id="btn-heatmap" onclick="toggleHeatmap()" title="Heatmap"
+      aria-label="Toggle heatmap layer"
+      class="layer-btn w-11 h-11 rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg
+             flex items-center justify-center text-lg hover:bg-white transition-all
+             border border-transparent">
+      🔥
+    </button>
+    <button id="btn-weather" onclick="toggleWeatherOverlay()" title="Wetter"
+      aria-label="Toggle weather overlay"
+      class="layer-btn w-11 h-11 rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg
+             flex items-center justify-center text-lg hover:bg-white transition-all
+             border border-transparent">
+      🌡
+    </button>
+    <button id="btn-playback" onclick="openPlayback()" title="Route-Playback"
+      aria-label="Play route animation"
+      class="layer-btn w-11 h-11 rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg
+             flex items-center justify-center text-lg hover:bg-white transition-all
+             border border-transparent">
+      ▶️
+    </button>
+  </div>
 
   <!-- Hinweis-Chip (zentriert unten, nur Desktop) -->
   <div id="hint-chip"
@@ -1933,6 +2247,107 @@
   let previewMarker  = null;
   const markerMap   = {};
 
+  // ─── Länder-Erkennung (Reverse Geocoding + Cache) ────────────────────────
+  // Cache mapping: { "lat,lng" : "ISO-2 country code (lowercase)" }
+  let countryCache = {};
+  try { countryCache = JSON.parse(localStorage.getItem('reise_country_cache') || '{}'); } catch {}
+  function saveCountryCache() {
+    try { localStorage.setItem('reise_country_cache', JSON.stringify(countryCache)); } catch {}
+  }
+  function coordKey(lat, lng) {
+    // Rasterise auf 0.1° (~11 km) — Einträge im selben Ort teilen Cache-Treffer
+    return `${(+lat).toFixed(1)},${(+lng).toFixed(1)}`;
+  }
+  function flagEmoji(iso2) {
+    if (!iso2 || iso2.length !== 2) return '';
+    const cc = iso2.toUpperCase();
+    return String.fromCodePoint(127397 + cc.charCodeAt(0)) +
+           String.fromCodePoint(127397 + cc.charCodeAt(1));
+  }
+  async function fetchCountryFor(lat, lng) {
+    const key = coordKey(lat, lng);
+    if (countryCache[key]) return countryCache[key];
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=3&addressdetails=1`,
+        { headers: { 'Accept-Language': currentLang || 'de' } }
+      );
+      if (!r.ok) return null;
+      const j  = await r.json();
+      const cc = (j?.address?.country_code || '').toLowerCase();
+      if (cc) { countryCache[key] = cc; saveCountryCache(); }
+      return cc || null;
+    } catch { return null; }
+  }
+  let countryResolveQueue = null;
+  async function resolveAllCountries() {
+    if (countryResolveQueue) return countryResolveQueue;
+    const loader = document.getElementById('country-stats-loader');
+    const missing = (allEntries || []).filter(e => {
+      return e.lat != null && e.lng != null && !countryCache[coordKey(e.lat, e.lng)];
+    });
+    if (!missing.length) return;
+    if (loader) loader.classList.remove('hidden');
+    countryResolveQueue = (async () => {
+      for (const e of missing) {
+        await fetchCountryFor(e.lat, e.lng);
+        await new Promise(r => setTimeout(r, 1100)); // Nominatim ToS: ≤1 req/s
+      }
+    })();
+    await countryResolveQueue;
+    countryResolveQueue = null;
+    if (loader) loader.classList.add('hidden');
+    renderCountryStats();
+  }
+  function renderCountryStats() {
+    const wrap = document.getElementById('country-stats');
+    if (!wrap) return;
+    const list = (allEntries || []).filter(e => !e.isWishlist);
+    if (!list.length) { wrap.classList.add('hidden'); return; }
+    const codes = new Set();
+    for (const e of list) {
+      const cc = countryCache[coordKey(e.lat, e.lng)];
+      if (cc) codes.add(cc);
+    }
+    if (!codes.size) { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    const titleEl = document.getElementById('country-stats-title');
+    if (titleEl) {
+      const pre  = (typeof t === 'function') ? t('visitedPrefix') : 'Du hast';
+      const post = (typeof t === 'function') ? t('visitedSuffix') : 'Länder besucht';
+      titleEl.innerHTML =
+        `${pre} <span id="country-count" class="text-orange-600 text-sm font-extrabold">${codes.size}</span> ${post}`;
+    }
+    document.getElementById('country-flags').innerHTML =
+      [...codes].sort().map(cc => `<span title="${cc.toUpperCase()}">${flagEmoji(cc)}</span>`).join('');
+  }
+
+  // ─── Pagination (infinite scroll via IntersectionObserver) ───────────────
+  const PAGE_SIZE = 30;
+  const viewLimits = { tripCards: PAGE_SIZE, gallery: PAGE_SIZE, pinnwand: PAGE_SIZE, list: PAGE_SIZE };
+  function resetViewLimits() {
+    viewLimits.tripCards = PAGE_SIZE;
+    viewLimits.gallery   = PAGE_SIZE;
+    viewLimits.pinnwand  = PAGE_SIZE;
+    viewLimits.list      = PAGE_SIZE;
+  }
+  function attachLoadMoreSentinel(container, total, key, renderFn) {
+    if (!container || viewLimits[key] >= total) return;
+    const sentinel = document.createElement('div');
+    sentinel.className = 'pagination-sentinel col-span-full text-center text-xs text-gray-400 py-4';
+    sentinel.style.gridColumn = '1 / -1';
+    sentinel.textContent = `${viewLimits[key]} / ${total} …`;
+    container.appendChild(sentinel);
+    const io = new IntersectionObserver(ents => {
+      if (ents[0].isIntersecting) {
+        io.disconnect();
+        viewLimits[key] = Math.min(viewLimits[key] + PAGE_SIZE, total);
+        renderFn();
+      }
+    }, { rootMargin: '200px' });
+    io.observe(sentinel);
+  }
+
   function showPreviewPin(lat, lng) {
     if (previewMarker) { map.removeLayer(previewMarker); previewMarker = null; }
     const icon = L.divIcon({
@@ -1969,8 +2384,10 @@
 
     // Nach Autor gruppieren, jede User-Route eigenständig zeichnen,
     // damit Mitglieder einer Gruppe optisch unterscheidbar sind.
+    // Wunsch-Orte (Bucket-List) gehören nicht zur tatsächlichen Reiseroute.
     const byUser = new Map();
     for (const e of entries) {
+      if (e.isWishlist) continue;
       const key = e.userId || '__unknown__';
       if (!byUser.has(key)) byUser.set(key, []);
       byUser.get(key).push(e);
@@ -2032,6 +2449,554 @@
       thumb.classList.add('left-0.5');
     }
     drawRoute();
+  }
+
+  // ─── Heatmap-Layer (Leaflet.heat) ────────────────────────────────────────
+  let heatLayer = null;
+  function buildHeatPoints() {
+    return (allEntries || [])
+      .filter(e => !e.isWishlist && Number.isFinite(e.lat) && Number.isFinite(e.lng))
+      .map(e => [e.lat, e.lng, 0.6]);
+  }
+  function toggleHeatmap() {
+    const btn = document.getElementById('btn-heatmap');
+    if (heatLayer) {
+      map.removeLayer(heatLayer); heatLayer = null;
+      btn?.classList.remove('active');
+      return;
+    }
+    if (typeof L.heatLayer !== 'function') {
+      toast(tG('Heatmap-Plugin wurde noch nicht geladen.', 'Heatmap plugin not loaded yet.'), 'err');
+      return;
+    }
+    const pts = buildHeatPoints();
+    if (!pts.length) { toast(tG('Keine Einträge für Heatmap.', 'No entries for heatmap.'), 'info'); return; }
+    heatLayer = L.heatLayer(pts, {
+      radius: 28, blur: 22, maxZoom: 14, minOpacity: 0.35,
+      gradient: { 0.2: '#3b82f6', 0.45: '#10b981', 0.65: '#facc15', 0.85: '#f97316', 1.0: '#ef4444' },
+    }).addTo(map);
+    btn?.classList.add('active');
+  }
+  function refreshHeatmap() {
+    if (!heatLayer) return;
+    heatLayer.setLatLngs(buildHeatPoints());
+  }
+
+  // ─── Jahres-Recap (Spotify-Wrapped Style) ────────────────────────────────
+  let recapYear   = null;
+  let recapStats  = null;
+  let recapSlides = [];
+  let recapIdx    = 0;
+  let recapTimer  = null;
+  const RECAP_SLIDE_MS = 5000;
+
+  function computeRecapStats(year) {
+    const inYear = (allEntries || []).filter(e => {
+      if (e.isWishlist) return false;
+      if (!e.date) return false;
+      return new Date(e.date).getFullYear() === year;
+    });
+    // Länder zählen
+    const countryCount = {};
+    inYear.forEach(e => {
+      const cc = countryCache[coordKey(e.lat, e.lng)];
+      if (cc) countryCount[cc] = (countryCount[cc] || 0) + 1;
+    });
+    const topCountry = Object.entries(countryCount).sort((a,b) => b[1] - a[1])[0];
+
+    // Top Mood
+    const moodCount = {};
+    inYear.forEach(e => { if (e.mood) moodCount[e.mood] = (moodCount[e.mood] || 0) + 1; });
+    const topMood = Object.entries(moodCount).sort((a,b) => b[1] - a[1])[0];
+
+    // Monate
+    const monthCount = new Array(12).fill(0);
+    inYear.forEach(e => monthCount[new Date(e.date).getMonth()]++);
+    const topMonthIdx = monthCount.indexOf(Math.max(...monthCount));
+    const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const topMonth = (currentLang === 'en' ? MONTHS_EN : MONTHS_DE)[topMonthIdx];
+
+    // Fotos
+    let photoCount = 0;
+    inYear.forEach(e => { photoCount += (e.photos || []).filter(p => !isVideoUrl(p)).length; });
+
+    // Distanz (km, Haversine)
+    const sorted = [...inYear].sort((a,b) => a.date.localeCompare(b.date));
+    let totalKm = 0;
+    function hav(a, b) {
+      const R = 6371, toR = d => d * Math.PI / 180;
+      const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+      const x = Math.sin(dLat/2)**2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(x));
+    }
+    for (let i = 1; i < sorted.length; i++) totalKm += hav(sorted[i-1], sorted[i]);
+
+    // First & last entry
+    return {
+      year,
+      count: inYear.length,
+      countries: Object.keys(countryCount).length,
+      topCountry: topCountry ? { cc: topCountry[0], n: topCountry[1] } : null,
+      topMood:    topMood    ? { mood: topMood[0],   n: topMood[1] }   : null,
+      photos:    photoCount,
+      topMonth,
+      kmTotal: Math.round(totalKm),
+      first: sorted[0] || null,
+      last:  sorted[sorted.length - 1] || null,
+    };
+  }
+
+  function recapAvailableYears() {
+    const ys = new Set();
+    (allEntries || []).forEach(e => {
+      if (e.date && !e.isWishlist) ys.add(new Date(e.date).getFullYear());
+    });
+    return [...ys].sort((a,b) => b - a);
+  }
+
+  function openRecap(year) {
+    const years = recapAvailableYears();
+    if (!years.length) { toast(tG('Noch keine Einträge für einen Rückblick.', 'No entries yet for a recap.'), 'info'); return; }
+    recapYear = year || years[0];
+    recapStats = computeRecapStats(recapYear);
+    recapSlides = buildRecapSlides(recapStats);
+    recapIdx = 0;
+    renderRecapYears(years);
+    document.getElementById('recap-overlay').classList.remove('hidden');
+    showRecapSlide(0);
+  }
+
+  function renderRecapYears(years) {
+    const row = document.getElementById('recap-year-row');
+    row.innerHTML = years.map(y =>
+      `<button class="recap-year-btn ${y === recapYear ? 'active' : ''}"
+               onclick="event.stopPropagation(); openRecap(${y})">${y}</button>`
+    ).join('');
+  }
+
+  function closeRecap() {
+    document.getElementById('recap-overlay').classList.add('hidden');
+    if (recapTimer) { clearTimeout(recapTimer); recapTimer = null; }
+  }
+
+  function recapNext() {
+    if (recapIdx >= recapSlides.length - 1) { closeRecap(); return; }
+    showRecapSlide(recapIdx + 1);
+  }
+  function recapPrev() {
+    if (recapIdx <= 0) return;
+    showRecapSlide(recapIdx - 1);
+  }
+
+  function buildRecapSlides(s) {
+    const en = currentLang === 'en';
+    const gradients = [
+      'linear-gradient(135deg, #f97316, #f59e0b)',
+      'linear-gradient(135deg, #ec4899, #f97316)',
+      'linear-gradient(135deg, #6366f1, #ec4899)',
+      'linear-gradient(135deg, #10b981, #06b6d4)',
+      'linear-gradient(135deg, #8b5cf6, #6366f1)',
+      'linear-gradient(135deg, #f59e0b, #ef4444)',
+      'linear-gradient(135deg, #06b6d4, #6366f1)',
+      'linear-gradient(135deg, #0f172a, #1e293b)',
+    ];
+    const slides = [];
+    slides.push({
+      bg: gradients[0],
+      html: `
+        <p class="recap-anim text-base font-bold tracking-widest uppercase text-white/85" style="animation-delay:.05s">${en ? 'Your travel year' : 'Dein Reisejahr'}</p>
+        <p class="recap-anim text-[120px] sm:text-[160px] font-black leading-none mt-3" style="animation-delay:.25s">${s.year}</p>
+        <p class="recap-anim text-sm text-white/80 mt-6 max-w-xs" style="animation-delay:.5s">${en ? 'Tap right to start.' : 'Tippe rechts, um zu starten.'}</p>`,
+    });
+    slides.push({
+      bg: gradients[1],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Entries' : 'Einträge'}</p>
+        <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.count}</p>
+        <p class="recap-anim text-base text-white/85 mt-6 leading-snug" style="animation-delay:.5s">${en ? `moments you captured.` : `Momente festgehalten.`}</p>`,
+    });
+    slides.push({
+      bg: gradients[2],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Countries' : 'Länder'}</p>
+        <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.countries}</p>
+        ${s.topCountry ? `<p class="recap-anim text-3xl mt-6" style="animation-delay:.5s">${flagEmoji(s.topCountry.cc)} <span class="text-base text-white/80">${en ? 'most visits' : 'meiste Besuche'}</span></p>` : ''}`,
+    });
+    if (s.topMood) slides.push({
+      bg: gradients[3],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Top mood' : 'Top-Stimmung'}</p>
+        <p class="recap-anim text-[180px] leading-none mt-6" style="animation-delay:.25s">${s.topMood.mood}</p>
+        <p class="recap-anim text-base text-white/85 mt-6" style="animation-delay:.5s">${s.topMood.n}× ${en ? 'this year' : 'dieses Jahr'}</p>`,
+    });
+    slides.push({
+      bg: gradients[4],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Best month' : 'Bester Monat'}</p>
+        <p class="recap-anim text-5xl sm:text-6xl font-black mt-6" style="animation-delay:.25s">${s.topMonth || '–'}</p>
+        <p class="recap-anim text-base text-white/80 mt-6" style="animation-delay:.5s">${en ? 'when you traveled most.' : 'der reisefreudigste Monat.'}</p>`,
+    });
+    slides.push({
+      bg: gradients[5],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Distance' : 'Strecke'}</p>
+        <p class="recap-anim text-[110px] sm:text-[150px] font-black leading-none mt-4" style="animation-delay:.25s">${s.kmTotal.toLocaleString(currentLang === 'en' ? 'en' : 'de')}</p>
+        <p class="recap-anim text-2xl text-white/85 mt-2" style="animation-delay:.4s">km</p>
+        <p class="recap-anim text-sm text-white/75 mt-4" style="animation-delay:.55s">${en ? 'between your stops' : 'zwischen deinen Stationen'}</p>`,
+    });
+    slides.push({
+      bg: gradients[6],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'Photos' : 'Fotos'}</p>
+        <p class="recap-anim text-[140px] sm:text-[180px] font-black leading-none mt-4" style="animation-delay:.25s">${s.photos}</p>
+        <p class="recap-anim text-base text-white/85 mt-6" style="animation-delay:.5s">${en ? 'memories on camera.' : 'Erinnerungen in Bildern.'}</p>`,
+    });
+    slides.push({
+      bg: gradients[7],
+      html: `
+        <p class="recap-anim text-sm font-bold uppercase tracking-widest text-white/80" style="animation-delay:.05s">${en ? 'That was your year' : 'Das war dein Jahr'}</p>
+        <p class="recap-anim text-6xl font-black mt-4" style="animation-delay:.2s">${s.year} ✨</p>
+        <p class="recap-anim text-sm text-white/75 mt-6 max-w-xs leading-relaxed" style="animation-delay:.5s">${en ? 'Thanks for traveling with us. Here’s to more in the year ahead.' : 'Danke, dass du mit uns reist. Auf viele weitere Wege im nächsten Jahr.'}</p>
+        <button onclick="closeRecap()" class="recap-anim mt-8 px-5 py-2.5 rounded-full bg-white text-stone-900 font-bold text-sm shadow-lg" style="animation-delay:.7s">${en ? 'Done' : 'Fertig'}</button>`,
+    });
+    return slides;
+  }
+
+  function showRecapSlide(i) {
+    recapIdx = i;
+    const slide = recapSlides[i];
+    if (!slide) return;
+    const stage = document.querySelector('.recap-stage');
+    // Hintergrund umfärben
+    stage.style.background = slide.bg;
+    document.getElementById('recap-slide').innerHTML = slide.html;
+    // Fortschritts-Bars
+    const prog = document.getElementById('recap-progress');
+    prog.innerHTML = recapSlides.map((_, k) =>
+      `<div class="recap-progress-bar"><div class="recap-progress-fill ${k < i ? 'done' : (k === i ? 'active' : '')}"></div></div>`
+    ).join('');
+    if (recapTimer) clearTimeout(recapTimer);
+    recapTimer = setTimeout(recapNext, RECAP_SLIDE_MS);
+  }
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (document.getElementById('recap-overlay')?.classList.contains('hidden')) return;
+    if (e.key === 'Escape')   closeRecap();
+    if (e.key === 'ArrowRight') recapNext();
+    if (e.key === 'ArrowLeft')  recapPrev();
+  });
+
+  // Generischer Esc-Handler für neue Modals + Backdrop-Click
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    const sh = document.getElementById('share-modal');
+    if (sh && !sh.classList.contains('hidden')) { closeShareCard(); return; }
+    const pb = document.getElementById('playback-overlay');
+    if (pb && !pb.classList.contains('hidden')) { closePlayback(); return; }
+  });
+  document.addEventListener('click', e => {
+    const sh = document.getElementById('share-modal');
+    if (sh && e.target === sh && !sh.classList.contains('hidden')) closeShareCard();
+  });
+
+  // ─── Share-Card (Canvas: 1080×1920 Story-Format) ─────────────────────────
+  let shareEntryId = null;
+  let shareBlob    = null;
+
+  async function openShareCard() {
+    const entry = allEntries.find(e => e.id === lbActiveId);
+    if (!entry) return;
+    shareEntryId = entry.id;
+    document.getElementById('share-modal').classList.remove('hidden');
+    document.getElementById('share-native-btn')?.classList.toggle('hidden', !navigator.canShare);
+    await renderShareCard(entry);
+  }
+  function closeShareCard() {
+    document.getElementById('share-modal').classList.add('hidden');
+    shareEntryId = null; shareBlob = null;
+  }
+  function loadImg(src) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload  = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+    const words = String(text || '').split(/\s+/);
+    let line = '', lines = 0;
+    for (let i = 0; i < words.length; i++) {
+      const test = line ? line + ' ' + words[i] : words[i];
+      if (ctx.measureText(test).width > maxWidth && line) {
+        ctx.fillText(line, x, y); lines++;
+        if (lines >= maxLines - 1) {
+          ctx.fillText(words.slice(i).join(' ').replace(/(.{30}).*$/, '$1…'), x, y + lineHeight);
+          return;
+        }
+        line = words[i]; y += lineHeight;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, x, y);
+  }
+  async function renderShareCard(entry) {
+    const canvas = document.getElementById('share-canvas');
+    const ctx    = canvas.getContext('2d');
+    const W = canvas.width = 1080, H = canvas.height = 1920;
+
+    // Hintergrund
+    ctx.fillStyle = '#1c1917';
+    ctx.fillRect(0, 0, W, H);
+
+    // Foto (cover-fit) — sonst farbiger Verlauf
+    const firstPhoto = (entry.photos || []).find(p => !isVideoUrl(p));
+    let img = null;
+    if (firstPhoto) {
+      try {
+        const src = await getSignedUrl(firstPhoto) || firstPhoto;
+        img = await loadImg(toDisplayUrl(src, 1200) || src);
+      } catch {}
+    }
+    if (img) {
+      const r = Math.max(W / img.width, H / img.height);
+      const w = img.width * r, h = img.height * r;
+      ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    } else {
+      const g = ctx.createLinearGradient(0, 0, W, H);
+      g.addColorStop(0, '#f97316'); g.addColorStop(1, '#f59e0b');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+    // Untere Verdunklung für Lesbarkeit
+    const g2 = ctx.createLinearGradient(0, H * 0.4, 0, H);
+    g2.addColorStop(0, 'rgba(0,0,0,0)');
+    g2.addColorStop(1, 'rgba(0,0,0,0.78)');
+    ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+    // Top-Verdunklung
+    const g3 = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+    g3.addColorStop(0, 'rgba(0,0,0,0.55)');
+    g3.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g3; ctx.fillRect(0, 0, W, H);
+
+    // Mood (Top-Right)
+    if (entry.mood) {
+      ctx.font = 'bold 130px "Inter", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(entry.mood, W - 70, 200);
+    }
+
+    // Datum (Top-Left)
+    if (entry.date) {
+      ctx.font = 'bold 38px "Inter", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fdba74';
+      ctx.fillText(fmtDate(entry.date).toUpperCase(), 70, 130);
+    }
+
+    // Watermark (Top)
+    ctx.font = '500 30px "Inter", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText('🌍 REISETAGEBUCH', 70, 175);
+
+    // Ortsname (Bottom)
+    ctx.fillStyle = '#fff';
+    ctx.font = '900 92px "Inter", sans-serif';
+    ctx.textAlign = 'left';
+    wrapText(ctx, entry.locationName || '', 70, H - 380, W - 140, 110, 3);
+
+    // Notizen (kurz)
+    if (entry.notes) {
+      ctx.font = '400 36px "Inter", sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      const notesClean = entry.notes.replace(/\*\*(.+?)\*\*/g, '$1');
+      wrapText(ctx, notesClean, 70, H - 200, W - 140, 50, 3);
+    }
+
+    // Koordinaten / Country Flag (Footer)
+    ctx.font = '500 28px "Inter", sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    const cc = countryCache[coordKey(entry.lat, entry.lng)];
+    const flag = cc ? flagEmoji(cc) + '  ' : '';
+    ctx.fillText(`${flag}${(+entry.lat).toFixed(3)}°, ${(+entry.lng).toFixed(3)}°`, 70, H - 80);
+
+    // Blob für Share/Download
+    canvas.toBlob(b => { shareBlob = b; }, 'image/png', 0.95);
+  }
+
+  function downloadShareCard() {
+    const canvas = document.getElementById('share-canvas');
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reisetagebuch-${shareEntryId || Date.now()}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }, 'image/png', 0.95);
+  }
+
+  async function nativeShareCard() {
+    if (!navigator.canShare) { downloadShareCard(); return; }
+    try {
+      const canvas = document.getElementById('share-canvas');
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
+      const file = new File([blob], `reisetagebuch-${shareEntryId}.png`, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Reisetagebuch' });
+      } else {
+        downloadShareCard();
+      }
+    } catch (e) { /* User cancelled or share failed */ }
+  }
+
+  // ─── Route-Playback (chronologisch animiert) ────────────────────────────
+  let pbEntries  = [];
+  let pbIdx      = 0;
+  let pbPlaying  = false;
+  let pbSpeed    = 1;
+  let pbMarker   = null;
+  let pbPolyline = null;
+  let pbTimer    = null;
+
+  function openPlayback() {
+    pbEntries = (entries || [])
+      .filter(e => !e.isWishlist && e.date && Number.isFinite(e.lat) && Number.isFinite(e.lng))
+      .sort((a,b) => a.date.localeCompare(b.date));
+    if (pbEntries.length < 2) {
+      toast(currentLang === 'en'
+        ? 'Need at least 2 dated entries for playback.'
+        : 'Mindestens 2 datierte Einträge nötig.', 'info');
+      return;
+    }
+    pbIdx     = 0;
+    pbPlaying = false;
+    pbSpeed   = 1;
+    document.querySelectorAll('.pb-speed-btn').forEach(b =>
+      b.classList.toggle('active', +b.dataset.pbSpeed === 1));
+
+    document.getElementById('playback-overlay').classList.remove('hidden');
+    document.getElementById('btn-playback')?.classList.add('active');
+
+    // Vollständige Polyline einzeichnen
+    if (pbPolyline) { map.removeLayer(pbPolyline); pbPolyline = null; }
+    pbPolyline = L.polyline(pbEntries.map(e => [e.lat, e.lng]), {
+      color: '#f97316', weight: 3, opacity: 0.4, dashArray: '6 6',
+    }).addTo(map);
+
+    pbMarker?.remove();
+    pbMarker = L.marker([pbEntries[0].lat, pbEntries[0].lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="width:22px;height:22px;border-radius:50%;
+                            background:#f97316;border:3px solid #fff;
+                            box-shadow:0 4px 14px rgba(249,115,22,.7);
+                            display:flex;align-items:center;justify-content:center;
+                            color:#fff;font-size:11px;font-weight:900">✈</div>`,
+        iconSize: [22, 22], iconAnchor: [11, 11],
+      }),
+      zIndexOffset: 1000,
+    }).addTo(map);
+
+    pbSetIndex(0);
+  }
+
+  function closePlayback() {
+    pbPlaying = false;
+    if (pbTimer) { clearTimeout(pbTimer); pbTimer = null; }
+    if (pbPolyline) { map.removeLayer(pbPolyline); pbPolyline = null; }
+    pbMarker?.remove(); pbMarker = null;
+    document.getElementById('playback-overlay').classList.add('hidden');
+    document.getElementById('btn-playback')?.classList.remove('active');
+    setPbPlayIcon(false);
+  }
+
+  function setPbPlayIcon(playing) {
+    const b = document.getElementById('pb-play-btn');
+    if (b) b.textContent = playing ? '⏸' : '▶';
+  }
+
+  function pbSetIndex(i) {
+    pbIdx = Math.max(0, Math.min(pbEntries.length - 1, i));
+    const e = pbEntries[pbIdx];
+    if (!e) return;
+    if (pbMarker) pbMarker.setLatLng([e.lat, e.lng]);
+    map.flyTo([e.lat, e.lng], Math.max(map.getZoom(), 6), { duration: 0.6 });
+    document.getElementById('pb-location').textContent = e.locationName || '–';
+    document.getElementById('pb-date').textContent     = e.date ? fmtDate(e.date) : '';
+    document.getElementById('pb-progress').textContent = `${pbIdx + 1} / ${pbEntries.length}`;
+    document.getElementById('pb-bar').style.width =
+      `${((pbIdx + 1) / pbEntries.length) * 100}%`;
+  }
+
+  function pbStep(delta) {
+    if (!pbEntries.length) return;
+    if (pbIdx + delta >= pbEntries.length) { pbPlaying = false; setPbPlayIcon(false); return; }
+    pbSetIndex(pbIdx + delta);
+  }
+
+  function pbTogglePlay() {
+    if (!pbEntries.length) return;
+    pbPlaying = !pbPlaying;
+    setPbPlayIcon(pbPlaying);
+    if (pbPlaying) {
+      if (pbIdx >= pbEntries.length - 1) pbSetIndex(0);
+      pbTick();
+    } else if (pbTimer) {
+      clearTimeout(pbTimer); pbTimer = null;
+    }
+  }
+
+  function pbTick() {
+    if (!pbPlaying) return;
+    if (pbIdx >= pbEntries.length - 1) { pbPlaying = false; setPbPlayIcon(false); return; }
+    const delay = 1600 / pbSpeed;
+    pbTimer = setTimeout(() => {
+      pbSetIndex(pbIdx + 1);
+      pbTick();
+    }, delay);
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.pb-speed-btn');
+    if (!b) return;
+    pbSpeed = +b.dataset.pbSpeed || 1;
+    document.querySelectorAll('.pb-speed-btn').forEach(x =>
+      x.classList.toggle('active', x === b));
+    if (pbPlaying) { clearTimeout(pbTimer); pbTick(); }
+  });
+
+  // ─── Wetter-Overlay (RainViewer: live Niederschlag, kostenlos) ───────────
+  let weatherLayer = null;
+  async function toggleWeatherOverlay() {
+    const btn = document.getElementById('btn-weather');
+    if (weatherLayer) {
+      map.removeLayer(weatherLayer); weatherLayer = null;
+      btn?.classList.remove('active');
+      return;
+    }
+    try {
+      const r = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+      const j = await r.json();
+      const past = j?.radar?.past || [];
+      const last = past[past.length - 1];
+      if (!last) { toast(tG('Wetterdaten momentan nicht verfügbar.', 'Weather data unavailable right now.'), 'err'); return; }
+      // 2 = color scheme „Universal Blue"; smooth=1, snow=1
+      const tileUrl = `https://tilecache.rainviewer.com${last.path}/256/{z}/{x}/{y}/2/1_1.png`;
+      weatherLayer = L.tileLayer(tileUrl, {
+        opacity: 0.65,
+        attribution: '<a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a>',
+        tileSize: 256,
+        crossOrigin: true,
+      }).addTo(map);
+      btn?.classList.add('active');
+    } catch (e) {
+      toast(tG('Wetterdaten konnten nicht geladen werden.', 'Failed to load weather data.'), 'err');
+    }
   }
 
   // ─── Karte (einmalige Welt, keine Wiederholung) ───────────────────────────
@@ -2289,11 +3254,13 @@
       clusterGroup.removeLayer(markerMap[id]);
       delete markerMap[id];
     });
+    resetViewLimits();
     await preSignEntries(entries);
     entries.forEach(placeMarker);
     renderList();
     renderTripCards();
     drawRoute();
+    refreshHeatmap();
     renderUserFilterRow();
   }
 
@@ -2338,7 +3305,22 @@
     refreshAfterFilterChange();
   }
 
-  function makeIcon(hasPhoto, color = '#f97316') {
+  function makeIcon(hasPhoto, color = '#f97316', opts = {}) {
+    if (opts.wishlist) {
+      // Bucket-List: gestrichelter Rand, transparenter Hintergrund — klar abgesetzt
+      return L.divIcon({
+        className: '',
+        html: `<div style="position:relative;width:20px;height:20px;background:transparent;
+                           border:2.5px dashed ${color};border-radius:50%;
+                           display:flex;align-items:center;justify-content:center;
+                           box-shadow:0 0 0 3px ${color}22">
+                 <span style="font-size:10px;line-height:1;color:${color};font-weight:900">★</span>
+               </div>`,
+        iconSize:    [20, 20],
+        iconAnchor:  [10, 10],
+        popupAnchor: [0, -16],
+      });
+    }
     const dot = hasPhoto
       ? `<div style="position:absolute;top:-5px;right:-5px;width:10px;height:10px;
                      background:#10b981;border:2px solid white;border-radius:50%"></div>`
@@ -2395,8 +3377,12 @@
       photos:       parsePhotos(row),   // immer ein Array
       groupId:      row.group_id || null,
       userId:       row.user_id  || null,
+      mood:         row.mood     || '',
+      isWishlist:   !!row.is_wishlist,
     };
   }
+  // Spaltenliste für SELECTs — zentral, damit Mood/Bucket-List überall mitkommen.
+  const ENTRY_COLUMNS = 'id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id,mood,is_wishlist';
 
   // Gibt optimierte URL zurück (Transform für Storage-URLs, direkter Wert für Base64)
   function getPhotoSrc(entry, width = 400) {
@@ -2539,6 +3525,7 @@
     const last = [...entries].filter(e => e.date).sort((a,b) => b.date.localeCompare(a.date))[0];
     document.getElementById('dash-last').textContent = last ? fmtDate(last.date) : '–';
 
+    renderCountryStats();
     renderChart();
   }
 
@@ -2694,17 +3681,18 @@
     const loader    = document.getElementById('trip-loader');
     if (loader) loader.remove();
 
-    const list = activeTab === 'favs'
+    const fullList = activeTab === 'favs'
       ? entries.filter(e => favorites.has(e.id))
       : entries;
 
-    if (!list.length) {
+    if (!fullList.length) {
       container.innerHTML = activeTab === 'favs'
         ? `<p class="text-center text-gray-300 text-xs py-8">${t('noFavs')}</p>`
         : `<p class="text-center text-gray-300 text-xs py-8">${t('noTrips')}</p>`;
       return;
     }
 
+    const list = fullList.slice(0, viewLimits.tripCards);
     container.innerHTML = list.map(e => {
       const src   = getPhotoSrc(e, 120);
       const isVid = e.photos?.length ? isVideoUrl(e.photos[0]) : false;
@@ -2726,7 +3714,9 @@
           <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
             ${thumb}
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
+              <p class="text-sm font-bold text-gray-800 truncate">
+                ${e.mood ? `<span class="mr-1 align-middle">${e.mood}</span>` : ''}${esc(e.locationName)}
+              </p>
               <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
               ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
             </div>
@@ -2747,6 +3737,7 @@
           </div>
         </div>`;
     }).join('');
+    attachLoadMoreSentinel(container, fullList.length, 'tripCards', renderTripCards);
   }
 
   // ─── Galerie ──────────────────────────────────────────────────────────────
@@ -2757,6 +3748,7 @@
     document.getElementById('pinnwand')?.classList.remove('open');
     document.getElementById('nav-pinnwand')?.classList.remove('nav-active');
     galMode = mode;
+    viewLimits.gallery = PAGE_SIZE;
     setGalTab(mode);
     renderGallery();
     galleryEl.classList.add('open');
@@ -2775,6 +3767,7 @@
 
   function openPinnwand() {
     closeGallery();
+    viewLimits.pinnwand = PAGE_SIZE;
     renderPinnwand();
     pinnwandEl.classList.add('open');
     if (window.innerWidth < 1024) hidePanel();
@@ -2790,17 +3783,18 @@
 
   function renderPinnwand() {
     const grid = document.getElementById('pinnwand-grid');
-    const list = allEntries.filter(e => hasPhoto(e));
+    const fullList = allEntries.filter(e => hasPhoto(e));
 
     document.getElementById('pinnwand-subtitle').textContent =
-      `${list.length} Erinnerung${list.length !== 1 ? 'en' : ''} mit Fotos`;
+      `${fullList.length} Erinnerung${fullList.length !== 1 ? 'en' : ''} mit Fotos`;
 
-    if (!list.length) {
+    if (!fullList.length) {
       grid.innerHTML = `<div class="col-span-full text-center py-24 text-gray-400 text-sm">
         Noch keine Einträge mit Fotos vorhanden.</div>`;
       return;
     }
 
+    const list = fullList.slice(0, viewLimits.pinnwand);
     grid.innerHTML = list.map(e => {
       const src        = toDisplayUrl(e.photos[0], 600);
       const count      = e.photos.length;
@@ -2834,6 +3828,7 @@
           </div>
         </div>`;
     }).join('');
+    attachLoadMoreSentinel(grid, fullList.length, 'pinnwand', renderPinnwand);
   }
 
   function pinnwandItemClick(id) {
@@ -2873,12 +3868,13 @@
     }
 
     // Flache Liste aller Fotos mit Eintragsbezug
-    const items = [];
+    const allItems = [];
     list.forEach(e => {
       (e.photos || []).forEach((src, i) => {
-        items.push({ e, src, i, total: e.photos.length });
+        allItems.push({ e, src, i, total: e.photos.length });
       });
     });
+    const items = allItems.slice(0, viewLimits.gallery);
 
     grid.innerHTML = items.map(({ e, src, i, total }) => {
       const displaySrc = toDisplayUrl(src, 400);
@@ -2906,6 +3902,7 @@
             : ''}
         </div>`;
     }).join('');
+    attachLoadMoreSentinel(grid, allItems.length, 'gallery', renderGallery);
   }
 
   function galItemClick(id, photoIdx) {
@@ -2930,8 +3927,9 @@
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
     const marker = L.marker([entry.lat, entry.lng], {
-      icon:   makeIcon(hasPhoto(entry), colorForUser(entry.userId)),
+      icon:   makeIcon(hasPhoto(entry), colorForUser(entry.userId), { wishlist: entry.isWishlist }),
       userId: entry.userId, // Cluster-Farbe ableiten zu können
+      wishlist: entry.isWishlist,
     });
     marker.on('click', () => openLightbox(entry));
     clusterGroup.addLayer(marker);
@@ -2947,6 +3945,8 @@
   const lbImg        = document.getElementById('lb-img');
   const lbDate       = document.getElementById('lb-date');
   const lbName       = document.getElementById('lb-name');
+  const lbNameText   = document.getElementById('lb-name-text');
+  const lbMoodEl     = document.getElementById('lb-mood');
   const lbNotes      = document.getElementById('lb-notes');
   const lbCoords     = document.getElementById('lb-coords');
   const lbPrev       = document.getElementById('lb-prev');
@@ -2957,6 +3957,22 @@
   let   lbIdx        = 0;
 
   const lbVid = document.getElementById('lb-vid');
+
+  function renderLbDots() {
+    const dots = document.getElementById('lb-dots');
+    if (!dots) return;
+    const total = lbPhotos.length;
+    if (total < 2 || total > 10) { dots.classList.add('hidden'); dots.innerHTML = ''; return; }
+    dots.classList.remove('hidden');
+    dots.innerHTML = lbPhotos.map((_, i) =>
+      `<button type="button" data-lb-dot="${i}" aria-label="Photo ${i+1}"
+         class="transition-all ${i === lbIdx ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/45 hover:bg-white/70'} rounded-full"></button>`
+    ).join('');
+  }
+  document.addEventListener('click', e => {
+    const dot = e.target.closest('[data-lb-dot]');
+    if (dot) showLbSlide(+dot.dataset.lbDot);
+  });
 
   function showLbSlide(idx) {
     lbIdx = (idx + lbPhotos.length) % lbPhotos.length;
@@ -2983,6 +3999,7 @@
       lbImg.style.opacity = '1';
     }, 150);
     lbCounter.textContent = `${lbIdx + 1} / ${lbPhotos.length}`;
+    renderLbDots();
   }
 
   async function openLightbox(entry) {
@@ -2998,14 +4015,23 @@
       lbNext.classList.toggle('hidden',    !multi);
       lbCounter.classList.toggle('hidden', !multi);
       if (multi) lbCounter.textContent = `1 / ${lbPhotos.length}`;
+      if (!multi) document.getElementById('lb-dots')?.classList.add('hidden');
     } else {
       lbImg.src = '';
       lbPhotoPanel.classList.add('hidden');
       lbCard.classList.remove('sm:flex-row');
+      document.getElementById('lb-dots')?.classList.add('hidden');
     }
 
     lbDate.textContent   = entry.date ? `📅  ${fmtDate(entry.date)}` : '';
-    lbName.textContent   = entry.locationName;
+    if (lbNameText) lbNameText.textContent = entry.locationName;
+    else lbName.textContent = entry.locationName;
+    if (lbMoodEl) {
+      if (entry.mood) { lbMoodEl.textContent = entry.mood; lbMoodEl.classList.remove('hidden'); }
+      else            { lbMoodEl.textContent = '';        lbMoodEl.classList.add('hidden'); }
+    }
+    const wlBadge = document.getElementById('lb-wishlist-badge');
+    if (wlBadge) wlBadge.classList.toggle('hidden', !entry.isWishlist);
     renderMdBold(lbNotes, entry.notes || t('noNotes'));
     lbCoords.textContent = `${entry.lat.toFixed(4)}°, ${entry.lng.toFixed(4)}°`;
 
@@ -3063,6 +4089,22 @@
 
   lbPrev.addEventListener('click', () => showLbSlide(lbIdx - 1));
   lbNext.addEventListener('click', () => showLbSlide(lbIdx + 1));
+  // Swipe: links/rechts auf dem Foto-Panel wechselt das Bild
+  (() => {
+    const panel = document.getElementById('lb-photo-panel');
+    if (!panel) return;
+    let sx = 0, sy = 0, st = 0;
+    panel.addEventListener('touchstart', e => {
+      const t = e.touches[0]; sx = t.clientX; sy = t.clientY; st = Date.now();
+    }, { passive: true });
+    panel.addEventListener('touchend', e => {
+      const t = e.changedTouches[0];
+      const dx = t.clientX - sx, dy = t.clientY - sy, dt = Date.now() - st;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 500 && lbPhotos.length > 1) {
+        showLbSlide(lbIdx + (dx < 0 ? 1 : -1));
+      }
+    }, { passive: true });
+  })();
   lbClose.addEventListener('click', closeLightbox);
   lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
   lbDelete.addEventListener('click', async () => {
@@ -3091,14 +4133,32 @@
     document.getElementById('coords-display').textContent =
       `${entry.lat.toFixed(5)}°, ${entry.lng.toFixed(5)}°`;
 
-    document.getElementById('sidebar-title').textContent = 'Eintrag bearbeiten';
-    document.getElementById('save-label').textContent    = 'Änderungen speichern';
+    document.getElementById('sidebar-title').textContent = tG('Eintrag bearbeiten', 'Edit entry');
+    document.getElementById('save-label').textContent    = tG('Änderungen speichern', 'Save changes');
 
+    setMood(entry.mood || '');
+    const wlEl = document.getElementById('inp-wishlist');
+    if (wlEl) wlEl.checked = !!entry.isWishlist;
     showPreviewPin(entry.lat, entry.lng);
     loadTagsForEntry(entry.id);
     renderThumbGrid();
     openSidebar();
   }
+
+  // ─── Mood-Picker (click → select) ────────────────────────────────────────
+  function setMood(value) {
+    const input = document.getElementById('inp-mood');
+    if (input) input.value = value || '';
+    document.querySelectorAll('#mood-picker .mood-opt').forEach(btn => {
+      btn.classList.toggle('selected', btn.dataset.mood === value);
+    });
+  }
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('#mood-picker .mood-opt');
+    if (!btn) return;
+    const cur = document.getElementById('inp-mood')?.value || '';
+    setMood(btn.dataset.mood === cur ? '' : btn.dataset.mood);
+  });
 
   // ─── Liste rendern ────────────────────────────────────────────────────────
   function renderList() {
@@ -3117,7 +4177,8 @@
       return;
     }
 
-    list.innerHTML = entries.map((e, i) => `
+    const visibleEntries = entries.slice(0, viewLimits.list);
+    list.innerHTML = visibleEntries.map((e, i) => `
       <div data-entry-id="${e.id}" class="entry-appear flex items-center gap-2 rounded-lg px-3 py-2
                   bg-white hover:bg-orange-100 transition-colors group"
            style="animation-delay:${Math.min(i * 35, 350)}ms">
@@ -3140,6 +4201,7 @@
                  opacity-0 group-hover:opacity-100 text-lg leading-none flex-shrink-0">×</button>
       </div>
     `).join('');
+    attachLoadMoreSentinel(list, entries.length, 'list', renderList);
 
     updateDashboard();
     renderTripCards();
@@ -3230,7 +4292,7 @@
            <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
              <span class="bg-black/50 rounded-full w-6 h-6 flex items-center justify-center text-white text-xs">▶</span>
            </span>`
-        : `<img src="${safeSrc(toDisplayUrl(src,200))}" class="w-full h-full object-cover" />`;
+        : `<img src="${safeSrc(toDisplayUrl(src,200))}" class="w-full h-full object-cover" loading="lazy" decoding="async" />`;
       return `
         <div class="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
           ${mediaEl}
@@ -3246,7 +4308,7 @@
 
     const imgItems = pendingPhotos.map((src, i) => `
       <div class="relative group aspect-square">
-        <img src="${safeSrc(src)}" class="w-full h-full object-cover rounded-xl" />
+        <img src="${safeSrc(src)}" class="w-full h-full object-cover rounded-xl" loading="lazy" decoding="async" />
         <button type="button" onclick="removeThumb('img',${i})"
           class="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600
                  text-white text-xs font-bold flex items-center justify-center
@@ -3352,8 +4414,8 @@
     resetPhoto();
     clearPendingAudio();
     removePreviewPin();
-    document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
-    document.getElementById('save-label').textContent    = 'Eintrag speichern';
+    document.getElementById('sidebar-title').textContent = tG('Neuer Eintrag', 'New entry');
+    document.getElementById('save-label').textContent    = tG('Eintrag speichern', 'Save entry');
   }
 
   document.getElementById('btn-close').addEventListener('click', closeSidebar);
@@ -3367,12 +4429,14 @@
     // Karte-Klick bricht Edit-Modus ab und startet neuen Eintrag
     if (editingId) {
       editingId = null;
-      document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
-      document.getElementById('save-label').textContent    = 'Eintrag speichern';
+      document.getElementById('sidebar-title').textContent = tG('Neuer Eintrag', 'New entry');
+      document.getElementById('save-label').textContent    = tG('Eintrag speichern', 'Save entry');
     }
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
     document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
+    setMood('');
+    { const wl = document.getElementById('inp-wishlist'); if (wl) wl.checked = false; }
     pendingTags = []; renderTagPicker();
     resetPhoto();
     openSidebar();
@@ -3398,14 +4462,15 @@
     if (!locVal) {
       document.getElementById('inp-location').focus();
       document.getElementById('inp-location').classList.add('ring-2','ring-red-400','border-red-300');
-      toast('Ortsname ist Pflicht.', 'err');
+      toast(tG('Ortsname ist Pflicht.', 'Location name is required.'), 'err');
       setTimeout(() => document.getElementById('inp-location').classList.remove('ring-2','ring-red-400','border-red-300'), 2000);
       return;
     }
+    const isWishlist = !!document.getElementById('inp-wishlist')?.checked;
     const hasMedia = existingPhotos.length > 0 || pendingPhotos.length > 0 || pendingVideos.length > 0;
-    if (!hasMedia) {
+    if (!hasMedia && !isWishlist) {
       document.getElementById('upload-area').classList.add('ring-2','ring-red-400');
-      toast('Mindestens ein Bild oder Video ist Pflicht.', 'err');
+      toast(tG('Mindestens ein Bild oder Video ist Pflicht.', 'At least one image or video is required.'), 'err');
       setTimeout(() => document.getElementById('upload-area').classList.remove('ring-2','ring-red-400'), 2000);
       return;
     }
@@ -3433,11 +4498,13 @@
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
+      mood:          (document.getElementById('inp-mood')?.value || '') || null,
+      is_wishlist:   !!document.getElementById('inp-wishlist')?.checked,
     };
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select(ENTRY_COLUMNS).single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       await preSignEntries([updated]);
@@ -3458,7 +4525,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select(ENTRY_COLUMNS).single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       await preSignEntries([entry]);
@@ -3595,7 +4662,7 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').order('created_at', { ascending: true });
+    let q = sb.from(TABLE).select(ENTRY_COLUMNS).order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
     const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
@@ -3834,10 +4901,27 @@
 
     document.getElementById('auth-tab-login').className =
       `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-        mode === 'login' ? 'bg-white text-orange-500 shadow-sm' : 'text-stone-400 hover:text-orange-400'}`;
+        mode === 'login' ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-stone-400 hover:text-orange-500'}`;
     document.getElementById('auth-tab-register').className =
       `flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-        isReg ? 'bg-white text-orange-500 shadow-sm' : 'text-stone-400 hover:text-orange-400'}`;
+        isReg ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm' : 'text-stone-400 hover:text-orange-500'}`;
+
+    // Hero-Text dynamisch
+    const heroTitle = document.getElementById('auth-hero-title');
+    const heroSub   = document.getElementById('auth-hero-subtitle');
+    if (heroTitle && heroSub) {
+      const enLang = currentLang === 'en';
+      if (isReg)        { heroTitle.textContent = enLang ? 'Start your journey'  : 'Starte deine Reise';
+                          heroSub.textContent   = enLang ? 'Create your account in a minute.' : 'Erstelle dein Konto in einer Minute.'; }
+      else if (isForgot){ heroTitle.textContent = enLang ? 'Forgot your password?' : 'Passwort vergessen?';
+                          heroSub.textContent   = enLang ? 'Enter your email — we’ll send a reset link.' : 'Gib deine E-Mail ein — wir senden dir einen Reset-Link.'; }
+      else if (isReset) { heroTitle.textContent = enLang ? 'Set a new password' : 'Neues Passwort festlegen';
+                          heroSub.textContent   = enLang ? 'Choose a strong, fresh one.' : 'Wähle ein starkes, neues Passwort.'; }
+      else if (isMfa)   { heroTitle.textContent = enLang ? 'Two-factor verify' : 'Zwei-Faktor-Code';
+                          heroSub.textContent   = enLang ? 'Enter the 6-digit code from your authenticator.' : 'Gib den 6-stelligen Code aus deiner App ein.'; }
+      else              { heroTitle.textContent = enLang ? 'Welcome back' : 'Willkommen zurück';
+                          heroSub.textContent   = enLang ? 'Your travel diary is waiting.' : 'Dein Reisetagebuch wartet auf dich.'; }
+    }
 
     // In MFA-Mode: nur das MFA-Feld zeigen; E-Mail/Passwort/Captcha/Tabs verstecken
     document.getElementById('auth-tabs-row')?.classList.toggle('hidden', isMfa);
@@ -4214,8 +5298,30 @@
     document.getElementById('mfa-enroll-error').classList.add('hidden');
     document.getElementById('mfa-disable-error').classList.add('hidden');
     document.getElementById('mfa-enroll-code').value = '';
+    switchSettingsTab('profile');
     await Promise.all([refreshMfaStatus(), loadGroupsAndInvites(), loadUsername()]);
   }
+
+  function switchSettingsTab(name) {
+    document.querySelectorAll('#settings-modal .settings-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === name);
+    });
+    document.querySelectorAll('#settings-modal [data-settings-tab]').forEach(sec => {
+      const match = sec.dataset.settingsTab === name;
+      // Pending-Invites: nur sichtbar im Groups-Tab UND wenn Einladungen vorliegen
+      if (sec.id === 'settings-invites-section') {
+        const ul = document.getElementById('invites-list');
+        const hasInvites = !!(ul && ul.children.length);
+        sec.classList.toggle('hidden', !(match && hasInvites));
+        return;
+      }
+      sec.classList.toggle('hidden', !match);
+    });
+  }
+  document.addEventListener('click', e => {
+    const tab = e.target.closest('#settings-modal .settings-tab-btn');
+    if (tab) switchSettingsTab(tab.dataset.tab);
+  });
 
   async function closeSettings() {
     // Wenn der User die Enrollment-Flow abbricht, müssen wir den unverified factor entfernen
@@ -4525,8 +5631,10 @@
     const wrap = document.getElementById('settings-invites-section');
     const ul   = document.getElementById('invites-list');
     if (!wrap || !ul) return;
-    if (!pendingInvites.length) { wrap.classList.add('hidden'); return; }
-    wrap.classList.remove('hidden');
+    if (!pendingInvites.length) { wrap.classList.add('hidden'); ul.innerHTML = ''; return; }
+    // Nur sichtbar machen, wenn aktuell der Groups-Tab aktiv ist
+    const groupsTabActive = document.querySelector('#settings-modal .settings-tab-btn.active')?.dataset.tab === 'groups';
+    if (groupsTabActive) wrap.classList.remove('hidden');
     ul.innerHTML = pendingInvites.map(i => `
       <li class="flex items-center gap-2 bg-orange-50 rounded-xl px-3 py-2">
         <span class="flex-1 text-sm text-gray-800 truncate">${esc(i.groupName)}</span>
@@ -5226,6 +6334,8 @@
     de: {
       // Left panel
       stats:'Statistiken', trips:'Reisen', north:'Nördlichst', last:'Letztes',
+      countriesVisited:'Länder besucht', visitedPrefix:'Du hast', visitedSuffix:'Länder besucht',
+      lblMood:'Stimmung', lblWishlist:'Bucket-List (noch nicht besucht)',
       filterPh:'Orte filtern …', allYears:'Alle',
       tabAll:'🗺 Alle', tabFavs:'❤ Favoriten',
       loading:'Lädt …', profileSub:'Weltenbummler', profilePh:'Dein Reisename …',
@@ -5286,6 +6396,8 @@
     },
     en: {
       stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
+      countriesVisited:'countries visited', visitedPrefix:'You’ve visited', visitedSuffix:'countries',
+      lblMood:'Mood', lblWishlist:'Bucket list (not visited yet)',
       filterPh:'Filter places …', allYears:'All',
       tabAll:'🗺 All', tabFavs:'❤ Favorites',
       loading:'Loading …', profileSub:'World Traveler', profilePh:'Your travel name …',
@@ -5431,8 +6543,50 @@
     // Switch map tile language (only affects standard style)
     setMapLang(lang);
 
+    // Mood-Label
+    s('lbl-mood', T.lblMood);
+    // Wishlist-Label (gefolgt vom Sub-Text via dedizierter IDs)
+    const wlLbl = document.getElementById('lbl-wishlist');
+    if (wlLbl) wlLbl.innerHTML = lang === 'en' ? '📍 Bucket list: not visited yet' : '📍 Bucket-List: noch nicht besucht';
+    const wlSub = document.getElementById('lbl-wishlist-sub');
+    if (wlSub) wlSub.textContent = lang === 'en'
+      ? 'Mark this place as a wish. Photos become optional.'
+      : 'Markiere diesen Ort als Wunsch. Fotos sind dann optional.';
+
+    // Lightbox extras
+    s('lbl-lb-edit',   lang === 'en' ? 'Edit'  : 'Bearbeiten');
+    s('lbl-lb-share',  lang === 'en' ? 'Share' : 'Teilen');
+    s('lbl-recap',     lang === 'en' ? 'Recap' : 'Recap');
+
+    // Settings tabs
+    document.querySelectorAll('#settings-modal [data-tlbl]').forEach(el => {
+      const key = el.dataset.tlbl;
+      const map = {
+        profile:  lang === 'en' ? 'Profile'  : 'Profil',
+        map:      lang === 'en' ? 'Map'      : 'Karte',
+        groups:   lang === 'en' ? 'Groups'   : 'Gruppen',
+        security: lang === 'en' ? 'Security' : 'Sicherheit',
+      };
+      if (map[key]) el.textContent = map[key];
+    });
+    s('settings-subtitle', lang === 'en' ? 'Profile, security & groups' : 'Profil, Sicherheit & Gruppen');
+
+    // Push notifications
+    s('lbl-push-title', lang === 'en' ? 'Push notifications' : 'Push-Benachrichtigungen');
+    s('lbl-push-desc',  lang === 'en'
+      ? 'Get notified about new group entries and invitations.'
+      : 'Erhalte Benachrichtigungen über neue Gruppen-Einträge und Einladungen.');
+    if (typeof refreshPushStatus === 'function') refreshPushStatus();
+
+    // Share modal
+    s('lbl-share-title',    lang === 'en' ? 'Share card' : 'Share-Card');
+    s('lbl-share-cancel',   lang === 'en' ? 'Close'      : 'Schließen');
+    s('lbl-share-download', lang === 'en' ? 'Download'   : 'Download');
+    s('lbl-share-native',   lang === 'en' ? 'Share…'     : 'Teilen…');
+
     // Re-render dynamic lists with new language
     renderTripCards();
+    renderCountryStats();
     if (galleryEl.classList.contains('open')) renderGallery();
   }
 
@@ -5452,7 +6606,7 @@
 
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id')
+      .select(ENTRY_COLUMNS)
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -5478,6 +6632,9 @@
     renderUserFilterRow();
     // Wetter für alle vorhandenen Einträge nachladen (im Hintergrund)
     allEntries.forEach(e => fetchAndStoreWeather(e).catch(() => {}));
+    // Länder im Hintergrund auflösen + Flaggen aktualisieren
+    renderCountryStats();
+    resolveAllCountries().catch(() => {});
     if (toastOnDone && entries.length) toast(`${entries.length} ${t('loaded')}`, 'info');
     applyLang(currentLang);
     checkAnniversaries();
@@ -5808,12 +6965,14 @@
       `${pendingLat.toFixed(5)}°, ${pendingLng.toFixed(5)}°`;
     if (editingId) {
       editingId = null;
-      document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
-      document.getElementById('save-label').textContent    = 'Eintrag speichern';
+      document.getElementById('sidebar-title').textContent = tG('Neuer Eintrag', 'New entry');
+      document.getElementById('save-label').textContent    = tG('Eintrag speichern', 'Save entry');
     }
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
     document.getElementById('inp-date').value     = new Date().toISOString().slice(0, 10);
+    setMood('');
+    { const wl = document.getElementById('inp-wishlist'); if (wl) wl.checked = false; }
     pendingTags = []; renderTagPicker();
     resetPhoto();
     openSidebar();
@@ -6374,6 +7533,134 @@
   // ─── PWA Service Worker registrieren ──────────────────────────────────────
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // ─── Web Push: Subscription Management ────────────────────────────────────
+  // VAPID Public Key — vom Server bereitgestellt. Vor dem Live-Schalten setzen:
+  // 1. `npx web-push generate-vapid-keys`
+  // 2. Public Key hier einsetzen
+  // 3. Edge Function mit Private Key deployen
+  window.VAPID_PUBLIC_KEY = window.VAPID_PUBLIC_KEY || ''; // <-- BIS DAHIN LEER
+
+  function urlBase64ToUint8Array(base64) {
+    const padding = '='.repeat((4 - base64.length % 4) % 4);
+    const b = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(b);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function pushSupported() {
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  }
+
+  async function refreshPushStatus() {
+    const dot   = document.getElementById('push-status-dot');
+    const txt   = document.getElementById('push-status-text');
+    const btn   = document.getElementById('push-toggle-btn');
+    const label = document.getElementById('push-toggle-label');
+    if (!dot || !txt || !btn) return;
+
+    if (!pushSupported()) {
+      dot.className = 'w-2 h-2 rounded-full bg-stone-300';
+      txt.textContent = currentLang === 'en' ? 'Not supported on this browser' : 'In diesem Browser nicht verfügbar';
+      btn.disabled = true; btn.classList.add('opacity-50','cursor-not-allowed');
+      return;
+    }
+    btn.disabled = false; btn.classList.remove('opacity-50','cursor-not-allowed');
+
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        txt.textContent = currentLang === 'en' ? 'Active' : 'Aktiviert';
+        label.textContent = currentLang === 'en' ? 'Disable' : 'Deaktivieren';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-stone-300';
+        txt.textContent = currentLang === 'en' ? 'Inactive' : 'Deaktiviert';
+        label.textContent = currentLang === 'en' ? 'Enable' : 'Aktivieren';
+      }
+    } catch {}
+  }
+
+  async function togglePushSubscription() {
+    const err = document.getElementById('push-error');
+    err?.classList.add('hidden'); err.textContent = '';
+    if (!pushSupported()) return;
+    if (!currentUser) { err.textContent = 'Bitte zuerst einloggen.'; err.classList.remove('hidden'); return; }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const existing = await reg.pushManager.getSubscription();
+
+      if (existing) {
+        // Unsubscribe
+        try {
+          await sb.from('reise_push_subscriptions').delete().eq('endpoint', existing.endpoint);
+        } catch {}
+        await existing.unsubscribe();
+        toast(currentLang === 'en' ? 'Push notifications disabled.' : 'Push deaktiviert.', 'info');
+        refreshPushStatus();
+        return;
+      }
+
+      // Permission
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        err.textContent = currentLang === 'en'
+          ? 'Permission denied. Enable notifications in browser settings.'
+          : 'Berechtigung verweigert. Bitte in den Browser-Einstellungen erlauben.';
+        err.classList.remove('hidden');
+        return;
+      }
+
+      // Subscribe
+      const opts = { userVisibleOnly: true };
+      if (window.VAPID_PUBLIC_KEY) {
+        opts.applicationServerKey = urlBase64ToUint8Array(window.VAPID_PUBLIC_KEY);
+      } else {
+        err.textContent = currentLang === 'en'
+          ? 'Server VAPID key missing. Push is not configured yet.'
+          : 'VAPID-Key fehlt. Push ist noch nicht eingerichtet.';
+        err.classList.remove('hidden');
+        return;
+      }
+      const sub = await reg.pushManager.subscribe(opts);
+
+      // In Supabase persistieren
+      const json = sub.toJSON();
+      const { error } = await sb.from('reise_push_subscriptions').upsert({
+        user_id:    currentUser.id,
+        endpoint:   sub.endpoint,
+        p256dh:     json.keys?.p256dh,
+        auth_key:   json.keys?.auth,
+        user_agent: navigator.userAgent.slice(0, 250),
+      }, { onConflict: 'endpoint' });
+
+      if (error) {
+        err.textContent = 'Fehler: ' + error.message;
+        err.classList.remove('hidden');
+        await sub.unsubscribe();
+        return;
+      }
+      toast(currentLang === 'en' ? 'Push notifications enabled.' : 'Push aktiviert.', 'info');
+      refreshPushStatus();
+    } catch (e) {
+      err.textContent = (e && e.message) || String(e);
+      err.classList.remove('hidden');
+    }
+  }
+
+  // Beim Öffnen der Settings den aktuellen Status anzeigen
+  const _origOpenSettings = window.openSettings;
+  if (typeof _origOpenSettings === 'function') {
+    window.openSettings = async function () {
+      const r = await _origOpenSettings();
+      refreshPushStatus();
+      return r;
+    };
   }
   </script>
 </body>

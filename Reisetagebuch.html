@@ -237,9 +237,25 @@
 
       /* Panel-Tab größer + besser sichtbar */
       #panel-tab {
-        padding: 1.25rem 0.875rem !important;
-        border-radius: 0 1rem 1rem 0 !important;
-        box-shadow: 2px 0 12px rgba(0,0,0,.15) !important;
+        padding: 1.75rem 1.5rem !important;
+        border-radius: 0 1.25rem 1.25rem 0 !important;
+        box-shadow: 2px 0 14px rgba(0,0,0,.18) !important;
+        gap: 0.5rem !important;
+      }
+      #panel-tab > div {
+        width: 5px !important;
+        height: 22px !important;
+      }
+
+      /* Mobile: gesamte Main-Section scrollbar, nicht nur Trip-Cards */
+      #panel-main-section {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 56px;
+      }
+      #trip-cards {
+        flex: none !important;
+        overflow-y: visible !important;
       }
     }
 
@@ -281,6 +297,16 @@
     /* ── Like Button ─────────────────────────────────────────────────────── */
     @keyframes like-pop { 0%,100%{transform:scale(1)} 40%{transform:scale(1.45)} 70%{transform:scale(.88)} }
     .like-pop { animation: like-pop .35s ease; }
+
+    /* ── Streak ──────────────────────────────────────────────────────────── */
+    @keyframes streak-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(249,115,22,.65); }
+      70%  { box-shadow: 0 0 0 11px rgba(249,115,22,0); }
+      100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+    }
+    .streak-pulse { animation: streak-pulse 1.6s ease-out infinite; }
+    @keyframes flame-bounce { 0%,100%{transform:scale(1) rotate(-4deg)} 50%{transform:scale(1.18) rotate(4deg)} }
+    .flame-bounce { animation: flame-bounce 1.2s ease-in-out infinite; }
 
     /* ── Tag-Chips ───────────────────────────────────────────────────────── */
     .tag-chip { cursor:pointer; user-select:none; border-radius:999px; padding:2px 8px;
@@ -736,6 +762,29 @@
             <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
             <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
           </div>
+        </div>
+
+        <!-- Streak-Banner -->
+        <div id="streak-banner"
+          class="mt-2 rounded-xl px-3 py-2 flex items-center justify-between gap-2
+                 bg-gradient-to-r from-orange-500 to-amber-400">
+          <div class="flex items-center gap-2">
+            <span id="streak-flame" class="text-xl leading-none select-none">🔥</span>
+            <div>
+              <p id="dash-streak" class="text-white font-extrabold text-lg leading-none">0</p>
+              <p class="text-orange-100 text-[10px] leading-tight">Tage Streak</p>
+            </div>
+          </div>
+          <span id="streak-today-badge"
+            class="hidden text-[11px] bg-white/25 text-white px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
+            ✓ Heute
+          </span>
+          <button id="streak-checkin-btn"
+            onclick="openStreakCheckin()"
+            class="text-[11px] bg-white text-orange-500 px-2.5 py-1.5 rounded-full font-bold
+                   shadow-sm hover:bg-orange-50 active:scale-95 transition-all whitespace-nowrap flex-shrink-0">
+            + Einchecken
+          </button>
         </div>
       </div>
 
@@ -1514,6 +1563,27 @@
           </div>
         </div>
       </div>
+
+      <!-- Daily Streak Toggle -->
+      <label id="daily-toggle-row"
+        class="flex items-center gap-3 cursor-pointer select-none
+               bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+        <div class="relative flex-shrink-0" onclick="toggleDailySwitch()">
+          <div id="daily-switch-track"
+            class="w-10 h-5 rounded-full bg-gray-200 transition-colors duration-200"></div>
+          <div id="daily-switch-thumb"
+            class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
+                   transition-transform duration-200"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+            <span id="daily-toggle-flame" class="text-base">🔥</span>
+            Täglicher Check-in
+          </p>
+          <p class="text-xs text-stone-400 leading-tight mt-0.5">Zählt für deinen Streak</p>
+        </div>
+        <input type="checkbox" id="inp-daily" class="hidden">
+      </label>
 
       <button id="btn-save"
         class="w-full flex items-center justify-center gap-2
@@ -2392,9 +2462,10 @@
       locationName: row.location_name,
       date:         row.date || '',
       notes:        row.notes || '',
-      photos:       parsePhotos(row),   // immer ein Array
+      photos:       parsePhotos(row),
       groupId:      row.group_id || null,
       userId:       row.user_id  || null,
+      isDaily:      row.is_daily || false,
     };
   }
 
@@ -2526,6 +2597,43 @@
     }, 3200);
   }
 
+  // ─── Streak-Berechnung ────────────────────────────────────────────────────
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function yesterdayISO() { return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
+
+  function hasTodayCheckin() {
+    const t = todayISO();
+    return allEntries.some(e => e.isDaily && e.date === t);
+  }
+
+  function calcStreak() {
+    const dateSet = new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date));
+    if (!dateSet.size) return 0;
+    const anchor = dateSet.has(todayISO()) ? todayISO() : dateSet.has(yesterdayISO()) ? yesterdayISO() : null;
+    if (!anchor) return 0;
+    let streak = 0;
+    let cur = new Date(anchor + 'T12:00:00Z');
+    while (dateSet.has(cur.toISOString().slice(0, 10))) {
+      streak++;
+      cur = new Date(cur.getTime() - 86400000);
+    }
+    return streak;
+  }
+
+  function updateStreakUI() {
+    const streak  = calcStreak();
+    const hasToday = hasTodayCheckin();
+    document.getElementById('dash-streak').textContent = streak;
+    document.getElementById('streak-today-badge').classList.toggle('hidden', !hasToday);
+    document.getElementById('streak-checkin-btn').classList.toggle('hidden', hasToday);
+    const flame = document.getElementById('streak-flame');
+    if (streak > 0) flame.classList.add('flame-bounce');
+    else            flame.classList.remove('flame-bounce');
+    // + Button auf Mobile pulsieren wenn noch kein Check-in heute
+    const navCta = document.querySelector('.nav-cta-btn');
+    if (navCta) navCta.classList.toggle('streak-pulse', !hasToday && !!currentUser);
+  }
+
   // ─── Dashboard + Trip-Cards ───────────────────────────────────────────────
   function updateStats() { updateDashboard(); }   // Alias für ältere Aufrufe
 
@@ -2539,6 +2647,7 @@
     const last = [...entries].filter(e => e.date).sort((a,b) => b.date.localeCompare(a.date))[0];
     document.getElementById('dash-last').textContent = last ? fmtDate(last.date) : '–';
 
+    updateStreakUI();
     renderChart();
   }
 
@@ -2927,11 +3036,33 @@
     if (window.innerWidth < 1024) hidePanel();
   }
 
+  function makeStreakIcon(photoUrl) {
+    const inner = photoUrl
+      ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">`
+      : `<span style="font-size:18px;line-height:1">🔥</span>`;
+    return L.divIcon({
+      className: '',
+      html: `<div style="width:42px;height:42px;border-radius:50%;border:3px solid #f97316;
+                         overflow:hidden;background:#fff;
+                         box-shadow:0 3px 14px rgba(249,115,22,.55);
+                         display:flex;align-items:center;justify-content:center">
+               ${inner}
+             </div>`,
+      iconSize:    [42, 42],
+      iconAnchor:  [21, 21],
+      popupAnchor: [0, -25],
+    });
+  }
+
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
+    const icon = entry.isDaily
+      ? makeStreakIcon(entry.photos?.[0] ? toDisplayUrl(entry.photos[0], 80) : null)
+      : makeIcon(hasPhoto(entry), colorForUser(entry.userId));
     const marker = L.marker([entry.lat, entry.lng], {
-      icon:   makeIcon(hasPhoto(entry), colorForUser(entry.userId)),
-      userId: entry.userId, // Cluster-Farbe ableiten zu können
+      icon,
+      userId:      entry.userId,
+      zIndexOffset: entry.isDaily ? 100 : 0,
     });
     marker.on('click', () => openLightbox(entry));
     clusterGroup.addLayer(marker);
@@ -3354,6 +3485,31 @@
     removePreviewPin();
     document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
     document.getElementById('save-label').textContent    = 'Eintrag speichern';
+    setDailySwitch(false);
+  }
+
+  // ─── Daily-Toggle ─────────────────────────────────────────────────────────
+  function setDailySwitch(on) {
+    document.getElementById('inp-daily').checked = on;
+    document.getElementById('daily-switch-track').style.background = on ? '#f97316' : '';
+    document.getElementById('daily-switch-track').classList.toggle('bg-orange-500', on);
+    document.getElementById('daily-switch-track').classList.toggle('bg-gray-200', !on);
+    document.getElementById('daily-switch-thumb').style.transform = on ? 'translateX(20px)' : '';
+    document.getElementById('daily-toggle-flame').textContent = on ? '🔥' : '🔥';
+  }
+
+  function toggleDailySwitch() {
+    setDailySwitch(!document.getElementById('inp-daily').checked);
+  }
+
+  function openStreakCheckin() {
+    if (!currentUser) return;
+    document.getElementById('inp-date').value = todayISO();
+    setDailySwitch(true);
+    sidebar.classList.add('open');
+    if (window.innerWidth < 1024) hidePanel();
+    // GPS auto-auslösen
+    setTimeout(() => document.getElementById('btn-gps')?.click(), 200);
   }
 
   document.getElementById('btn-close').addEventListener('click', closeSidebar);
@@ -3433,11 +3589,12 @@
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
+      is_daily:      document.getElementById('inp-daily').checked,
     };
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       await preSignEntries([updated]);
@@ -3458,7 +3615,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       await preSignEntries([entry]);
@@ -3474,6 +3631,12 @@
         pendingAudioBlob = null;
       }
       closeSidebar();
+      if (entry.isDaily) {
+        updateStreakUI();
+        const s = calcStreak();
+        const milestones = { 3:'3 Tage 🔥', 7:'1 Woche 🔥🔥', 14:'2 Wochen 💪', 30:'1 Monat 🏆', 100:'100 Tage 🌟' };
+        if (milestones[s]) setTimeout(() => toast(`Streak: ${milestones[s]} — Weiter so!`, 'info'), 600);
+      }
       toast(`"${entry.locationName}" ${t('savedOk')}`);
     }
     setSaving(false);
@@ -3595,7 +3758,7 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id').order('created_at', { ascending: true });
+    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id').order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
     const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
@@ -5452,7 +5615,7 @@
 
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id')
+      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id')
       .order('created_at', { ascending: true });
 
     if (error) {

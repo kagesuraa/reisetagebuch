@@ -3790,12 +3790,12 @@
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
       is_daily:      document.getElementById('inp-daily').checked,
-      is_public:     document.getElementById('inp-public').checked,
+      ...(hasPublicCol ? { is_public: document.getElementById('inp-public').checked } : {}),
     };
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select(entryCols()).single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       await preSignEntries([updated]);
@@ -3816,7 +3816,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select(entryCols()).single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       await preSignEntries([entry]);
@@ -3959,7 +3959,7 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id').order('created_at', { ascending: true });
+    let q = sb.from(TABLE).select(entryCols()).order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
     const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
@@ -4180,6 +4180,9 @@
   let currentUser   = null;
   let authMode      = 'login'; // 'login' | 'register' | 'forgot' | 'reset'
   let hasUserIdCol  = false;   // set true after running supabase_migration.sql
+  let hasPublicCol  = false;   // set true after running migration_is_public.sql
+  const ENTRY_BASE  = 'id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id';
+  const entryCols   = () => hasPublicCol ? ENTRY_BASE + ',is_public' : ENTRY_BASE;
 
   const authEmail    = document.getElementById('auth-email');
   const authPassword = document.getElementById('auth-password');
@@ -4880,7 +4883,7 @@
     // Benötigt RLS-Update: "select own or group" Policy (siehe Migrationsanleitung)
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id')
+      .select(entryCols())
       .neq('user_id', currentUser.id)
       .order('created_at', { ascending: true });
     if (error || !data?.length) return;
@@ -5878,7 +5881,15 @@
     applyLang(currentLang === 'de' ? 'en' : 'de');
   }
 
-  async function init() { await loadEntries({ toastOnDone: true }); }
+  async function probePublicCol() {
+    const { error } = await sb.from(TABLE).select('is_public').limit(1);
+    hasPublicCol = !error;
+  }
+
+  async function init() {
+    await probePublicCol();
+    await loadEntries({ toastOnDone: true });
+  }
 
   // Lädt Einträge neu (z.B. nach Gruppen-Beitritt/-Austritt)
   async function loadEntries({ toastOnDone = false } = {}) {
@@ -5890,7 +5901,7 @@
 
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id')
+      .select(entryCols())
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -6503,10 +6514,14 @@
     const list   = document.getElementById('discover-list');
     const loader = document.getElementById('discover-loader');
     list.innerHTML = '';
+    if (!hasPublicCol) {
+      list.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">Migration noch nicht ausgeführt.<br>Bitte migration_is_public.sql in Supabase ausführen.</p>`;
+      return;
+    }
     loader.classList.remove('hidden');
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id')
+      .select(entryCols())
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(60);

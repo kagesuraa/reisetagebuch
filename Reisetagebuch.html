@@ -866,6 +866,7 @@
         <button id="tab-all" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">🗺 Alle</button>
         <button id="tab-favs" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">❤ Favoriten</button>
         <button id="tab-top" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">🔥 Top</button>
+        <button id="tab-discover" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">🌍</button>
       </div>
 
       <!-- Trip-Cards -->
@@ -877,6 +878,18 @@
           </svg>
           <span id="lbl-loading">Lädt …</span>
         </div>
+      </div>
+
+      <!-- Entdecken-Feed -->
+      <div id="discover-feed" class="hidden flex-1 overflow-y-auto scroll-thin px-3 py-2">
+        <div id="discover-loader" class="hidden flex items-center justify-center gap-2 py-8 text-stone-300 text-xs">
+          <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span>Lädt …</span>
+        </div>
+        <div id="discover-list" class="space-y-3 pb-2"></div>
       </div>
 
     </div>
@@ -1623,6 +1636,27 @@
           <p class="text-xs text-stone-400 leading-tight mt-0.5">Zählt für deinen Streak</p>
         </div>
         <input type="checkbox" id="inp-daily" class="hidden">
+      </label>
+
+      <!-- Öffentlich Toggle -->
+      <label id="public-toggle-row"
+        class="flex items-center gap-3 cursor-pointer select-none
+               bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
+        <div class="relative flex-shrink-0" onclick="togglePublicSwitch()">
+          <div id="public-switch-track"
+            class="w-10 h-5 rounded-full bg-gray-200 transition-colors duration-200"></div>
+          <div id="public-switch-thumb"
+            class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
+                   transition-transform duration-200"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+            <span class="text-base">🌍</span>
+            Öffentlich teilen
+          </p>
+          <p class="text-xs text-stone-400 leading-tight mt-0.5">Im Entdecken-Feed für alle sichtbar</p>
+        </div>
+        <input type="checkbox" id="inp-public" class="hidden">
       </label>
 
       <button id="btn-save"
@@ -2509,7 +2543,8 @@
       photos:       parsePhotos(row),
       groupId:      row.group_id || null,
       userId:       row.user_id  || null,
-      isDaily:      row.is_daily || false,
+      isDaily:      row.is_daily  || false,
+      isPublic:     row.is_public || false,
     };
   }
 
@@ -2915,15 +2950,20 @@
     activeTab = tab;
     const inactive = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white';
     const active   = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white';
-    document.getElementById('tab-all').className  = tab === 'all'  ? active : inactive;
-    document.getElementById('tab-favs').className = tab === 'favs' ? active : inactive;
+    document.getElementById('tab-all').className      = tab === 'all'      ? active : inactive;
+    document.getElementById('tab-favs').className     = tab === 'favs'     ? active : inactive;
+    document.getElementById('tab-discover').className = tab === 'discover' ? active : inactive;
     const topBtn = document.getElementById('tab-top');
     if (topBtn) topBtn.className = inactive;
-    renderTripCards();
+    const isDiscover = tab === 'discover';
+    document.getElementById('trip-cards').classList.toggle('hidden', isDiscover);
+    document.getElementById('discover-feed').classList.toggle('hidden', !isDiscover);
+    if (!isDiscover) renderTripCards();
   }
 
-  document.getElementById('tab-all').addEventListener('click',  () => setTab('all'));
-  document.getElementById('tab-favs').addEventListener('click', () => setTab('favs'));
+  document.getElementById('tab-all').addEventListener('click',      () => setTab('all'));
+  document.getElementById('tab-favs').addEventListener('click',     () => setTab('favs'));
+  document.getElementById('tab-discover').addEventListener('click', () => { setTab('discover'); loadDiscoverFeed(); });
 
   // ─── Trip-Cards rendern ───────────────────────────────────────────────────
   function renderTripCards() {
@@ -2965,7 +3005,8 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-1.5 min-w-0">
                 <p class="text-sm font-bold text-gray-800 truncate flex-1">${esc(e.locationName)}</p>
-                ${e.isDaily ? `<span title="Streak Check-in" class="flex-shrink-0 text-sm">🔥</span>` : ''}
+                ${e.isDaily  ? `<span title="Streak Check-in" class="flex-shrink-0 text-sm">🔥</span>` : ''}
+                ${e.isPublic ? `<span title="Öffentlich" class="flex-shrink-0 text-sm">🌍</span>` : ''}
               </div>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <p class="text-xs text-orange-500 font-medium">${fmtDate(e.date)}</p>
@@ -3363,6 +3404,7 @@
 
     document.getElementById('sidebar-title').textContent = 'Eintrag bearbeiten';
     document.getElementById('save-label').textContent    = 'Änderungen speichern';
+    setPublicSwitch(entry.isPublic || false);
 
     showPreviewPin(entry.lat, entry.lng);
     loadTagsForEntry(entry.id);
@@ -3625,6 +3667,7 @@
     document.getElementById('sidebar-title').textContent = 'Neuer Eintrag';
     document.getElementById('save-label').textContent    = 'Eintrag speichern';
     setDailySwitch(false);
+    setPublicSwitch(false);
   }
 
   // ─── Daily-Toggle ─────────────────────────────────────────────────────────
@@ -3640,6 +3683,19 @@
 
   function toggleDailySwitch() {
     setDailySwitch(!document.getElementById('inp-daily').checked);
+  }
+
+  // ─── Öffentlich-Toggle ────────────────────────────────────────────────────
+  function setPublicSwitch(on) {
+    document.getElementById('inp-public').checked = on;
+    document.getElementById('public-switch-track').style.background = on ? '#0ea5e9' : '';
+    document.getElementById('public-switch-track').classList.toggle('bg-sky-500', on);
+    document.getElementById('public-switch-track').classList.toggle('bg-gray-200', !on);
+    document.getElementById('public-switch-thumb').style.transform = on ? 'translateX(20px)' : '';
+  }
+
+  function togglePublicSwitch() {
+    setPublicSwitch(!document.getElementById('inp-public').checked);
   }
 
   function openStreakCheckin() {
@@ -3730,11 +3786,12 @@
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
       is_daily:      document.getElementById('inp-daily').checked,
+      is_public:     document.getElementById('inp-public').checked,
     };
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       await preSignEntries([updated]);
@@ -3755,7 +3812,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id').single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id').single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       await preSignEntries([entry]);
@@ -3898,7 +3955,7 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id').order('created_at', { ascending: true });
+    let q = sb.from(TABLE).select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id').order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
     const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
@@ -4819,7 +4876,7 @@
     // Benötigt RLS-Update: "select own or group" Policy (siehe Migrationsanleitung)
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id')
+      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id')
       .neq('user_id', currentUser.id)
       .order('created_at', { ascending: true });
     if (error || !data?.length) return;
@@ -5787,7 +5844,7 @@
 
     const { data, error } = await sb
       .from(TABLE)
-      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id')
+      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id')
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -6392,6 +6449,66 @@
           </div>`;
       }).join('');
     });
+  }
+
+  // ─── Entdecken-Feed ───────────────────────────────────────────────────────
+  async function loadDiscoverFeed() {
+    if (!currentUser) return;
+    const list   = document.getElementById('discover-list');
+    const loader = document.getElementById('discover-loader');
+    list.innerHTML = '';
+    loader.classList.remove('hidden');
+    const { data, error } = await sb
+      .from(TABLE)
+      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,is_public,created_at,group_id,user_id')
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(60);
+    loader.classList.add('hidden');
+    if (error) {
+      list.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">Fehler beim Laden</p>`;
+      return;
+    }
+    if (!data?.length) {
+      list.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">Noch keine öffentlichen Einträge</p>`;
+      return;
+    }
+    const discoverEntries = data.map(rowToEntry);
+    await preSignEntries(discoverEntries);
+    await loadUserInfosForEntries(discoverEntries);
+    list.innerHTML = discoverEntries.map(e => renderDiscoverCard(e)).join('');
+  }
+
+  function renderDiscoverCard(e) {
+    const src      = hasPhoto(e) ? getPhotoSrc(e, 400) : null;
+    const isVid    = src && isVideoUrl(src);
+    const info     = userInfoMap[e.userId] || {};
+    const name     = esc(info.username || 'Anonym');
+    const color    = info.color || '#f97316';
+    const initial  = name[0]?.toUpperCase() || '?';
+    const mediaEl  = src
+      ? isVid
+        ? `<video src="${safeSrc(src)}" muted playsinline preload="metadata"
+             class="w-full h-36 object-cover pointer-events-none"></video>
+           <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <span class="bg-black/50 rounded-full w-8 h-8 flex items-center justify-center text-white text-sm">▶</span>
+           </span>`
+        : `<img src="${safeSrc(toDisplayUrl(src, 400))}" class="w-full h-36 object-cover" loading="lazy" />`
+      : '';
+    return `
+      <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+        ${src ? `<div class="relative">${mediaEl}</div>` : ''}
+        <div class="p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                 style="background:${color}">${initial}</div>
+            <span class="text-xs font-semibold text-gray-600">${name}</span>
+            <span class="text-xs text-gray-300 ml-auto">${fmtDate(e.date)}</span>
+          </div>
+          <p class="text-sm font-bold text-gray-800 truncate">📍 ${esc(e.locationName)}</p>
+          ${e.notes ? `<p class="text-xs text-gray-500 mt-1 line-clamp-2">${esc(e.notes)}</p>` : ''}
+        </div>
+      </div>`;
   }
 
   // ══════════════════════════════════════════════════════════════════════════

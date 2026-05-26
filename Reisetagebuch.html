@@ -932,123 +932,31 @@
     <!-- ── MAIN-SECTION (eingeloggt, anfangs versteckt) ──────────────────── -->
     <div id="panel-main-section" class="hidden flex-1 flex flex-col overflow-hidden">
 
-      <!-- Dashboard: 3 Metrik-Karten -->
-      <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-orange-100">
-        <div class="flex items-center justify-between mb-3">
-          <p id="lbl-stats" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Statistiken</p>
-          <div class="flex items-center gap-3">
-            <button onclick="openRecap()"
-              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors"
-              title="Jahresrückblick">
-              <span class="text-sm">✨</span>
-              <span id="lbl-recap">Recap</span>
-            </button>
-            <button onclick="openSlideshow()"
-              class="text-xs text-orange-400 hover:text-orange-600 font-semibold flex items-center gap-1 transition-colors">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              Memories
-            </button>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div class="bg-white rounded-xl px-2 py-3 text-center">
-            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
-            </svg>
-            <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
-            <p id="lbl-trips" class="text-xs text-stone-400 mt-0.5">Reisen</p>
-          </div>
-          <div class="bg-white rounded-xl px-2 py-3 text-center">
-            <span class="text-base leading-none block mb-1">🌍</span>
-            <p id="dash-countries" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
-            <p id="lbl-countries" class="text-xs text-stone-400 mt-0.5">Länder</p>
-          </div>
-          <div class="bg-white rounded-xl px-2 py-3 text-center">
-            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
-            </svg>
-            <p id="dash-north" class="text-xs font-extrabold text-stone-900 leading-tight truncate px-1">–</p>
-            <p id="lbl-north" class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
-          </div>
-          <div class="bg-white rounded-xl px-2 py-3 text-center">
-            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
-            <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
-          </div>
-        </div>
-        <!-- Länder-Counter (mit Flaggen) -->
-        <div id="country-stats" class="mt-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl px-3 py-2.5 hidden">
-          <div class="flex items-baseline justify-between mb-1">
-            <p id="country-stats-title" class="text-xs font-semibold text-stone-600">
-              Du hast <span id="country-count" class="text-orange-600 text-sm font-extrabold">0</span> Länder besucht
-            </p>
-            <span id="country-stats-loader" class="text-[10px] text-stone-400 hidden">…</span>
-          </div>
-          <div id="country-flags" class="flex flex-wrap gap-1 text-lg leading-none"></div>
-        </div>
-
-        <!-- Streak-Banner -->
-        <div id="streak-banner"
-          class="mt-2 rounded-xl px-3 py-2.5 bg-gradient-to-r from-orange-500 to-amber-400">
-          <!-- Zeile 1: Flamme + Streak + Badge/Button -->
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-2 flex-1 min-w-0">
-              <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
-              <div>
-                <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
-                <p id="lbl-streak-days" class="text-orange-100 text-xs leading-tight">Tage Streak</p>
-              </div>
-            </div>
-            <span id="streak-today-badge"
-              class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
-              <span id="lbl-streak-today">✓ Heute gecheckt</span>
-            </span>
-            <button id="streak-checkin-btn"
-              onclick="openStreakCheckin()"
-              class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
-                     shadow-sm hover:bg-orange-50 active:scale-95 transition-all
-                     whitespace-nowrap flex-shrink-0 min-h-[36px]">
-              <span id="lbl-streak-checkin">🔥 Heute einchecken</span>
-            </button>
-          </div>
-          <!-- Zeile 2: 7-Tage-Verlauf -->
-          <div id="streak-history" class="flex gap-1.5 mt-2.5 items-center"></div>
-          <!-- Zeile 3: Best + Gesamt -->
-          <div class="flex items-center justify-between mt-1.5">
-            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-best">Beste</span>: <span id="dash-best-streak" class="font-bold text-white">0</span> <span id="lbl-streak-best-unit">Tage</span></p>
-            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-total">Gesamt</span>: <span id="dash-total-checkins" class="font-bold text-white">0</span> <span id="lbl-streak-total-unit">Tage</span></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Aktivitäts-Diagramm -->
-      <div class="px-4 pt-3 pb-3 flex-shrink-0 border-b border-orange-100">
-        <div class="flex items-center justify-between mb-2">
-          <p id="lbl-chart-title" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
-          <div class="flex bg-orange-50 rounded-lg p-0.5 gap-0.5">
-            <button id="chart-mode-month"
-              class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors">
-              <span id="lbl-chart-months">Monate</span>
-            </button>
-            <button id="chart-mode-year"
-              class="text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors">
-              <span id="lbl-chart-years">Jahre</span>
-            </button>
-          </div>
-        </div>
-        <div id="stats-chart-wrap" style="height:140px; position:relative;">
-          <canvas id="stats-chart"></canvas>
-        </div>
+      <!-- Quick-Actions: Stats öffnen + Recap + Memories -->
+      <div class="px-4 pt-4 pb-3 flex-shrink-0 border-b border-orange-100 flex items-center gap-2">
+        <button onclick="openSettings('stats')"
+          class="flex-1 flex items-center justify-center gap-1.5 text-xs font-bold
+                 bg-gradient-to-r from-orange-500 to-amber-500 text-white
+                 rounded-xl px-3 py-2 shadow-sm hover:shadow-md active:scale-95 transition-all">
+          <span>📊</span><span id="lbl-open-stats">Statistik &amp; Aktivität</span>
+        </button>
+        <button onclick="openRecap()"
+          class="text-xs font-semibold text-orange-500 hover:text-orange-600 px-2.5 py-2 rounded-xl
+                 hover:bg-orange-50 transition-colors flex items-center gap-1"
+          title="Jahresrückblick">
+          ✨ <span id="lbl-recap">Recap</span>
+        </button>
+        <button onclick="openSlideshow()"
+          class="text-xs font-semibold text-orange-500 hover:text-orange-600 px-2.5 py-2 rounded-xl
+                 hover:bg-orange-50 transition-colors flex items-center gap-1"
+          title="Memories">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Filterleiste -->
@@ -1210,9 +1118,127 @@
       <div class="settings-tabs sticky top-[68px] sm:top-[78px] z-10 bg-white border-b border-orange-100
                   flex gap-1 px-3 py-2 overflow-x-auto scroll-thin">
         <button class="settings-tab-btn shrink-0" data-tab="profile">👤 <span data-tlbl="profile">Profil</span></button>
+        <button class="settings-tab-btn shrink-0" data-tab="stats">📊 <span data-tlbl="stats">Statistik</span></button>
         <button class="settings-tab-btn shrink-0" data-tab="map">🎨 <span data-tlbl="map">Karte</span></button>
         <button class="settings-tab-btn shrink-0" data-tab="groups">👥 <span data-tlbl="groups">Gruppen</span></button>
         <button class="settings-tab-btn shrink-0" data-tab="security">🔐 <span data-tlbl="security">Sicherheit</span></button>
+      </div>
+
+      <!-- ═══ STATS & AKTIVITÄT ══════════════════════════════════════════════ -->
+      <div id="settings-stats-section" data-settings-tab="stats" class="px-5 py-4 space-y-4 bg-orange-50/30">
+        <p id="lbl-stats" class="text-xs font-bold text-stone-500 uppercase tracking-widest">Statistiken</p>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/>
+            </svg>
+            <p id="dash-total" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
+            <p id="lbl-trips" class="text-xs text-stone-400 mt-0.5">Reisen</p>
+          </div>
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <span class="text-base leading-none block mb-1">🌍</span>
+            <p id="dash-countries" class="text-xl font-extrabold text-stone-900 leading-none">0</p>
+            <p id="lbl-countries" class="text-xs text-stone-400 mt-0.5">Länder</p>
+          </div>
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+            </svg>
+            <p id="dash-north" class="text-xs font-extrabold text-stone-900 leading-tight truncate px-1">–</p>
+            <p id="lbl-north" class="text-xs text-stone-400 mt-0.5">Nördlichst</p>
+          </div>
+          <div class="bg-white rounded-xl px-2 py-3 text-center">
+            <svg class="w-4 h-4 text-stone-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+            <p id="dash-last" class="text-xs font-extrabold text-stone-900 leading-tight">–</p>
+            <p id="lbl-last" class="text-xs text-stone-400 mt-0.5">Letztes</p>
+          </div>
+        </div>
+
+        <!-- Länder-Counter (mit Flaggen) -->
+        <div id="country-stats" class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl px-3 py-2.5 hidden">
+          <div class="flex items-baseline justify-between mb-1">
+            <p id="country-stats-title" class="text-xs font-semibold text-stone-600">
+              Du hast <span id="country-count" class="text-orange-600 text-sm font-extrabold">0</span> Länder besucht
+            </p>
+            <span id="country-stats-loader" class="text-[10px] text-stone-400 hidden">…</span>
+          </div>
+          <div id="country-flags" class="flex flex-wrap gap-1 text-lg leading-none"></div>
+        </div>
+
+        <!-- Streak-Banner -->
+        <div id="streak-banner"
+          class="rounded-xl px-3 py-2.5 bg-gradient-to-r from-orange-500 to-amber-400">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
+              <div>
+                <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
+                <p id="lbl-streak-days" class="text-orange-100 text-xs leading-tight">Tage Streak</p>
+              </div>
+            </div>
+            <span id="streak-today-badge"
+              class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
+              <span id="lbl-streak-today">✓ Heute gecheckt</span>
+            </span>
+            <button id="streak-checkin-btn"
+              onclick="closeSettings(); openStreakCheckin();"
+              class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
+                     shadow-sm hover:bg-orange-50 active:scale-95 transition-all
+                     whitespace-nowrap flex-shrink-0 min-h-[36px]">
+              <span id="lbl-streak-checkin">🔥 Heute einchecken</span>
+            </button>
+          </div>
+          <div id="streak-history" class="flex gap-1.5 mt-2.5 items-center"></div>
+          <div class="flex items-center justify-between mt-1.5">
+            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-best">Beste</span>: <span id="dash-best-streak" class="font-bold text-white">0</span> <span id="lbl-streak-best-unit">Tage</span></p>
+            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-total">Gesamt</span>: <span id="dash-total-checkins" class="font-bold text-white">0</span> <span id="lbl-streak-total-unit">Tage</span></p>
+          </div>
+        </div>
+
+        <!-- Aktivitäts-Diagramm -->
+        <div class="bg-white rounded-xl px-3 py-3">
+          <div class="flex items-center justify-between mb-2">
+            <p id="lbl-chart-title" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
+            <div class="flex bg-orange-50 rounded-lg p-0.5 gap-0.5">
+              <button id="chart-mode-month"
+                class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors">
+                <span id="lbl-chart-months">Monate</span>
+              </button>
+              <button id="chart-mode-year"
+                class="text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors">
+                <span id="lbl-chart-years">Jahre</span>
+              </button>
+            </div>
+          </div>
+          <div id="stats-chart-wrap" style="height:160px; position:relative;">
+            <canvas id="stats-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Recap + Memories als zusätzliche Aktionen -->
+        <div class="flex gap-2 pt-1">
+          <button onclick="closeSettings(); openRecap();"
+            class="flex-1 text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-500 text-white
+                   rounded-xl px-3 py-2.5 shadow-sm hover:shadow-md active:scale-95 transition-all">
+            ✨ <span id="lbl-recap-btn">Jahresrückblick</span>
+          </button>
+          <button onclick="closeSettings(); openSlideshow();"
+            class="flex-1 text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-700
+                   rounded-xl px-3 py-2.5 transition-colors flex items-center justify-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span id="lbl-memories-btn">Memories</span>
+          </button>
+        </div>
       </div>
 
       <!-- ═══ PROFILBILD (1) ═════════════════════════════════════════════════ -->
@@ -5819,8 +5845,10 @@
     }
   }
 
-  async function openSettings() {
+  async function openSettings(initialTab) {
     if (!currentUser) return;
+    // Wenn ein Event-Objekt durchgereicht wird (z.B. onclick), ignorieren wir es.
+    if (typeof initialTab !== 'string') initialTab = 'profile';
     showSettingsModal(true);
     document.getElementById('mfa-enroll-step').classList.add('hidden');
     document.getElementById('mfa-disable-step').classList.add('hidden');
@@ -5828,7 +5856,10 @@
     document.getElementById('mfa-enroll-error').classList.add('hidden');
     document.getElementById('mfa-disable-error').classList.add('hidden');
     document.getElementById('mfa-enroll-code').value = '';
-    switchSettingsTab('profile');
+    switchSettingsTab(initialTab);
+    // Chart neu rendern, falls auf Stats-Tab geöffnet (Canvas-Größe folgt erst nach
+    // Sichtbarwerden korrekt)
+    if (initialTab === 'stats') setTimeout(() => renderChart?.(), 30);
     await Promise.all([refreshMfaStatus(), loadGroupsAndInvites(), loadUsername()]);
   }
 
@@ -5847,6 +5878,7 @@
       }
       sec.classList.toggle('hidden', !match);
     });
+    if (name === 'stats') setTimeout(() => renderChart?.(), 30);
   }
   document.addEventListener('click', e => {
     const tab = e.target.closest('#settings-modal .settings-tab-btn');
@@ -7353,14 +7385,19 @@
     document.querySelectorAll('#settings-modal [data-tlbl]').forEach(el => {
       const key = el.dataset.tlbl;
       const map = {
-        profile:  lang === 'en' ? 'Profile'  : 'Profil',
-        map:      lang === 'en' ? 'Map'      : 'Karte',
-        groups:   lang === 'en' ? 'Groups'   : 'Gruppen',
-        security: lang === 'en' ? 'Security' : 'Sicherheit',
+        profile:  lang === 'en' ? 'Profile'   : 'Profil',
+        stats:    lang === 'en' ? 'Stats'     : 'Statistik',
+        map:      lang === 'en' ? 'Map'       : 'Karte',
+        groups:   lang === 'en' ? 'Groups'    : 'Gruppen',
+        security: lang === 'en' ? 'Security'  : 'Sicherheit',
       };
       if (map[key]) el.textContent = map[key];
     });
-    s('settings-subtitle', lang === 'en' ? 'Profile, security & groups' : 'Profil, Sicherheit & Gruppen');
+    s('settings-subtitle', lang === 'en' ? 'Profile, stats & groups' : 'Profil, Statistik & Gruppen');
+    // Panel-Quick-Action zum Öffnen der Stats
+    s('lbl-open-stats', lang === 'en' ? 'Stats & Activity' : 'Statistik & Aktivität');
+    s('lbl-recap-btn',    lang === 'en' ? 'Year recap' : 'Jahresrückblick');
+    s('lbl-memories-btn', lang === 'en' ? 'Memories'   : 'Memories');
 
     // Push notifications
     s('lbl-push-title', lang === 'en' ? 'Push notifications' : 'Push-Benachrichtigungen');

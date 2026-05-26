@@ -784,28 +784,35 @@
 
         <!-- Streak-Banner -->
         <div id="streak-banner"
-          class="mt-2 rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-2
-                 bg-gradient-to-r from-orange-500 to-amber-400">
-          <!-- Linke Seite: Flamme + Zahl -->
-          <div class="flex items-center gap-2 flex-1 min-w-0">
-            <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
-            <div>
-              <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
-              <p class="text-orange-100 text-xs leading-tight">Tage Streak</p>
+          class="mt-2 rounded-xl px-3 py-2.5 bg-gradient-to-r from-orange-500 to-amber-400">
+          <!-- Zeile 1: Flamme + Streak + Badge/Button -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
+              <div>
+                <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
+                <p class="text-orange-100 text-xs leading-tight">Tage Streak</p>
+              </div>
             </div>
+            <span id="streak-today-badge"
+              class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
+              ✓ Heute gecheckt
+            </span>
+            <button id="streak-checkin-btn"
+              onclick="openStreakCheckin()"
+              class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
+                     shadow-sm hover:bg-orange-50 active:scale-95 transition-all
+                     whitespace-nowrap flex-shrink-0 min-h-[36px]">
+              🔥 Heute einchecken
+            </button>
           </div>
-          <!-- Rechte Seite: Badge oder Button -->
-          <span id="streak-today-badge"
-            class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
-            ✓ Heute gecheckt
-          </span>
-          <button id="streak-checkin-btn"
-            onclick="openStreakCheckin()"
-            class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
-                   shadow-sm hover:bg-orange-50 active:scale-95 transition-all
-                   whitespace-nowrap flex-shrink-0 min-h-[36px]">
-            🔥 Heute einchecken
-          </button>
+          <!-- Zeile 2: 7-Tage-Verlauf -->
+          <div id="streak-history" class="flex gap-1.5 mt-2.5 items-center"></div>
+          <!-- Zeile 3: Best + Gesamt -->
+          <div class="flex items-center justify-between mt-1.5">
+            <p class="text-orange-100 text-[10px]">Beste: <span id="dash-best-streak" class="font-bold text-white">0</span> Tage</p>
+            <p class="text-orange-100 text-[10px]">Gesamt: <span id="dash-total-checkins" class="font-bold text-white">0</span> Tage</p>
+          </div>
         </div>
       </div>
 
@@ -1397,6 +1404,18 @@
   <div id="toast-container"
     class="fixed top-5 left-1/2 -translate-x-1/2 z-[2000]
            flex flex-col items-center gap-2 pointer-events-none"></div>
+
+  <!-- Streak-Gefahr-Banner -->
+  <div id="streak-danger-banner"
+    class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-[4800]
+           bg-red-500 text-white text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl
+           flex items-center gap-2 cursor-pointer max-w-xs w-[90vw]"
+    onclick="openStreakCheckin(); document.getElementById('streak-danger-banner').classList.add('hidden')">
+    <span class="text-lg">⚠️</span>
+    <span id="streak-danger-text">Streak in Gefahr! Jetzt einchecken.</span>
+    <button class="ml-auto text-white/70 hover:text-white text-lg leading-none"
+      onclick="event.stopPropagation(); document.getElementById('streak-danger-banner').classList.add('hidden')">×</button>
+  </div>
 
   <!-- Ortssuche -->
   <div class="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-sm px-4">
@@ -2645,18 +2664,102 @@
     return streak;
   }
 
-  function updateStreakUI() {
-    const streak  = calcStreak();
+  function calcBestStreak() {
+    const dates = [...new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date))].sort();
+    if (!dates.length) return 0;
+    let best = 1, cur = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const diff = new Date(dates[i] + 'T12:00:00Z') - new Date(dates[i-1] + 'T12:00:00Z');
+      if (diff === 86400000) { cur++; if (cur > best) best = cur; }
+      else cur = 1;
+    }
+    return best;
+  }
+
+  function calcTotalCheckins() {
+    return new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date)).size;
+  }
+
+  function renderStreakHistory() {
+    const container = document.getElementById('streak-history');
+    if (!container) return;
+    const dateSet = new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date));
+    const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    container.innerHTML = '';
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const iso = d.toISOString().slice(0, 10);
+      const checked = dateSet.has(iso);
+      const isToday = i === 0;
+      const dayName = days[d.getDay() === 0 ? 6 : d.getDay() - 1];
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;flex:1';
+      wrap.innerHTML = `
+        <div style="width:12px;height:12px;border-radius:50%;background:${checked ? '#fff' : 'rgba(255,255,255,0.25)'};
+             ${isToday ? 'outline:2px solid rgba(255,255,255,0.8);outline-offset:2px' : ''}"></div>
+        <span style="font-size:9px;color:rgba(255,255,255,${isToday ? '1' : '0.65'});font-weight:${isToday ? '700' : '400'}">${dayName}</span>`;
+      container.appendChild(wrap);
+    }
+  }
+
+  // ─── Streak Notifications ─────────────────────────────────────────────────
+  const NOTIF_DAY_KEY = 'reise_streak_notif_day';
+
+  async function scheduleStreakNotification() {
+    if (!currentUser) return;
+    const streak = calcStreak();
     const hasToday = hasTodayCheckin();
+    const dangerBanner = document.getElementById('streak-danger-banner');
+
+    if (!hasToday && streak > 0) {
+      // In-App Banner anzeigen
+      if (dangerBanner) {
+        document.getElementById('streak-danger-text').textContent =
+          `🔥 ${streak} Tage Streak! Heute noch nicht eingecheckt.`;
+        dangerBanner.classList.remove('hidden');
+        setTimeout(() => dangerBanner.classList.add('hidden'), 8000);
+      }
+      // Browser-Notification (einmal pro Tag)
+      const today = todayISO();
+      if (localStorage.getItem(NOTIF_DAY_KEY) !== today && 'Notification' in window) {
+        if (Notification.permission === 'default') await Notification.requestPermission();
+        if (Notification.permission === 'granted') {
+          new Notification('🔥 Streak in Gefahr!', {
+            body: `${streak} Tage Streak! Check heute noch ein, bevor er abbricht.`,
+            tag: 'streak-reminder',
+          });
+          localStorage.setItem(NOTIF_DAY_KEY, today);
+        }
+      }
+    } else {
+      dangerBanner?.classList.add('hidden');
+    }
+  }
+
+  function updateStreakUI() {
+    const streak   = calcStreak();
+    const best     = calcBestStreak();
+    const total    = calcTotalCheckins();
+    const hasToday = hasTodayCheckin();
+
     document.getElementById('dash-streak').textContent = streak;
+    document.getElementById('dash-best-streak').textContent  = best;
+    document.getElementById('dash-total-checkins').textContent = total;
     document.getElementById('streak-today-badge').classList.toggle('hidden', !hasToday);
     document.getElementById('streak-checkin-btn').classList.toggle('hidden', hasToday);
+
     const flame = document.getElementById('streak-flame');
     if (streak > 0) flame.classList.add('flame-bounce');
     else            flame.classList.remove('flame-bounce');
+
+    renderStreakHistory();
+
     // + Button auf Mobile pulsieren wenn noch kein Check-in heute
     const navCta = document.querySelector('.nav-cta-btn');
     if (navCta) navCta.classList.toggle('streak-pulse', !hasToday && !!currentUser);
+
+    // Notification nach kurzer Verzögerung (damit die UI zuerst rendert)
+    setTimeout(() => scheduleStreakNotification(), 1500);
   }
 
   // ─── Dashboard + Trip-Cards ───────────────────────────────────────────────
@@ -2860,8 +2963,19 @@
           <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
             ${thumb}
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-bold text-gray-800 truncate">${esc(e.locationName)}</p>
-              <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <p class="text-sm font-bold text-gray-800 truncate flex-1">${esc(e.locationName)}</p>
+                ${e.isDaily ? `<span title="Streak Check-in" class="flex-shrink-0 text-sm">🔥</span>` : ''}
+              </div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <p class="text-xs text-orange-500 font-medium">${fmtDate(e.date)}</p>
+                ${e.userId && e.userId !== currentUser?.id
+                  ? `<span style="display:inline-flex;align-items:center;gap:3px">
+                       <span style="width:7px;height:7px;border-radius:50%;background:${colorForUser(e.userId)};display:inline-block;flex-shrink:0"></span>
+                       <span style="font-size:10px;color:${colorForUser(e.userId)};font-weight:600;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(displayNameFor(e.userId) || '?')}</span>
+                     </span>`
+                  : ''}
+              </div>
               ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
             </div>
           </div>
@@ -4271,9 +4385,10 @@
     const savedStyle = currentUser.user_metadata?.map_style;
     if (savedStyle && savedStyle !== activeStyle) setTileStyle(savedStyle);
     init();
-    // Offene Gruppen-Einladungen → Popup anzeigen (nach kurzer Verzögerung,
-    // damit der Login-Flash zuerst durchläuft)
+    // Offene Gruppen-Einladungen → Popup anzeigen
     setTimeout(() => checkPendingInvitesPopup().catch(() => {}), 800);
+    // Gruppen-Mitglieder-Einträge auf Karte laden (im Hintergrund)
+    setTimeout(() => loadGroupsAndInvites().then(() => loadGroupMembersEntries()).catch(() => {}), 1200);
   }
 
   async function logout() {
@@ -4690,6 +4805,28 @@
 
     renderGroupsList();
     renderInvitesList();
+  }
+
+  // ─── Gruppen-Mitglieder-Einträge auf Karte laden ──────────────────────────
+  async function loadGroupMembersEntries() {
+    if (!currentUser || !myGroups.length) return;
+    // Benötigt RLS-Update: "select own or group" Policy (siehe Migrationsanleitung)
+    const { data, error } = await sb
+      .from(TABLE)
+      .select('id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id')
+      .neq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+    if (error || !data?.length) return;
+    const newEntries = data.map(rowToEntry).filter(e => e.lat && e.lng);
+    await preSignEntries(newEntries);
+    newEntries.forEach(e => {
+      if (!markerMap[e.id]) {
+        allEntries.push(e);
+        placeMarker(e);
+      }
+    });
+    renderTripCards();
+    updateDashboard();
   }
 
   function renderGroupsList() {

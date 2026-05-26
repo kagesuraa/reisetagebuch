@@ -173,17 +173,42 @@
       from { opacity: 0; transform: translateY(24px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .hero-text > * { animation: float-up .9s ease both; }
-    .hero-text > *:nth-child(1) { animation-delay: .1s; }
-    .hero-text > *:nth-child(2) { animation-delay: .3s; }
-    .hero-text > *:nth-child(3) { animation-delay: .5s; }
-    .hero-text > *:nth-child(4) { animation-delay: .7s; }
 
-    @keyframes scroll-hint {
-      0%, 100% { opacity: .4; transform: translateY(0); }
-      50%       { opacity: 1;  transform: translateY(6px); }
+    @keyframes hp-rise {
+      from { opacity: 0; transform: translateY(36px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
-    .scroll-hint { animation: scroll-hint 1.8s ease-in-out infinite; }
+    .hp-animate { animation: hp-rise .85s cubic-bezier(.22,1,.36,1) both; }
+    .hp-d1 { animation-delay: .08s; }
+    .hp-d2 { animation-delay: .22s; }
+    .hp-d3 { animation-delay: .36s; }
+    .hp-d4 { animation-delay: .50s; }
+    .hp-d5 { animation-delay: .64s; }
+    .hp-d6 { animation-delay: .78s; }
+
+    .hp-glass {
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .hp-feature {
+      background: rgba(15,23,42,0.55);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.10);
+      transition: background .25s ease, transform .25s ease;
+    }
+    .hp-feature:hover {
+      background: rgba(249,115,22,0.18);
+      border-color: rgba(249,115,22,0.35);
+      transform: translateY(-3px);
+    }
+    @keyframes hp-pulse-dot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.5; transform:scale(.7); }
+    }
+    .hp-pulse { animation: hp-pulse-dot 2s ease-in-out infinite; }
 
     .memory-card { flex: 0 0 260px; }
     .memory-card img { transition: transform .5s ease; }
@@ -208,11 +233,11 @@
       /* Floating Route-Button → Bottom Nav */
       #btn-route { display: none !important; }
 
-      /* DE + Dark Buttons auf Karte verstecken — zugänglich über Panel */
-      #lang-btn, #btn-darkmode { display: none !important; }
+      /* Dark-Button komplett verstecken */
+      #btn-darkmode { display: none !important; }
 
-      /* Style-Switcher kleiner + weiter nach oben */
-      #style-btn { width: 2.25rem !important; height: 2.25rem !important; }
+      /* Style- + Lang-Buttons kleiner auf Mobile */
+      #style-btn, #lang-btn { width: 2.25rem !important; height: 2.25rem !important; }
 
       /* Zoom-Buttons nicht überlappen lassen */
       .leaflet-bottom.leaflet-right { bottom: 72px !important; right: 12px !important; }
@@ -236,12 +261,40 @@
       /* Panel-Backdrop */
       #panel-backdrop { display: block; }
 
-      /* Panel-Tab größer + besser sichtbar */
+      /* Panel-Tab mobile */
       #panel-tab {
-        padding: 1.25rem 0.875rem !important;
-        border-radius: 0 1rem 1rem 0 !important;
-        box-shadow: 2px 0 12px rgba(0,0,0,.15) !important;
+        border-radius: 0 1.25rem 1.25rem 0 !important;
+        box-shadow: 3px 0 16px rgba(0,0,0,.2) !important;
       }
+
+      /* Mobile: gesamte Main-Section scrollbar, nicht nur Trip-Cards */
+      #panel-main-section {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 56px;
+      }
+      #trip-cards {
+        flex: none !important;
+        overflow-y: visible !important;
+      }
+
+      /* Chart kompakter auf Mobile */
+      #stats-chart-wrap { height: 100px !important; }
+
+      /* Streak-Banner: Button auf kleinen Panels full-width */
+      #streak-checkin-btn {
+        width: 100%;
+        justify-content: center;
+        display: flex;
+        align-items: center;
+        padding: 0.625rem 1rem !important;
+        border-radius: 0.75rem !important;
+      }
+
+      /* Daily-Toggle-Switch größer */
+      #daily-switch-track { width: 3rem !important; height: 1.5rem !important; }
+      #daily-switch-thumb { width: 1.25rem !important; height: 1.25rem !important; top: 2px !important; left: 2px !important; }
+      #daily-toggle-row { padding: 1rem !important; }
     }
 
     /* Tablet: breiteres Panel */
@@ -282,6 +335,16 @@
     /* ── Like Button ─────────────────────────────────────────────────────── */
     @keyframes like-pop { 0%,100%{transform:scale(1)} 40%{transform:scale(1.45)} 70%{transform:scale(.88)} }
     .like-pop { animation: like-pop .35s ease; }
+
+    /* ── Streak ──────────────────────────────────────────────────────────── */
+    @keyframes streak-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(249,115,22,.65); }
+      70%  { box-shadow: 0 0 0 11px rgba(249,115,22,0); }
+      100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
+    }
+    .streak-pulse { animation: streak-pulse 1.6s ease-out infinite; }
+    @keyframes flame-bounce { 0%,100%{transform:scale(1) rotate(-4deg)} 50%{transform:scale(1.18) rotate(4deg)} }
+    .flame-bounce { animation: flame-bounce 1.2s ease-in-out infinite; }
 
     /* ── Tag-Chips ───────────────────────────────────────────────────────── */
     .tag-chip { cursor:pointer; user-select:none; border-radius:999px; padding:2px 8px;
@@ -383,6 +446,9 @@
     html.dark #left-panel                   { border-color:var(--dk-brd) !important; }
     html.dark [class~="bg-orange-50"],
     html.dark [class~="bg-orange-100"]      { background:var(--dk-deep) !important; }
+    html.dark [class~="bg-sky-50"],
+    html.dark [class~="bg-sky-100"]         { background:var(--dk-deep) !important; }
+    html.dark [class~="border-sky-200"]     { border-color:var(--dk-brd) !important; }
     html.dark [class~="bg-gray-950"]        { background:#060d1a !important; }
 
     /* ─ Inputs / Textareas / Selects ─ */
@@ -499,7 +565,7 @@
     <span class="text-2xl flex-shrink-0">🗺️</span>
     <div class="flex-1 min-w-0">
       <p id="anniversary-text" class="text-sm font-semibold text-gray-800 leading-snug"></p>
-      <p class="text-xs text-orange-400 font-medium mt-0.5">Jahrestag heute ✨</p>
+      <p id="lbl-anniversary-today" class="text-xs text-orange-400 font-medium mt-0.5">Jahrestag heute ✨</p>
     </div>
     <button onclick="document.getElementById('anniversary-banner').classList.add('hidden')"
       class="text-gray-300 hover:text-gray-500 text-xl leading-none flex-shrink-0">×</button>
@@ -517,55 +583,126 @@
   <!-- ════ HOMEPAGE ══════════════════════════════════════════════════════════ -->
   <div id="homepage" class="fixed inset-0 z-[7000] overflow-hidden bg-black">
 
-    <!-- ── 1. HERO ─────────────────────────────────────────────────────────── -->
-    <section class="relative h-screen flex items-center justify-center overflow-hidden">
+    <!-- ── Hintergrund-Slider ─────────────────────────────────────────────── -->
+    <div id="hero-slider" class="absolute inset-0">
+      <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1920&q=80')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1920&q=80')"></div>
+    </div>
 
-      <!-- Bild-Slider -->
-      <div id="hero-slider" class="absolute inset-0">
-        <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1920&q=80')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1920&q=80')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1488085061851-07c3c6797be7?auto=format&fit=crop&w=1920&q=80')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1530521954074-e0a103ceff92?auto=format&fit=crop&w=1920&q=80')"></div>
+    <!-- Gradient-Overlay: oben leicht, Mitte transparent, unten dunkel für Feature-Strip -->
+    <div class="absolute inset-0 pointer-events-none"
+         style="background:linear-gradient(to bottom, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 35%, rgba(0,0,0,.25) 55%, rgba(0,0,0,.82) 100%)"></div>
+    <!-- Seitlicher Gradient links (Desktop, für Text-Kontrast) -->
+    <div class="absolute inset-0 pointer-events-none hidden lg:block"
+         style="background:linear-gradient(to right, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 50%, transparent 100%)"></div>
+
+    <!-- ── TOP NAVBAR ──────────────────────────────────────────────────────── -->
+    <nav class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between
+                px-5 sm:px-8 pt-5 sm:pt-6 hp-animate hp-d1">
+      <!-- Logo -->
+      <div class="flex items-center gap-2.5">
+        <span class="text-2xl leading-none select-none">🌍</span>
+        <span class="text-white font-black text-sm sm:text-base tracking-tight">Reisetagebuch</span>
       </div>
-
-      <!-- Gradient-Overlay -->
-      <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/50 to-black/70"></div>
-
-      <!-- Inhalt -->
-      <div class="relative z-10 text-center text-white px-6 max-w-4xl mx-auto hero-text">
-        <p class="text-orange-400 font-semibold tracking-[.25em] uppercase text-xs sm:text-sm mb-5">
-          Dein persönliches
-        </p>
-        <h1 class="text-5xl sm:text-7xl lg:text-8xl font-black leading-none tracking-tight mb-6">
-          Reise&shy;tagebuch
-        </h1>
-        <p class="text-white/70 text-base sm:text-xl max-w-xl mx-auto leading-relaxed mb-10">
-          Pins auf der Karte. Fotos. Notizen.<br class="hidden sm:block"/>
-          Alles was zählt — an einem Ort.
-        </p>
-        <button onclick="startJourney()"
-          class="group relative inline-flex items-center gap-3 bg-orange-500 hover:bg-orange-400
-                 text-white font-bold px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-base sm:text-lg
-                 transition-all duration-300 hover:scale-105 shadow-2xl shadow-orange-500/40
-                 hover:shadow-orange-400/50">
-          <span>Start Your Journey</span>
-          <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-          </svg>
+      <!-- Rechts: Dots + Lang -->
+      <div class="flex items-center gap-3">
+        <div id="hero-dots" class="flex gap-2 items-center"></div>
+        <button onclick="toggleLang()"
+          class="hp-glass text-white text-xs font-bold px-3 py-1.5 rounded-full
+                 flex items-center gap-1.5 hover:bg-white/15 transition-colors">
+          <span id="hp-lang-flag">🇩🇪</span>
+          <span id="hp-lang-code" class="hidden sm:inline">DE</span>
         </button>
       </div>
+    </nav>
 
-      <!-- Scroll-Hinweis -->
-      <div class="absolute bottom-8 left-1/2 -translate-x-1/2 scroll-hint">
-        <svg class="w-6 h-6 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-        </svg>
+    <!-- ── HERO TEXT ───────────────────────────────────────────────────────── -->
+    <div class="absolute inset-0 z-10 flex items-center">
+      <div class="w-full max-w-6xl mx-auto px-5 sm:px-8">
+        <div class="text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
+
+          <!-- Live-Pill -->
+          <div class="inline-flex items-center gap-2 hp-glass rounded-full px-4 py-1.5 mb-5
+                      hp-animate hp-d2">
+            <span class="w-1.5 h-1.5 rounded-full bg-orange-400 hp-pulse"></span>
+            <span id="hp-lbl-tagline" class="text-orange-300 text-[11px] font-semibold tracking-[.22em] uppercase">Dein persönliches</span>
+          </div>
+
+          <!-- Headline -->
+          <h1 class="text-white font-black leading-[.92] tracking-tight mb-5 hp-animate hp-d3"
+              style="font-size:clamp(3.8rem,11vw,7.5rem)">
+            Reise<span style="background:linear-gradient(135deg,#fdba74,#f97316,#c2410c);
+                              -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                              background-clip:text">tagebuch</span>
+          </h1>
+
+          <!-- Subtitel -->
+          <p id="hp-lbl-sub" class="text-white/60 text-base sm:text-xl leading-relaxed mb-8 hp-animate hp-d4">
+            Pins auf der Karte. Fotos. Notizen.<br class="hidden sm:block"/>
+            Alles was zählt — an einem Ort.
+          </p>
+
+          <!-- Feature-Badges -->
+          <div class="flex flex-wrap justify-center lg:justify-start gap-2 mb-9 hp-animate hp-d5">
+            <span id="hp-badge-1" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">🗺 Interaktive Karte</span>
+            <span id="hp-badge-2" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">📸 Fotos &amp; Galerie</span>
+            <span id="hp-badge-3" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">🔥 Daily Streak</span>
+            <span id="hp-badge-4" class="hp-glass rounded-full px-3 py-1 text-white/80 text-xs font-medium">👥 Gruppen</span>
+          </div>
+
+          <!-- CTA -->
+          <div class="hp-animate hp-d6">
+            <button onclick="startJourney()"
+              class="group inline-flex items-center gap-3 bg-orange-500 hover:bg-orange-400
+                     text-white font-bold px-8 py-4 rounded-2xl text-base
+                     transition-all duration-300 hover:scale-105
+                     shadow-2xl shadow-orange-500/40 hover:shadow-orange-400/50">
+              <span id="hp-lbl-cta">Start Your Journey</span>
+              <svg class="w-5 h-5 transition-transform group-hover:translate-x-1"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
       </div>
+    </div>
 
-      <!-- Slider-Dots -->
-      <div id="hero-dots" class="absolute bottom-8 right-8 flex gap-2"></div>
-    </section>
+    <!-- ── FEATURE STRIP (unten) ──────────────────────────────────────────── -->
+    <div class="absolute bottom-0 left-0 right-0 z-10 px-4 sm:px-6 pb-5 sm:pb-7 hp-animate hp-d6">
+      <div class="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+
+        <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
+          <p class="text-xl sm:text-2xl mb-1.5 leading-none">🗺</p>
+          <p id="hp-fc1-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Karte &amp; Pins</p>
+          <p id="hp-fc1-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Alle Orte auf einen Blick</p>
+        </div>
+
+        <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
+          <p class="text-xl sm:text-2xl mb-1.5 leading-none">📸</p>
+          <p id="hp-fc2-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Fotos &amp; Galerie</p>
+          <p id="hp-fc2-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Erinnerungen festhalten</p>
+        </div>
+
+        <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
+          <p class="text-xl sm:text-2xl mb-1.5 leading-none">🔥</p>
+          <p id="hp-fc3-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Daily Streak</p>
+          <p id="hp-fc3-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Täglich einchecken</p>
+        </div>
+
+        <div class="hp-feature rounded-2xl p-3.5 sm:p-4 cursor-pointer" onclick="startJourney()">
+          <p class="text-xl sm:text-2xl mb-1.5 leading-none">👥</p>
+          <p id="hp-fc4-title" class="text-white font-semibold text-xs sm:text-sm leading-tight">Gruppen</p>
+          <p id="hp-fc4-sub" class="text-white/45 text-[11px] sm:text-xs mt-0.5 leading-snug">Gemeinsam reisen</p>
+        </div>
+
+      </div>
+    </div>
 
   </div>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -580,13 +717,19 @@
 
     <!-- Tab-Button am rechten Rand des Panels (bewegt sich mit) -->
     <button id="panel-tab" aria-label="Open side panel"
-      class="absolute left-full top-1/2 -translate-y-1/2 flex
-             flex-col items-center gap-1.5 py-5 px-2.5
+      class="absolute left-full top-1/2 -translate-y-1/2 flex flex-col items-center justify-center
              bg-white rounded-r-2xl shadow-md cursor-pointer
-             hover:bg-orange-50 active:scale-95 transition-all duration-150">
-      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+             hover:bg-orange-50 active:scale-95 transition-all duration-150
+             lg:gap-1.5 lg:py-5 lg:px-2.5
+             gap-0 py-7 px-4">
+      <!-- Striche (Desktop) -->
+      <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
+      <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
+      <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
+      <!-- Chevron-Pfeil (Mobile/Tablet) -->
+      <svg class="lg:hidden w-7 h-7 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transition:transform 150ms ease">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
     </button>
 
     <!-- ── GRADIENT HEADER ──────────────────────────────────────────────── -->
@@ -733,7 +876,7 @@
 
       <!-- Neues Passwort (nur bei Reset) -->
       <div id="auth-newpw-field" class="hidden">
-        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5">Neues Passwort</label>
+        <label class="block text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1.5"><span id="lbl-auth-newpw">Neues Passwort</span></label>
         <input id="auth-new-password" type="password" autocomplete="new-password" placeholder="Mindestens 8 Zeichen"
           class="w-full rounded-xl border border-orange-200 bg-white px-3.5 py-3 text-sm shadow-sm
                  placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition" />
@@ -840,24 +983,57 @@
           </div>
           <div id="country-flags" class="flex flex-wrap gap-1 text-lg leading-none"></div>
         </div>
+
+        <!-- Streak-Banner -->
+        <div id="streak-banner"
+          class="mt-2 rounded-xl px-3 py-2.5 bg-gradient-to-r from-orange-500 to-amber-400">
+          <!-- Zeile 1: Flamme + Streak + Badge/Button -->
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
+              <div>
+                <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
+                <p id="lbl-streak-days" class="text-orange-100 text-xs leading-tight">Tage Streak</p>
+              </div>
+            </div>
+            <span id="streak-today-badge"
+              class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
+              <span id="lbl-streak-today">✓ Heute gecheckt</span>
+            </span>
+            <button id="streak-checkin-btn"
+              onclick="openStreakCheckin()"
+              class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
+                     shadow-sm hover:bg-orange-50 active:scale-95 transition-all
+                     whitespace-nowrap flex-shrink-0 min-h-[36px]">
+              <span id="lbl-streak-checkin">🔥 Heute einchecken</span>
+            </button>
+          </div>
+          <!-- Zeile 2: 7-Tage-Verlauf -->
+          <div id="streak-history" class="flex gap-1.5 mt-2.5 items-center"></div>
+          <!-- Zeile 3: Best + Gesamt -->
+          <div class="flex items-center justify-between mt-1.5">
+            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-best">Beste</span>: <span id="dash-best-streak" class="font-bold text-white">0</span> <span id="lbl-streak-best-unit">Tage</span></p>
+            <p class="text-orange-100 text-[10px]"><span id="lbl-streak-total">Gesamt</span>: <span id="dash-total-checkins" class="font-bold text-white">0</span> <span id="lbl-streak-total-unit">Tage</span></p>
+          </div>
+        </div>
       </div>
 
       <!-- Aktivitäts-Diagramm -->
       <div class="px-4 pt-3 pb-3 flex-shrink-0 border-b border-orange-100">
         <div class="flex items-center justify-between mb-2">
-          <p class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
+          <p id="lbl-chart-title" class="text-xs font-medium text-stone-400 uppercase tracking-widest">Aktivität</p>
           <div class="flex bg-orange-50 rounded-lg p-0.5 gap-0.5">
             <button id="chart-mode-month"
               class="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-orange-500 text-white transition-colors">
-              Monate
+              <span id="lbl-chart-months">Monate</span>
             </button>
             <button id="chart-mode-year"
               class="text-xs font-semibold px-2.5 py-0.5 rounded-md text-stone-400 hover:text-stone-600 transition-colors">
-              Jahre
+              <span id="lbl-chart-years">Jahre</span>
             </button>
           </div>
         </div>
-        <div style="height:140px; position:relative;">
+        <div id="stats-chart-wrap" style="height:140px; position:relative;">
           <canvas id="stats-chart"></canvas>
         </div>
       </div>
@@ -892,6 +1068,7 @@
         <button id="tab-all" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white">🗺 Alle</button>
         <button id="tab-favs" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">❤ Favoriten</button>
         <button id="tab-top" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">🔥 Top</button>
+        <button id="tab-discover" class="flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white">🌍</button>
       </div>
 
       <!-- Trip-Cards -->
@@ -903,6 +1080,18 @@
           </svg>
           <span id="lbl-loading">Lädt …</span>
         </div>
+      </div>
+
+      <!-- Entdecken-Feed -->
+      <div id="discover-feed" class="hidden flex-1 overflow-y-auto scroll-thin px-3 py-2">
+        <div id="discover-loader" class="hidden flex items-center justify-center gap-2 py-8 text-stone-300 text-xs">
+          <svg class="w-4 h-4 spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+          <span>Lädt …</span>
+        </div>
+        <div id="discover-list" class="space-y-3 pb-2"></div>
       </div>
 
     </div>
@@ -1452,12 +1641,12 @@
 
     <!-- Sprach-Toggle -->
     <button id="lang-btn" onclick="toggleLang()"
-      class="w-10 h-10 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
-             flex items-center justify-center hover:bg-white transition-colors
+      class="h-10 w-10 lg:w-auto lg:px-3 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg
+             flex items-center justify-center gap-1 hover:bg-white transition-colors
              text-stone-600 font-bold text-sm tracking-wider"
       title="Sprache wechseln">
-      <span id="lang-flag" class="sr-only">🇩🇪</span>
-      <span id="lang-code">DE</span>
+      <span id="lang-flag">🇩🇪</span>
+      <span id="lang-code" class="hidden lg:inline">DE</span>
     </button>
   </div>
 
@@ -1465,6 +1654,18 @@
   <div id="toast-container"
     class="fixed top-5 left-1/2 -translate-x-1/2 z-[2000]
            flex flex-col items-center gap-2 pointer-events-none"></div>
+
+  <!-- Streak-Gefahr-Banner -->
+  <div id="streak-danger-banner"
+    class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-[4800]
+           bg-red-500 text-white text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl
+           flex items-center gap-2 cursor-pointer max-w-xs w-[90vw]"
+    onclick="openStreakCheckin(); document.getElementById('streak-danger-banner').classList.add('hidden')">
+    <span class="text-lg">⚠️</span>
+    <span id="streak-danger-text">Streak in Gefahr! Jetzt einchecken.</span>
+    <button class="ml-auto text-white/70 hover:text-white text-lg leading-none"
+      onclick="event.stopPropagation(); document.getElementById('streak-danger-banner').classList.add('hidden')">×</button>
+  </div>
 
   <!-- Ortssuche -->
   <div class="fixed top-4 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-sm px-4">
@@ -1688,6 +1889,48 @@
             </button>
           </div>
         </div>
+      </div>
+
+      <!-- Daily Streak Toggle -->
+      <div id="daily-toggle-row" onclick="toggleDailySwitch()"
+        class="flex items-center gap-3 cursor-pointer select-none
+               bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+        <div class="relative flex-shrink-0 pointer-events-none">
+          <div id="daily-switch-track"
+            class="w-10 h-5 rounded-full bg-gray-200 transition-colors duration-200"></div>
+          <div id="daily-switch-thumb"
+            class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
+                   transition-transform duration-200"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+            <span id="daily-toggle-flame" class="text-base">🔥</span>
+            <span id="lbl-daily-checkin">Täglicher Check-in</span>
+          </p>
+          <p id="lbl-daily-sub" class="text-xs text-orange-500 leading-tight mt-0.5">Zählt für deinen Streak</p>
+        </div>
+        <input type="checkbox" id="inp-daily" class="hidden" onclick="event.stopPropagation()">
+      </div>
+
+      <!-- Öffentlich Toggle -->
+      <div id="public-toggle-row" onclick="togglePublicSwitch()"
+        class="flex items-center gap-3 cursor-pointer select-none
+               bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
+        <div class="relative flex-shrink-0 pointer-events-none">
+          <div id="public-switch-track"
+            class="w-10 h-5 rounded-full bg-gray-200 transition-colors duration-200"></div>
+          <div id="public-switch-thumb"
+            class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow
+                   transition-transform duration-200"></div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
+            <span class="text-base">🌍</span>
+            <span id="lbl-public-label">Öffentlich teilen</span>
+          </p>
+          <p id="lbl-public-desc" class="text-xs text-sky-500 leading-tight mt-0.5">Im Entdecken-Feed für alle sichtbar</p>
+        </div>
+        <input type="checkbox" id="inp-public" class="hidden" onclick="event.stopPropagation()">
       </div>
 
       <button id="btn-save"
@@ -2175,7 +2418,7 @@
     <!-- Neuer Eintrag (Mitte – Haupt-CTA) -->
     <button id="nav-map"
       onclick="mobileNavMap()"
-      class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors relative">
+      class="hidden">
       <div class="nav-cta-btn absolute -top-4 w-14 h-14 bg-orange-500 rounded-2xl shadow-lg
                   flex items-center justify-center transition-colors hover:bg-orange-400">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3103,15 +3346,19 @@
 
   const panelBackdrop = document.getElementById('panel-backdrop');
 
+  const panelChevron = document.querySelector('#panel-tab svg');
+
   function showPanel() {
     clearTimeout(hideTimer);
     leftPanel.classList.remove('-translate-x-full');
     panelBackdrop?.classList.add('active');
+    if (panelChevron) panelChevron.style.transform = 'rotate(180deg)';
   }
 
   function hidePanel() {
     leftPanel.classList.add('-translate-x-full');
     panelBackdrop?.classList.remove('active');
+    if (panelChevron) panelChevron.style.transform = '';
   }
 
   function scheduleHide() {
@@ -3374,15 +3621,15 @@
       locationName: row.location_name,
       date:         row.date || '',
       notes:        row.notes || '',
-      photos:       parsePhotos(row),   // immer ein Array
+      photos:       parsePhotos(row),
       groupId:      row.group_id || null,
       userId:       row.user_id  || null,
       mood:         row.mood     || '',
       isWishlist:   !!row.is_wishlist,
+      isDaily:      row.is_daily  || false,
+      isPublic:     row.is_public || false,
     };
   }
-  // Spaltenliste für SELECTs — zentral, damit Mood/Bucket-List überall mitkommen.
-  const ENTRY_COLUMNS = 'id,lat,lng,location_name,date,notes,image_url,created_at,group_id,user_id,mood,is_wishlist';
 
   // Gibt optimierte URL zurück (Transform für Storage-URLs, direkter Wert für Base64)
   function getPhotoSrc(entry, width = 400) {
@@ -3512,6 +3759,131 @@
     }, 3200);
   }
 
+  // ─── Streak-Berechnung ────────────────────────────────────────────────────
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
+  function yesterdayISO() { return new Date(Date.now() - 86400000).toISOString().slice(0, 10); }
+
+  function hasTodayCheckin() {
+    const t = todayISO();
+    return allEntries.some(e => e.isDaily && e.date === t);
+  }
+
+  function calcStreak() {
+    const dateSet = new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date));
+    if (!dateSet.size) return 0;
+    const anchor = dateSet.has(todayISO()) ? todayISO() : dateSet.has(yesterdayISO()) ? yesterdayISO() : null;
+    if (!anchor) return 0;
+    let streak = 0;
+    let cur = new Date(anchor + 'T12:00:00Z');
+    while (dateSet.has(cur.toISOString().slice(0, 10))) {
+      streak++;
+      cur = new Date(cur.getTime() - 86400000);
+    }
+    return streak;
+  }
+
+  function calcBestStreak() {
+    const dates = [...new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date))].sort();
+    if (!dates.length) return 0;
+    let best = 1, cur = 1;
+    for (let i = 1; i < dates.length; i++) {
+      const diff = new Date(dates[i] + 'T12:00:00Z') - new Date(dates[i-1] + 'T12:00:00Z');
+      if (diff === 86400000) { cur++; if (cur > best) best = cur; }
+      else cur = 1;
+    }
+    return best;
+  }
+
+  function calcTotalCheckins() {
+    return new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date)).size;
+  }
+
+  function renderStreakHistory() {
+    const container = document.getElementById('streak-history');
+    if (!container) return;
+    const dateSet = new Set(allEntries.filter(e => e.isDaily && e.date).map(e => e.date));
+    const days = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    container.innerHTML = '';
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000);
+      const iso = d.toISOString().slice(0, 10);
+      const checked = dateSet.has(iso);
+      const isToday = i === 0;
+      const dayName = days[d.getDay() === 0 ? 6 : d.getDay() - 1];
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;flex:1';
+      wrap.innerHTML = `
+        <div style="width:12px;height:12px;border-radius:50%;background:${checked ? '#fff' : 'rgba(255,255,255,0.25)'};
+             ${isToday ? 'outline:2px solid rgba(255,255,255,0.8);outline-offset:2px' : ''}"></div>
+        <span style="font-size:9px;color:rgba(255,255,255,${isToday ? '1' : '0.65'});font-weight:${isToday ? '700' : '400'}">${dayName}</span>`;
+      container.appendChild(wrap);
+    }
+  }
+
+  // ─── Streak Notifications ─────────────────────────────────────────────────
+  const NOTIF_DAY_KEY = 'reise_streak_notif_day';
+
+  async function scheduleStreakNotification() {
+    if (!currentUser) return;
+    const streak = calcStreak();
+    const hasToday = hasTodayCheckin();
+    const dangerBanner = document.getElementById('streak-danger-banner');
+
+    if (!hasToday && streak > 0) {
+      // In-App Banner anzeigen
+      if (dangerBanner) {
+        const dangerText = document.getElementById('streak-danger-text');
+        dangerText.textContent = tr[currentLang].streakDangerFull(streak);
+        dangerText.dataset.live = '1';
+        dangerBanner.classList.remove('hidden');
+        setTimeout(() => {
+          dangerBanner.classList.add('hidden');
+          delete dangerText.dataset.live;
+        }, 8000);
+      }
+      // Browser-Notification (einmal pro Tag)
+      const today = todayISO();
+      if (localStorage.getItem(NOTIF_DAY_KEY) !== today && 'Notification' in window) {
+        if (Notification.permission === 'default') await Notification.requestPermission();
+        if (Notification.permission === 'granted') {
+          new Notification(tr[currentLang].streakNotifTitle, {
+            body: tr[currentLang].streakNotifBody(streak),
+            tag: 'streak-reminder',
+          });
+          localStorage.setItem(NOTIF_DAY_KEY, today);
+        }
+      }
+    } else {
+      dangerBanner?.classList.add('hidden');
+    }
+  }
+
+  function updateStreakUI() {
+    const streak   = calcStreak();
+    const best     = calcBestStreak();
+    const total    = calcTotalCheckins();
+    const hasToday = hasTodayCheckin();
+
+    document.getElementById('dash-streak').textContent = streak;
+    document.getElementById('dash-best-streak').textContent  = best;
+    document.getElementById('dash-total-checkins').textContent = total;
+    document.getElementById('streak-today-badge').classList.toggle('hidden', !hasToday);
+    document.getElementById('streak-checkin-btn').classList.toggle('hidden', hasToday);
+
+    const flame = document.getElementById('streak-flame');
+    if (streak > 0) flame.classList.add('flame-bounce');
+    else            flame.classList.remove('flame-bounce');
+
+    renderStreakHistory();
+
+    // + Button auf Mobile pulsieren wenn noch kein Check-in heute
+    const navCta = document.querySelector('.nav-cta-btn');
+    if (navCta) navCta.classList.toggle('streak-pulse', !hasToday && !!currentUser);
+
+    // Notification nach kurzer Verzögerung (damit die UI zuerst rendert)
+    setTimeout(() => scheduleStreakNotification(), 1500);
+  }
+
   // ─── Dashboard + Trip-Cards ───────────────────────────────────────────────
   function updateStats() { updateDashboard(); }   // Alias für ältere Aufrufe
 
@@ -3526,6 +3898,7 @@
     document.getElementById('dash-last').textContent = last ? fmtDate(last.date) : '–';
 
     renderCountryStats();
+    updateStreakUI();
     renderChart();
   }
 
@@ -3537,7 +3910,7 @@
     const canvas = document.getElementById('stats-chart');
     if (!canvas || typeof Chart === 'undefined') return;
 
-    const MONTHS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const MONTHS = tr[currentLang].chartMonths;
     let labels, data;
 
     if (chartMode === 'month') {
@@ -3579,7 +3952,7 @@
             titleFont: { size: 11 },
             bodyFont: { size: 11 },
             callbacks: {
-              label: ctx => ` ${ctx.parsed.y} Eintrag${ctx.parsed.y !== 1 ? 'e' : ''}`,
+              label: ctx => ` ${ctx.parsed.y} ${tr[currentLang].chartEntryLabel(ctx.parsed.y)}`,
             },
           },
         },
@@ -3637,7 +4010,7 @@
     document.getElementById('profile-name-display').textContent = name;
     const av = document.getElementById('profile-avatar');
     if (profile.avatarUrl) {
-      av.innerHTML = `<img src="${esc(profile.avatarUrl)}" alt=""
+      av.innerHTML = `<img src="${safeSrc(profile.avatarUrl)}" alt=""
         class="w-full h-full object-cover" />`;
       av.style.background = 'transparent';
     } else {
@@ -3665,15 +4038,20 @@
     activeTab = tab;
     const inactive = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors text-stone-400 hover:bg-white';
     const active   = 'flex-1 py-1.5 rounded-xl text-xs font-bold transition-colors bg-orange-500 text-white';
-    document.getElementById('tab-all').className  = tab === 'all'  ? active : inactive;
-    document.getElementById('tab-favs').className = tab === 'favs' ? active : inactive;
+    document.getElementById('tab-all').className      = tab === 'all'      ? active : inactive;
+    document.getElementById('tab-favs').className     = tab === 'favs'     ? active : inactive;
+    document.getElementById('tab-discover').className = tab === 'discover' ? active : inactive;
     const topBtn = document.getElementById('tab-top');
     if (topBtn) topBtn.className = inactive;
-    renderTripCards();
+    const isDiscover = tab === 'discover';
+    document.getElementById('trip-cards').classList.toggle('hidden', isDiscover);
+    document.getElementById('discover-feed').classList.toggle('hidden', !isDiscover);
+    if (!isDiscover) renderTripCards();
   }
 
-  document.getElementById('tab-all').addEventListener('click',  () => setTab('all'));
-  document.getElementById('tab-favs').addEventListener('click', () => setTab('favs'));
+  document.getElementById('tab-all').addEventListener('click',      () => setTab('all'));
+  document.getElementById('tab-favs').addEventListener('click',     () => setTab('favs'));
+  document.getElementById('tab-discover').addEventListener('click', () => { setTab('discover'); loadDiscoverFeed(); });
 
   // ─── Trip-Cards rendern ───────────────────────────────────────────────────
   function renderTripCards() {
@@ -3714,10 +4092,23 @@
           <div class="cursor-pointer flex gap-3 flex-1 min-w-0" onclick="cardFlyTo('${e.id}')">
             ${thumb}
             <div class="min-w-0 flex-1">
-              <p class="text-sm font-bold text-gray-800 truncate">
-                ${e.mood ? `<span class="mr-1 align-middle">${e.mood}</span>` : ''}${esc(e.locationName)}
-              </p>
-              <p class="text-xs text-orange-500 font-medium mt-0.5">${fmtDate(e.date)}</p>
+              <div class="flex items-center gap-1.5 min-w-0">
+                <p class="text-sm font-bold text-gray-800 truncate flex-1">
+                  ${e.mood ? `<span class="mr-1 align-middle">${e.mood}</span>` : ''}${esc(e.locationName)}
+                </p>
+                ${e.isDaily   ? `<span title="Streak Check-in" class="flex-shrink-0 text-sm">🔥</span>` : ''}
+                ${e.isPublic  ? `<span title="Öffentlich" class="flex-shrink-0 text-sm">🌍</span>` : ''}
+                ${e.isWishlist ? `<span title="Bucket-List" class="flex-shrink-0 text-sm">⭐</span>` : ''}
+              </div>
+              <div class="flex items-center gap-1.5 mt-0.5">
+                <p class="text-xs text-orange-500 font-medium">${fmtDate(e.date)}</p>
+                ${e.userId && e.userId !== currentUser?.id
+                  ? `<span style="display:inline-flex;align-items:center;gap:3px">
+                       <span style="width:7px;height:7px;border-radius:50%;background:${colorForUser(e.userId)};display:inline-block;flex-shrink:0"></span>
+                       <span style="font-size:10px;color:${colorForUser(e.userId)};font-weight:600;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(displayNameFor(e.userId) || '?')}</span>
+                     </span>`
+                  : ''}
+              </div>
               ${e.notes ? `<p class="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">${esc(e.notes)}</p>` : ''}
             </div>
           </div>
@@ -3924,12 +4315,38 @@
     if (window.innerWidth < 1024) hidePanel();
   }
 
+  function makeStreakIcon(photoUrl) {
+    const inner = photoUrl
+      ? `<img src="${safeSrc(photoUrl)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">`
+      : `<span style="font-size:18px;line-height:1">🔥</span>`;
+    return L.divIcon({
+      className: '',
+      html: `<div style="width:42px;height:42px;border-radius:50%;border:3px solid #f97316;
+                         overflow:hidden;background:#fff;
+                         box-shadow:0 3px 14px rgba(249,115,22,.55);
+                         display:flex;align-items:center;justify-content:center">
+               ${inner}
+             </div>`,
+      iconSize:    [42, 42],
+      iconAnchor:  [21, 21],
+      popupAnchor: [0, -25],
+    });
+  }
+
   // ─── Marker setzen ────────────────────────────────────────────────────────
   function placeMarker(entry) {
+    // Wunsch-Orte (Bucket-List) → eigenes Symbol; Streak-Einträge → Streak-Icon;
+    // sonst Standard mit Foto-Indikator.
+    const icon = entry.isWishlist
+      ? makeIcon(false, colorForUser(entry.userId), { wishlist: true })
+      : entry.isDaily
+        ? makeStreakIcon(entry.photos?.[0] ? toDisplayUrl(entry.photos[0], 80) : null)
+        : makeIcon(hasPhoto(entry), colorForUser(entry.userId));
     const marker = L.marker([entry.lat, entry.lng], {
-      icon:   makeIcon(hasPhoto(entry), colorForUser(entry.userId), { wishlist: entry.isWishlist }),
-      userId: entry.userId, // Cluster-Farbe ableiten zu können
-      wishlist: entry.isWishlist,
+      icon,
+      userId:       entry.userId,
+      wishlist:     entry.isWishlist,
+      zIndexOffset: entry.isDaily ? 100 : 0,
     });
     marker.on('click', () => openLightbox(entry));
     clusterGroup.addLayer(marker);
@@ -4133,8 +4550,9 @@
     document.getElementById('coords-display').textContent =
       `${entry.lat.toFixed(5)}°, ${entry.lng.toFixed(5)}°`;
 
-    document.getElementById('sidebar-title').textContent = tG('Eintrag bearbeiten', 'Edit entry');
-    document.getElementById('save-label').textContent    = tG('Änderungen speichern', 'Save changes');
+    document.getElementById('sidebar-title').textContent = t('editEntry');
+    document.getElementById('save-label').textContent    = t('saveChanges');
+    setPublicSwitch(entry.isPublic || false);
 
     setMood(entry.mood || '');
     const wlEl = document.getElementById('inp-wishlist');
@@ -4414,8 +4832,48 @@
     resetPhoto();
     clearPendingAudio();
     removePreviewPin();
-    document.getElementById('sidebar-title').textContent = tG('Neuer Eintrag', 'New entry');
-    document.getElementById('save-label').textContent    = tG('Eintrag speichern', 'Save entry');
+    document.getElementById('sidebar-title').textContent = t('newEntry');
+    document.getElementById('save-label').textContent    = t('saveBtn');
+    setDailySwitch(false);
+    setPublicSwitch(false);
+  }
+
+  // ─── Daily-Toggle ─────────────────────────────────────────────────────────
+  function setDailySwitch(on) {
+    document.getElementById('inp-daily').checked = on;
+    document.getElementById('daily-switch-track').style.background = on ? '#f97316' : '';
+    document.getElementById('daily-switch-track').classList.toggle('bg-orange-500', on);
+    document.getElementById('daily-switch-track').classList.toggle('bg-gray-200', !on);
+    const isMobile = window.innerWidth < 1024;
+    document.getElementById('daily-switch-thumb').style.transform = on ? `translateX(${isMobile ? 24 : 20}px)` : '';
+    document.getElementById('daily-toggle-flame').textContent = on ? '🔥' : '🔥';
+  }
+
+  function toggleDailySwitch() {
+    setDailySwitch(!document.getElementById('inp-daily').checked);
+  }
+
+  // ─── Öffentlich-Toggle ────────────────────────────────────────────────────
+  function setPublicSwitch(on) {
+    document.getElementById('inp-public').checked = on;
+    document.getElementById('public-switch-track').style.background = on ? '#0ea5e9' : '';
+    document.getElementById('public-switch-track').classList.toggle('bg-sky-500', on);
+    document.getElementById('public-switch-track').classList.toggle('bg-gray-200', !on);
+    document.getElementById('public-switch-thumb').style.transform = on ? 'translateX(20px)' : '';
+  }
+
+  function togglePublicSwitch() {
+    setPublicSwitch(!document.getElementById('inp-public').checked);
+  }
+
+  function openStreakCheckin() {
+    if (!currentUser) return;
+    document.getElementById('inp-date').value = todayISO();
+    setDailySwitch(true);
+    sidebar.classList.add('open');
+    if (window.innerWidth < 1024) hidePanel();
+    // GPS auto-auslösen
+    setTimeout(() => document.getElementById('btn-gps')?.click(), 200);
   }
 
   document.getElementById('btn-close').addEventListener('click', closeSidebar);
@@ -4429,8 +4887,8 @@
     // Karte-Klick bricht Edit-Modus ab und startet neuen Eintrag
     if (editingId) {
       editingId = null;
-      document.getElementById('sidebar-title').textContent = tG('Neuer Eintrag', 'New entry');
-      document.getElementById('save-label').textContent    = tG('Eintrag speichern', 'Save entry');
+      document.getElementById('sidebar-title').textContent = t('newEntry');
+      document.getElementById('save-label').textContent    = t('saveBtn');
     }
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
@@ -4498,13 +4956,17 @@
       date:          document.getElementById('inp-date').value || null,
       notes:         document.getElementById('inp-notes').value.trim() || null,
       image_url:     imageUrl,
-      mood:          (document.getElementById('inp-mood')?.value || '') || null,
-      is_wishlist:   !!document.getElementById('inp-wishlist')?.checked,
+      is_daily:      document.getElementById('inp-daily').checked,
+      ...(hasPublicCol ? { is_public: document.getElementById('inp-public').checked } : {}),
+      ...(hasMoodCols  ? {
+        mood:        (document.getElementById('inp-mood')?.value || '') || null,
+        is_wishlist: !!document.getElementById('inp-wishlist')?.checked,
+      } : {}),
     };
 
     if (editingId) {
       // ── UPDATE ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select(ENTRY_COLUMNS).single();
+      const { data, error } = await sb.from(TABLE).update(payload).eq('id', editingId).select(entryCols()).single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const updated = rowToEntry(data);
       await preSignEntries([updated]);
@@ -4525,7 +4987,7 @@
       toast(`"${updated.locationName}" aktualisiert ✓`);
     } else {
       // ── INSERT ────────────────────────────────────────────────────────────
-      const { data, error } = await sb.from(TABLE).insert([payload]).select(ENTRY_COLUMNS).single();
+      const { data, error } = await sb.from(TABLE).insert([payload]).select(entryCols()).single();
       if (error) { toast(t('errSave') + error.message, 'err'); setSaving(false); return; }
       const entry = rowToEntry(data);
       await preSignEntries([entry]);
@@ -4541,6 +5003,12 @@
         pendingAudioBlob = null;
       }
       closeSidebar();
+      if (entry.isDaily) {
+        updateStreakUI();
+        const s = calcStreak();
+        const milestones = tr[currentLang].milestones;
+        if (milestones[s]) setTimeout(() => toast(tr[currentLang].streakMilestoneMsg(milestones[s]), 'info'), 600);
+      }
       toast(`"${entry.locationName}" ${t('savedOk')}`);
     }
     setSaving(false);
@@ -4662,7 +5130,7 @@
   async function applyFilters() {
     filterResetEl.classList.toggle('hidden', !isFilterActive());
 
-    let q = sb.from(TABLE).select(ENTRY_COLUMNS).order('created_at', { ascending: true });
+    let q = sb.from(TABLE).select(entryCols()).order('created_at', { ascending: true });
     const rawTxt = filterTextEl.value.trim().slice(0, 100); // M-6: max 100 chars
     const txt    = rawTxt.replace(/[%_\\,().]/g, c => `\\${c}`); // escape wildcards + PostgREST operators
     const year   = filterYearEl.value;
@@ -4883,6 +5351,12 @@
   let currentUser   = null;
   let authMode      = 'login'; // 'login' | 'register' | 'forgot' | 'reset'
   let hasUserIdCol  = false;   // set true after running supabase_migration.sql
+  let hasPublicCol  = false;   // set true after running migration_is_public.sql
+  let hasMoodCols   = false;   // set true after running supabase_mood_bucket_migration.sql
+  const ENTRY_BASE  = 'id,lat,lng,location_name,date,notes,image_url,is_daily,created_at,group_id,user_id';
+  const entryCols   = () => ENTRY_BASE
+    + (hasPublicCol ? ',is_public'        : '')
+    + (hasMoodCols  ? ',mood,is_wishlist' : '');
 
   const authEmail    = document.getElementById('auth-email');
   const authPassword = document.getElementById('auth-password');
@@ -4936,18 +5410,18 @@
     if (emailField) emailField.classList.toggle('hidden', isMfa);
 
     if (isForgot) {
-      authBtnLbl.textContent = 'Reset-Link senden';
+      authBtnLbl.textContent = t('authBtnForgot');
       document.getElementById('lbl-auth-info').textContent = '';
     } else if (isReset) {
-      authBtnLbl.textContent = 'Passwort speichern';
+      authBtnLbl.textContent = t('authBtnReset');
     } else if (isMfa) {
-      authBtnLbl.textContent = currentLang === 'en' ? 'Verify' : 'Bestätigen';
+      authBtnLbl.textContent = t('mfaVerify');
       document.getElementById('lbl-auth-info').textContent   = currentLang === 'en' ? 'Lost access?' : 'Kein Zugriff?';
-      document.getElementById('lbl-auth-switch').textContent = currentLang === 'en' ? 'Cancel' : 'Abbrechen';
+      document.getElementById('lbl-auth-switch').textContent = t('mfaCancel');
     } else {
-      authBtnLbl.textContent = isReg ? 'Registrieren' : 'Anmelden';
-      document.getElementById('lbl-auth-info').textContent   = isReg ? 'Schon ein Konto?' : 'Noch kein Konto?';
-      document.getElementById('lbl-auth-switch').textContent = isReg ? 'Jetzt anmelden' : 'Jetzt registrieren';
+      authBtnLbl.textContent = isReg ? t('authBtnRegister') : t('authBtnLogin');
+      document.getElementById('lbl-auth-info').textContent   = isReg ? t('authInfoExists') : t('authInfoNew');
+      document.getElementById('lbl-auth-switch').textContent = isReg ? t('authSwitchLogin') : t('authSwitchRegister');
       authPassword.autocomplete = isReg ? 'new-password' : 'current-password';
     }
     authError.classList.add('hidden');
@@ -5144,9 +5618,12 @@
     document.getElementById('panel-main-section').classList.remove('hidden');
     document.getElementById('panel-logo-row').classList.add('hidden');
     document.getElementById('panel-profile-row').classList.remove('hidden');
-    // zweiter Mobile-Schließen-Button
-    document.getElementById('left-panel-close-logged')
-      ?.addEventListener('click', () => leftPanel.classList.add('-translate-x-full'));
+    // zweiter Mobile-Schließen-Button (nur einmal registrieren)
+    const closeLogged = document.getElementById('left-panel-close-logged');
+    if (closeLogged && !closeLogged.dataset.listenerAttached) {
+      closeLogged.dataset.listenerAttached = '1';
+      closeLogged.addEventListener('click', () => hidePanel());
+    }
   }
 
   function onAuthSuccess() {
@@ -5163,9 +5640,10 @@
     const savedStyle = currentUser.user_metadata?.map_style;
     if (savedStyle && savedStyle !== activeStyle) setTileStyle(savedStyle);
     init();
-    // Offene Gruppen-Einladungen → Popup anzeigen (nach kurzer Verzögerung,
-    // damit der Login-Flash zuerst durchläuft)
+    // Offene Gruppen-Einladungen → Popup anzeigen
     setTimeout(() => checkPendingInvitesPopup().catch(() => {}), 800);
+    // Gruppen-Mitglieder-Einträge auf Karte laden (im Hintergrund)
+    setTimeout(() => loadGroupsAndInvites().then(() => loadGroupMembersEntries()).catch(() => {}), 1200);
   }
 
   async function logout() {
@@ -5180,7 +5658,13 @@
     authEmail.value = ''; authPassword.value = ''; authNameInp.value = '';
     authError.classList.add('hidden');
     setAuthMode('login');
-    showPanel();
+    // Flag löschen damit closeLogged-Listener bei Re-Login korrekt re-attached wird
+    const closeLogged = document.getElementById('left-panel-close-logged');
+    if (closeLogged) delete closeLogged.dataset.listenerAttached;
+    // Panel öffnen ohne hideTimer zu canceln (scheduleHide läuft weiter)
+    leftPanel.classList.remove('-translate-x-full');
+    panelBackdrop?.classList.add('active');
+    if (panelChevron) panelChevron.style.transform = 'rotate(180deg)';
   }
 
   // ─── Homepage Slider ──────────────────────────────────────────────────────
@@ -5604,6 +6088,28 @@
 
     renderGroupsList();
     renderInvitesList();
+  }
+
+  // ─── Gruppen-Mitglieder-Einträge auf Karte laden ──────────────────────────
+  async function loadGroupMembersEntries() {
+    if (!currentUser || !myGroups.length) return;
+    // Benötigt RLS-Update: "select own or group" Policy (siehe Migrationsanleitung)
+    const { data, error } = await sb
+      .from(TABLE)
+      .select(entryCols())
+      .neq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+    if (error || !data?.length) return;
+    const newEntries = data.map(rowToEntry).filter(e => e.lat && e.lng);
+    await preSignEntries(newEntries);
+    newEntries.forEach(e => {
+      if (!markerMap[e.id]) {
+        allEntries.push(e);
+        placeMarker(e);
+      }
+    });
+    renderTripCards();
+    updateDashboard();
   }
 
   function renderGroupsList() {
@@ -6347,7 +6853,8 @@
       galNoPhotos:'Noch keine Fotos hochgeladen.',
       galNoFavPhotos:'Keine Favoriten mit Fotos vorhanden.',
       // Form sidebar
-      newEntry:'Neuer Eintrag', lblLocation:'Ortsname', locationPh:'Ort suchen oder eingeben …',
+      newEntry:'Neuer Eintrag', editEntry:'Eintrag bearbeiten', saveChanges:'Änderungen speichern',
+      lblLocation:'Ortsname', locationPh:'Ort suchen oder eingeben …',
       lblDate:'Datum', lblPhoto:'Foto',
       uploadMain:'Fotos auswählen oder hierher ziehen',
       uploadSub:'Mehrere Bilder möglich · JPG, PNG, WEBP',
@@ -6393,6 +6900,72 @@
       mfaDisableConfirm:'Deaktivieren',
       authMfaLabel:'2FA-Code',
       authMfaHint:'6-stelligen Code aus deiner Authenticator-App eingeben.',
+      // Streak
+      streakDays:'Tage Streak', streakBest:'Beste', streakTotal:'Gesamt', streakDaysUnit:'Tage',
+      streakCheckedToday:'✓ Heute gecheckt', streakCheckinBtn:'🔥 Heute einchecken',
+      streakDangerText:'Streak in Gefahr! Jetzt einchecken.',
+      streakDangerFull: s => `🔥 ${s} Tage Streak! Heute noch nicht eingecheckt.`,
+      streakNotifTitle:'🔥 Streak in Gefahr!',
+      streakNotifBody: s => `${s} Tage Streak! Check heute noch ein.`,
+      dailyCheckinLabel:'Täglicher Check-in', dailyCheckinSub:'Zählt für deinen Streak',
+      milestones: { 3:'3 Tage 🔥', 7:'1 Woche 🔥🔥', 14:'2 Wochen 💪', 30:'1 Monat 🏆', 100:'100 Tage 🌟' },
+      streakMilestoneMsg: (label) => `Streak: ${label} — Weiter so!`,
+      anniversaryToday:'Jahrestag heute ✨',
+      anniversaryMsg: (years, place) => `Vor ${years} Jahr${years>1?'en':''} warst du in ${place}!`,
+      // Chart
+      chartMonths:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],
+      chartEntryLabel: n => `Eintrag${n !== 1 ? 'e' : ''}`,
+      chartTitle:'Aktivität', chartMonthsBtn:'Monate', chartYearsBtn:'Jahre',
+      // Homepage
+      hpTagline:'Dein persönliches',
+      hpSub:'Pins auf der Karte. Fotos. Notizen.<br class="hidden sm:block"/>Alles was zählt — an einem Ort.',
+      hpBadge1:'🗺 Interaktive Karte', hpBadge2:'📸 Fotos & Galerie',
+      hpBadge3:'🔥 Daily Streak',      hpBadge4:'👥 Gruppen',
+      hpCta:'Jetzt starten',
+      hpFc1Title:'Karte & Pins',       hpFc1Sub:'Alle Orte auf einen Blick',
+      hpFc2Title:'Fotos & Galerie',    hpFc2Sub:'Erinnerungen festhalten',
+      hpFc3Title:'Daily Streak',       hpFc3Sub:'Täglich einchecken',
+      hpFc4Title:'Gruppen',            hpFc4Sub:'Gemeinsam reisen',
+      // Auth
+      authLogin:'Anmelden', authRegister:'Registrieren',
+      authName:'Name', authNamePh:'Dein Reisename',
+      authPassword:'Passwort', authForgot:'Passwort vergessen?',
+      authNewPw:'Neues Passwort', authNewPwPh:'Mindestens 8 Zeichen',
+      authBtnLogin:'Anmelden', authBtnRegister:'Registrieren',
+      authBtnForgot:'Reset-Link senden', authBtnReset:'Passwort speichern',
+      authInfoNew:'Noch kein Konto?', authInfoExists:'Schon ein Konto?',
+      authSwitchRegister:'Jetzt registrieren', authSwitchLogin:'Jetzt anmelden',
+      authEmailTooltip:'Nutze eine echte E-Mail — sie ist dein einziger Weg zurück, falls du dein Passwort vergisst.',
+      // Settings
+      avatarTitle:'Profilbild', avatarPick:'Bild ändern', avatarRemove:'Bild entfernen',
+      usernameTitle:'Benutzername', usernameSave:'Speichern',
+      usernameDesc:'Andere können dich per Benutzername zu Gruppen einladen.',
+      usernamePh:'z.B. anna_m',
+      colorTitle:'Deine Farbe',
+      colorDesc:'Wird für deine Marker, Routenlinie und Cluster-Blasen verwendet.',
+      groupsTitle:'Meine Gruppen', createGroup:'+ Erstellen',
+      invitesTitle:'Einladungen',
+      settingsLogout:'Abmelden', settingsDelete:'Konto löschen',
+      // Group Create
+      cgTitle:'Neue Gruppe', cgName:'Gruppenname', cgNamePh:'z.B. Familie Müller',
+      cgInclude:'Meine bisherigen Einträge in diese Gruppe übernehmen',
+      cgIncludeHint:'Andere Mitglieder können dann auch deine alten Einträge sehen.',
+      cgCancel:'Abbrechen', cgConfirm:'Erstellen',
+      // Invite Popup
+      inviteTitle:'Neue Einladung',
+      inviteBody:'Du wurdest zur Gruppe', inviteSuffix:'eingeladen. Möchtest du beitreten?',
+      inviteShare:'Meine bisherigen Einträge in diese Gruppe übernehmen',
+      inviteShareHint:'Andere Mitglieder können dann auch deine bisherigen Einträge sehen.',
+      inviteDecline:'Ablehnen', inviteAccept:'Annehmen',
+      // Group Detail
+      gdMembers:'Mitglieder', gdInvite:'Benutzername oder E-Mail einladen',
+      gdInvitePh:'anna_m oder name@example.com', gdInviteBtn:'Einladen',
+      gdPending:'Offene Einladungen', gdDelete:'Gruppe löschen',
+      gdShareEntries:'Meine privaten Einträge in diese Gruppe übernehmen',
+      gdLeave:'Gruppe verlassen',
+      // Public / Entdecken
+      publicLabel:'Öffentlich teilen', publicDesc:'Im Entdecken-Feed für alle sichtbar',
+      tabDiscover:'🌍 Entdecken',
     },
     en: {
       stats:'Statistics', trips:'Trips', north:'Northmost', last:'Latest',
@@ -6407,7 +6980,8 @@
       galAll:'All', galFavs:'❤ Favorites',
       galNoPhotos:'No photos uploaded yet.',
       galNoFavPhotos:'No favorite entries with photos.',
-      newEntry:'New Entry', lblLocation:'Location', locationPh:'Search or enter a place …',
+      newEntry:'New Entry', editEntry:'Edit Entry', saveChanges:'Save Changes',
+      lblLocation:'Location', locationPh:'Search or enter a place …',
       lblDate:'Date', lblPhoto:'Photo',
       uploadMain:'Select photos or drag here',
       uploadSub:'Multiple images supported · JPG, PNG, WEBP',
@@ -6450,12 +7024,81 @@
       mfaDisableConfirm:'Disable',
       authMfaLabel:'2FA code',
       authMfaHint:'Enter the 6-digit code from your authenticator app.',
+      // Streak
+      streakDays:'Day Streak', streakBest:'Best', streakTotal:'Total', streakDaysUnit:'days',
+      streakCheckedToday:'✓ Checked in today', streakCheckinBtn:'🔥 Check in today',
+      streakDangerText:'Streak at risk! Check in now.',
+      streakDangerFull: s => `🔥 ${s}-day streak! Not checked in yet today.`,
+      streakNotifTitle:'🔥 Streak at risk!',
+      streakNotifBody: s => `${s}-day streak! Check in today.`,
+      dailyCheckinLabel:'Daily Check-in', dailyCheckinSub:'Counts for your streak',
+      milestones: { 3:'3 days 🔥', 7:'1 week 🔥🔥', 14:'2 weeks 💪', 30:'1 month 🏆', 100:'100 days 🌟' },
+      streakMilestoneMsg: (label) => `Streak: ${label} — Keep it up!`,
+      anniversaryToday:'Anniversary today ✨',
+      anniversaryMsg: (years, place) => `${years} year${years>1?'s':''} ago you were in ${place}!`,
+      // Chart
+      chartMonths:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      chartEntryLabel: n => `entr${n !== 1 ? 'ies' : 'y'}`,
+      chartTitle:'Activity', chartMonthsBtn:'Months', chartYearsBtn:'Years',
+      // Homepage
+      hpTagline:'Your personal',
+      hpSub:'Pins on the map. Photos. Notes.<br class="hidden sm:block"/>Everything that matters — in one place.',
+      hpBadge1:'🗺 Interactive Map',  hpBadge2:'📸 Photos & Gallery',
+      hpBadge3:'🔥 Daily Streak',     hpBadge4:'👥 Groups',
+      hpCta:'Start Your Journey',
+      hpFc1Title:'Map & Pins',        hpFc1Sub:'All places at a glance',
+      hpFc2Title:'Photos & Gallery',  hpFc2Sub:'Capture memories',
+      hpFc3Title:'Daily Streak',      hpFc3Sub:'Check in every day',
+      hpFc4Title:'Groups',            hpFc4Sub:'Travel together',
+      // Auth
+      authLogin:'Sign In', authRegister:'Register',
+      authName:'Name', authNamePh:'Your travel name',
+      authPassword:'Password', authForgot:'Forgot password?',
+      authNewPw:'New Password', authNewPwPh:'At least 8 characters',
+      authBtnLogin:'Sign In', authBtnRegister:'Register',
+      authBtnForgot:'Send reset link', authBtnReset:'Save password',
+      authInfoNew:"Don't have an account?", authInfoExists:'Already have an account?',
+      authSwitchRegister:'Register now', authSwitchLogin:'Sign in now',
+      authEmailTooltip:"Use a real email — it's your only way back if you forget your password.",
+      // Settings
+      avatarTitle:'Profile Picture', avatarPick:'Change photo', avatarRemove:'Remove photo',
+      usernameTitle:'Username', usernameSave:'Save',
+      usernameDesc:'Others can invite you to groups using your username.',
+      usernamePh:'e.g. anna_m',
+      colorTitle:'Your Color',
+      colorDesc:'Used for your markers, route line and cluster bubbles.',
+      groupsTitle:'My Groups', createGroup:'+ Create',
+      invitesTitle:'Invitations',
+      settingsLogout:'Sign Out', settingsDelete:'Delete Account',
+      // Group Create
+      cgTitle:'New Group', cgName:'Group Name', cgNamePh:'e.g. Family Smith',
+      cgInclude:'Include my existing entries in this group',
+      cgIncludeHint:'Other members will then also be able to see your old entries.',
+      cgCancel:'Cancel', cgConfirm:'Create',
+      // Invite Popup
+      inviteTitle:'New Invitation',
+      inviteBody:'You were invited to join', inviteSuffix:'Would you like to join?',
+      inviteShare:'Include my existing entries in this group',
+      inviteShareHint:'Other members will then also be able to see your existing entries.',
+      inviteDecline:'Decline', inviteAccept:'Accept',
+      // Group Detail
+      gdMembers:'Members', gdInvite:'Invite by username or email',
+      gdInvitePh:'anna_m or name@example.com', gdInviteBtn:'Invite',
+      gdPending:'Pending Invitations', gdDelete:'Delete Group',
+      gdShareEntries:'Share my private entries with this group',
+      gdLeave:'Leave Group',
+      // Public / Discover
+      publicLabel:'Share publicly', publicDesc:'Visible to everyone in the Discover feed',
+      tabDiscover:'🌍 Discover',
     }
   };
 
   let currentLang = localStorage.getItem('reise_lang') || 'de';
 
   function t(key) { return tr[currentLang][key] ?? tr.de[key] ?? key; }
+
+  // Apply language immediately so static HTML reflects saved preference before data loads
+  applyLang(currentLang);
 
   function applyLang(lang) {
     currentLang = lang;
@@ -6531,14 +7174,116 @@
     s('hint-mobile',   T.hintMobile);
     sp('search-input', T.searchPh);
 
-    // Lang toggle button
+    // Lang toggle buttons (map + homepage navbar + panel)
     const flag = lang === 'de' ? '🇩🇪' : '🇬🇧';
+    const code = lang === 'de' ? 'DE' : 'EN';
     document.getElementById('lang-flag').textContent = flag;
-    document.getElementById('lang-code').textContent = lang === 'de' ? 'DE' : 'EN';
+    document.getElementById('lang-code').textContent = code;
+    const hpf = document.getElementById('hp-lang-flag');
+    const hpc = document.getElementById('hp-lang-code');
+    if (hpf) hpf.textContent = flag;
+    if (hpc) hpc.textContent = code;
     const pf  = document.getElementById('panel-lang-flag');
     const pf2 = document.getElementById('panel-lang-flag2');
     if (pf)  pf.textContent  = flag;
     if (pf2) pf2.textContent = flag;
+
+    // Streak UI
+    s('lbl-streak-days',    T.streakDays);
+    s('lbl-streak-today',   T.streakCheckedToday);
+    s('lbl-streak-checkin', T.streakCheckinBtn);
+    s('lbl-streak-best',    T.streakBest);
+    s('lbl-streak-total',   T.streakTotal);
+    s('lbl-streak-best-unit',  T.streakDaysUnit);
+    s('lbl-streak-total-unit', T.streakDaysUnit);
+    s('lbl-daily-checkin',  T.dailyCheckinLabel);
+    s('lbl-daily-sub',      T.dailyCheckinSub);
+    s('lbl-anniversary-today', T.anniversaryToday);
+    // Danger banner default text (only if not currently showing a live streak message)
+    const dangerEl = document.getElementById('streak-danger-text');
+    if (dangerEl && !dangerEl.dataset.live) dangerEl.textContent = T.streakDangerText;
+
+    // Auth panel
+    s('lbl-auth-login',    T.authLogin);
+    s('lbl-auth-register', T.authRegister);
+    s('lbl-auth-name',     T.authName);
+    s('lbl-auth-password', T.authPassword);
+    s('lbl-auth-newpw',    T.authNewPw);
+    s('auth-btn-label',    T.authBtnLogin);
+    s('lbl-auth-info',     T.authInfoNew);
+    s('lbl-auth-switch',   T.authSwitchRegister);
+    s('auth-forgot-link',  T.authForgot);
+    sp('auth-name',        T.authNamePh);
+    sp('auth-new-password',T.authNewPwPh);
+
+    // Settings modal
+    s('lbl-avatar-title',   T.avatarTitle);
+    s('lbl-avatar-pick',    T.avatarPick);
+    s('lbl-avatar-remove',  T.avatarRemove);
+    s('lbl-username-title', T.usernameTitle);
+    s('lbl-username-desc',  T.usernameDesc);
+    s('lbl-username-save',  T.usernameSave);
+    s('lbl-color-title',    T.colorTitle);
+    s('lbl-color-desc',     T.colorDesc);
+    s('lbl-groups-title',   T.groupsTitle);
+    s('lbl-create-group',   T.createGroup);
+    s('lbl-invites-title',  T.invitesTitle);
+    s('lbl-settings-logout',T.settingsLogout);
+    s('lbl-settings-delete',T.settingsDelete);
+    sp('username-input',    T.usernamePh);
+
+    // Group Create modal
+    s('lbl-cg-title',        T.cgTitle);
+    s('lbl-cg-name',         T.cgName);
+    s('lbl-cg-include',      T.cgInclude);
+    s('lbl-cg-include-hint', T.cgIncludeHint);
+    s('lbl-cg-cancel',       T.cgCancel);
+    s('lbl-cg-confirm',      T.cgConfirm);
+    sp('cg-name',            T.cgNamePh);
+
+    // Invite Popup
+    s('lbl-invite-popup-title',      T.inviteTitle);
+    s('lbl-invite-popup-body',       T.inviteBody);
+    s('lbl-invite-popup-suffix',     T.inviteSuffix);
+    s('lbl-invite-popup-share',      T.inviteShare);
+    s('lbl-invite-popup-share-hint', T.inviteShareHint);
+    s('lbl-invite-popup-decline',    T.inviteDecline);
+    s('lbl-invite-popup-accept',     T.inviteAccept);
+
+    // Group Detail modal
+    s('lbl-gd-members',      T.gdMembers);
+    s('lbl-gd-invite',       T.gdInvite);
+    s('lbl-gd-invite-btn',   T.gdInviteBtn);
+    s('lbl-gd-pending',      T.gdPending);
+    s('lbl-gd-delete',       T.gdDelete);
+    s('lbl-gd-share-entries',T.gdShareEntries);
+    s('lbl-gd-leave',        T.gdLeave);
+    sp('gd-invite-email',    T.gdInvitePh);
+
+    // Public toggle + Discover tab
+    s('lbl-public-label', T.publicLabel);
+    s('lbl-public-desc',  T.publicDesc);
+    s('tab-discover',     T.tabDiscover);
+
+    // Chart
+    s('lbl-chart-title',  T.chartTitle);
+    s('lbl-chart-months', T.chartMonthsBtn);
+    s('lbl-chart-years',  T.chartYearsBtn);
+    renderChart();
+
+    // Homepage
+    s('hp-lbl-tagline', T.hpTagline);
+    s('hp-lbl-cta',     T.hpCta);
+    s('hp-badge-1',     T.hpBadge1);
+    s('hp-badge-2',     T.hpBadge2);
+    s('hp-badge-3',     T.hpBadge3);
+    s('hp-badge-4',     T.hpBadge4);
+    s('hp-fc1-title',   T.hpFc1Title); s('hp-fc1-sub', T.hpFc1Sub);
+    s('hp-fc2-title',   T.hpFc2Title); s('hp-fc2-sub', T.hpFc2Sub);
+    s('hp-fc3-title',   T.hpFc3Title); s('hp-fc3-sub', T.hpFc3Sub);
+    s('hp-fc4-title',   T.hpFc4Title); s('hp-fc4-sub', T.hpFc4Sub);
+    const hpSub = document.getElementById('hp-lbl-sub');
+    if (hpSub) hpSub.innerHTML = T.hpSub;
 
     // Switch map tile language (only affects standard style)
     setMapLang(lang);
@@ -6594,7 +7339,20 @@
     applyLang(currentLang === 'de' ? 'en' : 'de');
   }
 
-  async function init() { await loadEntries({ toastOnDone: true }); }
+  async function probePublicCol() {
+    const { error } = await sb.from(TABLE).select('is_public').limit(1);
+    hasPublicCol = !error;
+  }
+  async function probeMoodCols() {
+    const { error } = await sb.from(TABLE).select('mood,is_wishlist').limit(1);
+    hasMoodCols = !error;
+  }
+
+  async function init() {
+    await probePublicCol();
+    await probeMoodCols();
+    await loadEntries({ toastOnDone: true });
+  }
 
   // Lädt Einträge neu (z.B. nach Gruppen-Beitritt/-Austritt)
   async function loadEntries({ toastOnDone = false } = {}) {
@@ -6606,7 +7364,7 @@
 
     const { data, error } = await sb
       .from(TABLE)
-      .select(ENTRY_COLUMNS)
+      .select(entryCols())
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -6965,8 +7723,8 @@
       `${pendingLat.toFixed(5)}°, ${pendingLng.toFixed(5)}°`;
     if (editingId) {
       editingId = null;
-      document.getElementById('sidebar-title').textContent = tG('Neuer Eintrag', 'New entry');
-      document.getElementById('save-label').textContent    = tG('Eintrag speichern', 'Save entry');
+      document.getElementById('sidebar-title').textContent = t('newEntry');
+      document.getElementById('save-label').textContent    = t('saveBtn');
     }
     document.getElementById('inp-location').value = '';
     document.getElementById('inp-notes').value    = '';
@@ -7109,7 +7867,7 @@
     const years   = today.getFullYear() - new Date(e.date + 'T00:00:00').getFullYear();
     const banner  = document.getElementById('anniversary-banner');
     const text    = document.getElementById('anniversary-text');
-    text.textContent = `Vor ${years} Jahr${years > 1 ? 'en' : ''} warst du in ${e.locationName}!`;
+    text.textContent = tr[currentLang].anniversaryMsg(years, e.locationName);
     banner.classList.remove('hidden');
 
     banner.querySelector('button').addEventListener('click', () => {
@@ -7216,6 +7974,70 @@
           </div>`;
       }).join('');
     });
+  }
+
+  // ─── Entdecken-Feed ───────────────────────────────────────────────────────
+  async function loadDiscoverFeed() {
+    if (!currentUser) return;
+    const list   = document.getElementById('discover-list');
+    const loader = document.getElementById('discover-loader');
+    list.innerHTML = '';
+    if (!hasPublicCol) {
+      list.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">Migration noch nicht ausgeführt.<br>Bitte migration_is_public.sql in Supabase ausführen.</p>`;
+      return;
+    }
+    loader.classList.remove('hidden');
+    const { data, error } = await sb
+      .from(TABLE)
+      .select(entryCols())
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(60);
+    loader.classList.add('hidden');
+    if (error) {
+      list.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">Fehler beim Laden</p>`;
+      return;
+    }
+    if (!data?.length) {
+      list.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">Noch keine öffentlichen Einträge</p>`;
+      return;
+    }
+    const discoverEntries = data.map(rowToEntry);
+    await preSignEntries(discoverEntries);
+    await loadUserInfosForEntries(discoverEntries);
+    list.innerHTML = discoverEntries.map(e => renderDiscoverCard(e)).join('');
+  }
+
+  function renderDiscoverCard(e) {
+    const src      = hasPhoto(e) ? getPhotoSrc(e, 400) : null;
+    const isVid    = src && isVideoUrl(src);
+    const info     = userInfoMap[e.userId] || {};
+    const name     = esc(info.username || 'Anonym');
+    const color    = info.color || '#f97316';
+    const initial  = name[0]?.toUpperCase() || '?';
+    const mediaEl  = src
+      ? isVid
+        ? `<video src="${safeSrc(src)}" muted playsinline preload="metadata"
+             class="w-full h-36 object-cover pointer-events-none"></video>
+           <span class="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <span class="bg-black/50 rounded-full w-8 h-8 flex items-center justify-center text-white text-sm">▶</span>
+           </span>`
+        : `<img src="${safeSrc(toDisplayUrl(src, 400))}" class="w-full h-36 object-cover" loading="lazy" />`
+      : '';
+    return `
+      <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+        ${src ? `<div class="relative">${mediaEl}</div>` : ''}
+        <div class="p-3">
+          <div class="flex items-center gap-2 mb-2">
+            <div class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                 style="background:${color}">${initial}</div>
+            <span class="text-xs font-semibold text-gray-600">${name}</span>
+            <span class="text-xs text-gray-300 ml-auto">${fmtDate(e.date)}</span>
+          </div>
+          <p class="text-sm font-bold text-gray-800 truncate">📍 ${esc(e.locationName)}</p>
+          ${e.notes ? `<p class="text-xs text-gray-500 mt-1 line-clamp-2">${esc(e.notes)}</p>` : ''}
+        </div>
+      </div>`;
   }
 
   // ══════════════════════════════════════════════════════════════════════════

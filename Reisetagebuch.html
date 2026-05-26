@@ -235,16 +235,10 @@
       /* Panel-Backdrop */
       #panel-backdrop { display: block; }
 
-      /* Panel-Tab größer + besser sichtbar */
+      /* Panel-Tab mobile */
       #panel-tab {
-        padding: 2.25rem 1.75rem !important;
-        border-radius: 0 1.5rem 1.5rem 0 !important;
-        box-shadow: 2px 0 16px rgba(0,0,0,.2) !important;
-        gap: 0.6rem !important;
-      }
-      #panel-tab > div {
-        width: 6px !important;
-        height: 26px !important;
+        border-radius: 0 1.25rem 1.25rem 0 !important;
+        box-shadow: 3px 0 16px rgba(0,0,0,.2) !important;
       }
 
       /* Mobile: gesamte Main-Section scrollbar, nicht nur Trip-Cards */
@@ -536,13 +530,19 @@
 
     <!-- Tab-Button am rechten Rand des Panels (bewegt sich mit) -->
     <button id="panel-tab"
-      class="absolute left-full top-1/2 -translate-y-1/2 flex
-             flex-col items-center gap-1.5 py-5 px-2.5
+      class="absolute left-full top-1/2 -translate-y-1/2 flex flex-col items-center justify-center
              bg-white rounded-r-2xl shadow-md cursor-pointer
-             hover:bg-orange-50 active:scale-95 transition-all duration-150">
-      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
-      <div class="w-1 h-4 bg-orange-500 rounded-full"></div>
+             hover:bg-orange-50 active:scale-95 transition-all duration-150
+             lg:gap-1.5 lg:py-5 lg:px-2.5
+             gap-0 py-7 px-4">
+      <!-- Striche (Desktop) -->
+      <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
+      <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
+      <div class="hidden lg:block w-1 h-4 bg-orange-500 rounded-full"></div>
+      <!-- Chevron-Pfeil (Mobile/Tablet) -->
+      <svg class="lg:hidden w-7 h-7 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/>
+      </svg>
     </button>
 
     <!-- ── GRADIENT HEADER ──────────────────────────────────────────────── -->
@@ -1931,7 +1931,7 @@
     <!-- Neuer Eintrag (Mitte – Haupt-CTA) -->
     <button id="nav-map"
       onclick="mobileNavMap()"
-      class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors relative">
+      class="hidden">
       <div class="nav-cta-btn absolute -top-4 w-14 h-14 bg-orange-500 rounded-2xl shadow-lg
                   flex items-center justify-center transition-colors hover:bg-orange-400">
         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -2475,6 +2475,9 @@
   // Cloudflare Turnstile — Sitekey eintragen nach: cloudflare.com/products/turnstile → Site erstellen
   // Dann in Supabase: Authentication → Settings → Enable Captcha → Turnstile → Secret eingeben
   const TURNSTILE_SITE_KEY = '0x4AAAAAADVYY2mfTTPdTdAT';
+  // MapTiler key (lokalisierte Karten-Labels DE/EN). Domain-Whitelist im
+  // MapTiler-Dashboard aktivieren, sonst kann der Key überall verwendet werden.
+  window.MAPTILER_KEY = 'l0aEzx5zHGNmKthOWNYW';
 
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   // ══════════════════════════════════════════════════════════════════════════

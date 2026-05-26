@@ -251,6 +251,24 @@
         flex: none !important;
         overflow-y: visible !important;
       }
+
+      /* Chart kompakter auf Mobile */
+      #stats-chart-wrap { height: 100px !important; }
+
+      /* Streak-Banner: Button auf kleinen Panels full-width */
+      #streak-checkin-btn {
+        width: 100%;
+        justify-content: center;
+        display: flex;
+        align-items: center;
+        padding: 0.625rem 1rem !important;
+        border-radius: 0.75rem !important;
+      }
+
+      /* Daily-Toggle-Switch größer */
+      #daily-switch-track { width: 3rem !important; height: 1.5rem !important; }
+      #daily-switch-thumb { width: 1.25rem !important; height: 1.25rem !important; top: 2px !important; left: 2px !important; }
+      #daily-toggle-row { padding: 1rem !important; }
     }
 
     /* Tablet: breiteres Panel */
@@ -766,24 +784,27 @@
 
         <!-- Streak-Banner -->
         <div id="streak-banner"
-          class="mt-2 rounded-xl px-3 py-2 flex items-center justify-between gap-2
+          class="mt-2 rounded-xl px-3 py-2.5 flex flex-wrap items-center gap-2
                  bg-gradient-to-r from-orange-500 to-amber-400">
-          <div class="flex items-center gap-2">
-            <span id="streak-flame" class="text-xl leading-none select-none">🔥</span>
+          <!-- Linke Seite: Flamme + Zahl -->
+          <div class="flex items-center gap-2 flex-1 min-w-0">
+            <span id="streak-flame" class="text-2xl leading-none select-none">🔥</span>
             <div>
-              <p id="dash-streak" class="text-white font-extrabold text-lg leading-none">0</p>
-              <p class="text-orange-100 text-[10px] leading-tight">Tage Streak</p>
+              <p id="dash-streak" class="text-white font-extrabold text-xl leading-none">0</p>
+              <p class="text-orange-100 text-xs leading-tight">Tage Streak</p>
             </div>
           </div>
+          <!-- Rechte Seite: Badge oder Button -->
           <span id="streak-today-badge"
-            class="hidden text-[11px] bg-white/25 text-white px-2 py-0.5 rounded-full font-semibold whitespace-nowrap">
-            ✓ Heute
+            class="hidden text-xs bg-white/25 text-white px-3 py-1.5 rounded-full font-semibold whitespace-nowrap">
+            ✓ Heute gecheckt
           </span>
           <button id="streak-checkin-btn"
             onclick="openStreakCheckin()"
-            class="text-[11px] bg-white text-orange-500 px-2.5 py-1.5 rounded-full font-bold
-                   shadow-sm hover:bg-orange-50 active:scale-95 transition-all whitespace-nowrap flex-shrink-0">
-            + Einchecken
+            class="text-xs bg-white text-orange-500 px-3 py-2 rounded-xl font-bold
+                   shadow-sm hover:bg-orange-50 active:scale-95 transition-all
+                   whitespace-nowrap flex-shrink-0 min-h-[36px]">
+            🔥 Heute einchecken
           </button>
         </div>
       </div>
@@ -803,7 +824,7 @@
             </button>
           </div>
         </div>
-        <div style="height:140px; position:relative;">
+        <div id="stats-chart-wrap" style="height:140px; position:relative;">
           <canvas id="stats-chart"></canvas>
         </div>
       </div>
@@ -3494,7 +3515,8 @@
     document.getElementById('daily-switch-track').style.background = on ? '#f97316' : '';
     document.getElementById('daily-switch-track').classList.toggle('bg-orange-500', on);
     document.getElementById('daily-switch-track').classList.toggle('bg-gray-200', !on);
-    document.getElementById('daily-switch-thumb').style.transform = on ? 'translateX(20px)' : '';
+    const isMobile = window.innerWidth < 1024;
+    document.getElementById('daily-switch-thumb').style.transform = on ? `translateX(${isMobile ? 24 : 20}px)` : '';
     document.getElementById('daily-toggle-flame').textContent = on ? '🔥' : '🔥';
   }
 

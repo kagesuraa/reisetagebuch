@@ -7456,9 +7456,9 @@
     renderTripCards();
     renderCountryStats();
     if (galleryEl.classList.contains('open')) renderGallery();
-    if (typeof renderTagPicker === 'function') renderTagPicker();
-    if (typeof renderTagFilterRow === 'function') renderTagFilterRow();
-    if (typeof showLbTags === 'function' && typeof lbActiveId !== 'undefined' && lbActiveId) showLbTags(lbActiveId);
+    // Tags are defined later in the script (BUILTIN_TAGS const is in TDZ on first call)
+    try { renderTagPicker(); renderTagFilterRow(); } catch (_) {}
+    try { if (lbActiveId) showLbTags(lbActiveId); } catch (_) {}
   }
 
   function toggleLang() {

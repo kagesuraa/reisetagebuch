@@ -2169,24 +2169,7 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- Routen-Toggle (unten links) -->
-  <div class="fixed bottom-5 left-5 z-[1000] flex flex-col items-start gap-1.5">
-    <!-- Modus-Dropdown (erscheint über dem Button) -->
-    <div id="route-mode-dropdown"
-      class="hidden bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-2 flex flex-col gap-0.5 min-w-[180px]">
-      <p id="lbl-route-choose" class="text-[10px] font-semibold text-stone-400 uppercase tracking-wider px-2 pt-1 pb-0.5">Route-Modus</p>
-      <button id="route-mode-btn-auto"  onclick="setRouteMode('auto')"
-        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
-        <span>👥</span><span id="lbl-route-auto">Getrennt pro Nutzer</span>
-      </button>
-      <button id="route-mode-btn-all"   onclick="setRouteMode('all')"
-        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
-        <span>🗺️</span><span id="lbl-route-all">Alle zusammen</span>
-      </button>
-      <button id="route-mode-btn-mine"  onclick="setRouteMode('mine')"
-        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
-        <span>🙋</span><span id="lbl-route-mine">Nur meine Einträge</span>
-      </button>
-    </div>
+  <div class="fixed bottom-5 left-5 z-[1100] relative">
     <!-- Toggle-Button -->
     <button id="btn-route"
       class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
@@ -2203,8 +2186,25 @@
       <!-- Einstellungs-Chevron -->
       <span id="route-settings-chevron"
         onclick="event.stopPropagation(); toggleRouteDropdown()"
-        class="text-gray-400 text-xs ml-0.5 transition-transform duration-200 cursor-pointer px-1 -mr-1">▲</span>
+        class="text-gray-400 text-xs ml-0.5 transition-transform duration-200 cursor-pointer px-1 -mr-1">▼</span>
     </button>
+    <!-- Modus-Dropdown — öffnet nach oben, links ausgerichtet -->
+    <div id="route-mode-dropdown"
+      class="hidden absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-2 flex flex-col gap-0.5 min-w-[190px]">
+      <p id="lbl-route-choose" class="text-[10px] font-semibold text-stone-400 uppercase tracking-wider px-2 pt-1 pb-0.5">Route-Modus</p>
+      <button id="route-mode-btn-auto"  onclick="setRouteMode('auto')"
+        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span>👥</span><span id="lbl-route-auto">Getrennt pro Nutzer</span>
+      </button>
+      <button id="route-mode-btn-all"   onclick="setRouteMode('all')"
+        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span>🗺️</span><span id="lbl-route-all">Alle zusammen</span>
+      </button>
+      <button id="route-mode-btn-mine"  onclick="setRouteMode('mine')"
+        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span>🙋</span><span id="lbl-route-mine">Nur meine Einträge</span>
+      </button>
+    </div>
   </div>
 
   <!-- ════ JAHRES-RECAP (Spotify-Wrapped Style Stories) ═════════════════════ -->

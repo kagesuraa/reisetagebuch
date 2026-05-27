@@ -2169,9 +2169,9 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- Routen-Toggle (unten links) -->
-  <div class="fixed bottom-5 left-5 z-[1100] relative">
+  <div style="position:fixed;bottom:1.25rem;left:1.25rem;z-index:1100">
     <!-- Toggle-Button -->
-    <button id="btn-route"
+    <button id="btn-route" onclick="toggleRoute()"
       class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
              hover:bg-white transition-colors whitespace-nowrap select-none">
       <span class="text-base" id="route-mode-icon">✈️</span>
@@ -2190,7 +2190,8 @@
     </button>
     <!-- Modus-Dropdown — öffnet nach oben, links ausgerichtet -->
     <div id="route-mode-dropdown"
-      class="hidden absolute bottom-full left-0 mb-2 bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-2 flex flex-col gap-0.5 min-w-[190px]">
+      style="position:fixed;bottom:4rem;left:1.25rem"
+      class="hidden bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-2 flex flex-col gap-0.5 min-w-[190px] z-[1200]">
       <p id="lbl-route-choose" class="text-[10px] font-semibold text-stone-400 uppercase tracking-wider px-2 pt-1 pb-0.5">Route-Modus</p>
       <button id="route-mode-btn-auto"  onclick="setRouteMode('auto')"
         class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">

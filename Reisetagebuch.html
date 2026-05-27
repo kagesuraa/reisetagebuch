@@ -2169,20 +2169,43 @@
   <!-- ════════════════════════════════════════════════════════════════════════ -->
 
   <!-- Routen-Toggle (unten links) -->
-  <button id="btn-route" onclick="toggleRoute()"
-    class="fixed bottom-5 left-5 z-[1000] bg-white/95 backdrop-blur-sm
-           rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
-           hover:bg-white transition-colors whitespace-nowrap select-none">
-    <span class="text-base">✈️</span>
-    <span id="lbl-route" class="text-gray-700 text-sm font-medium">Route</span>
-    <!-- Toggle-Switch -->
-    <div id="route-switch"
-      class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-orange-500">
-      <div id="route-thumb"
-        class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 right-0.5">
-      </div>
+  <div class="fixed bottom-5 left-5 z-[1000] flex flex-col items-start gap-1.5">
+    <!-- Modus-Dropdown (erscheint über dem Button) -->
+    <div id="route-mode-dropdown"
+      class="hidden bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-2 flex flex-col gap-0.5 min-w-[180px]">
+      <p id="lbl-route-choose" class="text-[10px] font-semibold text-stone-400 uppercase tracking-wider px-2 pt-1 pb-0.5">Route-Modus</p>
+      <button id="route-mode-btn-auto"  onclick="setRouteMode('auto')"
+        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span>👥</span><span id="lbl-route-auto">Getrennt pro Nutzer</span>
+      </button>
+      <button id="route-mode-btn-all"   onclick="setRouteMode('all')"
+        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span>🗺️</span><span id="lbl-route-all">Alle zusammen</span>
+      </button>
+      <button id="route-mode-btn-mine"  onclick="setRouteMode('mine')"
+        class="route-mode-opt text-left text-sm px-3 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2">
+        <span>🙋</span><span id="lbl-route-mine">Nur meine Einträge</span>
+      </button>
     </div>
-  </button>
+    <!-- Toggle-Button -->
+    <button id="btn-route"
+      class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2.5
+             hover:bg-white transition-colors whitespace-nowrap select-none">
+      <span class="text-base" id="route-mode-icon">✈️</span>
+      <span id="lbl-route" class="text-gray-700 text-sm font-medium">Route</span>
+      <!-- Toggle-Switch -->
+      <div id="route-switch"
+        class="relative w-9 h-5 rounded-full transition-colors duration-200 bg-orange-500">
+        <div id="route-thumb"
+          class="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 right-0.5">
+        </div>
+      </div>
+      <!-- Einstellungs-Chevron -->
+      <span id="route-settings-chevron"
+        onclick="event.stopPropagation(); toggleRouteDropdown()"
+        class="text-gray-400 text-xs ml-0.5 transition-transform duration-200 cursor-pointer px-1 -mr-1">▲</span>
+    </button>
+  </div>
 
   <!-- ════ JAHRES-RECAP (Spotify-Wrapped Style Stories) ═════════════════════ -->
   <div id="recap-overlay" role="dialog" aria-modal="true" aria-label="Year in review"
@@ -2439,7 +2462,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
       </svg>
-      <span class="text-xs text-gray-400 font-medium transition-colors">Route</span>
+      <span id="lbl-nav-route" class="text-xs text-gray-400 font-medium transition-colors">Route</span>
     </button>
   </nav>
   <!-- ════════════════════════════════════════════════════════════════════════ -->
@@ -2616,28 +2639,40 @@
     if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
     if (!showRoute || entries.length < 2) return;
 
-    // Nach Autor gruppieren, jede User-Route eigenständig zeichnen,
-    // damit Mitglieder einer Gruppe optisch unterscheidbar sind.
-    const byUser = new Map();
-    for (const e of entries) {
-      const key = e.userId || '__unknown__';
-      if (!byUser.has(key)) byUser.set(key, []);
-      byUser.get(key).push(e);
+    const sortByDate = (a, b) => {
+      if (a.date && b.date) return a.date.localeCompare(b.date);
+      if (a.date) return -1;
+      if (b.date) return  1;
+      return 0;
+    };
+
+    // Einträge nach Modus filtern/gruppieren
+    let groups; // Array von { userId, es }
+    if (routeMode === 'mine' && currentUser) {
+      const mine = entries.filter(e => e.userId === currentUser.id);
+      if (mine.length < 2) return;
+      groups = [{ userId: currentUser.id, es: mine }];
+    } else if (routeMode === 'all') {
+      groups = [{ userId: '__all__', es: [...entries] }];
+    } else {
+      // 'auto': getrennt pro Nutzer
+      const byUser = new Map();
+      for (const e of entries) {
+        const key = e.userId || '__unknown__';
+        if (!byUser.has(key)) byUser.set(key, []);
+        byUser.get(key).push(e);
+      }
+      groups = [...byUser.entries()].map(([userId, es]) => ({ userId, es }));
     }
 
     const layers = [];
     const animateLater = [];
 
-    for (const [userId, es] of byUser) {
+    for (const { userId, es } of groups) {
       if (es.length < 2) continue;
-      const sorted = [...es].sort((a, b) => {
-        if (a.date && b.date) return a.date.localeCompare(b.date);
-        if (a.date)  return -1;
-        if (b.date)  return  1;
-        return 0;
-      });
+      const sorted = [...es].sort(sortByDate);
       const coords = sorted.map(e => [e.lat, e.lng]);
-      const color  = colorForUser(userId);
+      const color  = routeMode === 'all' ? (colorForUser(currentUser?.id) || '#f97316') : colorForUser(userId);
 
       const glow = L.polyline(coords, {
         color, weight: 8, opacity: 0.18,
@@ -2666,22 +2701,76 @@
     }, 50);
   }
 
+  let routeMode = localStorage.getItem('reise_route_mode') || 'auto';
+  // 'auto' = getrennt pro Nutzer | 'all' = alle zusammen | 'mine' = nur eigene
+
+  const ROUTE_MODE_ICONS = { auto: '👥', all: '🗺️', mine: '🙋' };
+
   function toggleRoute() {
     showRoute = !showRoute;
     const sw    = document.getElementById('route-switch');
     const thumb = document.getElementById('route-thumb');
     if (showRoute) {
       sw.classList.replace('bg-gray-300', 'bg-orange-500');
-      thumb.classList.replace('left-0.5', 'right-0.5');
       thumb.classList.remove('left-0.5');
       thumb.classList.add('right-0.5');
     } else {
       sw.classList.replace('bg-orange-500', 'bg-gray-300');
       thumb.classList.remove('right-0.5');
       thumb.classList.add('left-0.5');
+      document.getElementById('route-mode-dropdown')?.classList.add('hidden');
     }
     drawRoute();
   }
+
+  function toggleRouteDropdown() {
+    const dd = document.getElementById('route-mode-dropdown');
+    if (!dd) return;
+    dd.classList.toggle('hidden');
+    const chevron = document.getElementById('route-settings-chevron');
+    if (chevron) chevron.textContent = dd.classList.contains('hidden') ? '▲' : '▼';
+    updateRouteModeHighlight();
+  }
+
+  function updateRouteModeHighlight() {
+    ['auto','all','mine'].forEach(m => {
+      const btn = document.getElementById(`route-mode-btn-${m}`);
+      if (!btn) return;
+      btn.classList.toggle('bg-orange-100', m === routeMode);
+      btn.classList.toggle('text-orange-700', m === routeMode);
+      btn.classList.toggle('font-semibold',   m === routeMode);
+    });
+  }
+
+  function setRouteMode(mode) {
+    routeMode = mode;
+    localStorage.setItem('reise_route_mode', mode);
+    const icon = document.getElementById('route-mode-icon');
+    if (icon) icon.textContent = ROUTE_MODE_ICONS[mode] || '✈️';
+    updateRouteModeHighlight();
+    document.getElementById('route-mode-dropdown')?.classList.add('hidden');
+    const chevron = document.getElementById('route-settings-chevron');
+    if (chevron) chevron.textContent = '▲';
+    if (showRoute) drawRoute();
+  }
+
+  // Modus-Icon beim Start setzen
+  document.addEventListener('DOMContentLoaded', () => {
+    const icon = document.getElementById('route-mode-icon');
+    if (icon) icon.textContent = ROUTE_MODE_ICONS[routeMode] || '✈️';
+  });
+
+  // Dropdown schließen bei Klick außerhalb
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#btn-route') && !e.target.closest('#route-mode-dropdown')) {
+      const dd = document.getElementById('route-mode-dropdown');
+      if (dd && !dd.classList.contains('hidden')) {
+        dd.classList.add('hidden');
+        const chevron = document.getElementById('route-settings-chevron');
+        if (chevron) chevron.textContent = '▲';
+      }
+    }
+  });
 
   // ─── Heatmap-Layer (Leaflet.heat) ────────────────────────────────────────
   let heatLayer = null;
@@ -6996,6 +7085,7 @@
       styleTitle:'Kartenstil wechseln', galleryTitle:'Galerie öffnen',
       styleStd:'🌍 Standard', styleDark:'🌑 Dark Mode', styleSat:'🛰️ Satellit',
       lblRoute:'Route',
+      routeChoose:'Route-Modus', routeAuto:'Getrennt pro Nutzer', routeAll:'Alle zusammen', routeMine:'Nur meine Einträge',
       hintDesktop:'Klicke auf die Karte, um einen Eintrag hinzuzufügen.',
       hintMobile:'Karte antippen',
       searchPh:'Stadt oder Ort suchen …',
@@ -7121,6 +7211,7 @@
       styleTitle:'Switch map style', galleryTitle:'Open Gallery',
       styleStd:'🌍 Standard', styleDark:'🌑 Dark Mode', styleSat:'🛰️ Satellite',
       lblRoute:'Route',
+      routeChoose:'Route Mode', routeAuto:'Separate per user', routeAll:'All together', routeMine:'Only my entries',
       hintDesktop:'Click on the map to add an entry.',
       hintMobile:'Tap the map',
       searchPh:'Search city or place …',
@@ -7298,7 +7389,12 @@
     s('style-opt-standard',  T.styleStd);
     s('style-opt-dark',      T.styleDark);
     s('style-opt-satellite', T.styleSat);
-    s('lbl-route',     T.lblRoute);
+    s('lbl-route',        T.lblRoute);
+    s('lbl-nav-route',    T.lblRoute);
+    s('lbl-route-choose', T.routeChoose);
+    s('lbl-route-auto',   T.routeAuto);
+    s('lbl-route-all',    T.routeAll);
+    s('lbl-route-mine',   T.routeMine);
     s('hint-desktop',  T.hintDesktop);
     s('hint-mobile',   T.hintMobile);
     sp('search-input', T.searchPh);
@@ -7867,7 +7963,15 @@
     drawRoute();
     const btn = document.getElementById('nav-route');
     btn.classList.toggle('nav-active', mobileRouteOn);
-    toast(mobileRouteOn ? 'Route eingeblendet' : 'Route ausgeblendet', 'info');
+    const sw    = document.getElementById('route-switch');
+    const thumb = document.getElementById('route-thumb');
+    if (sw && thumb) {
+      if (mobileRouteOn) { sw.classList.replace('bg-gray-300','bg-orange-500'); thumb.classList.remove('left-0.5'); thumb.classList.add('right-0.5'); }
+      else               { sw.classList.replace('bg-orange-500','bg-gray-300'); thumb.classList.remove('right-0.5'); thumb.classList.add('left-0.5'); }
+    }
+    toast(mobileRouteOn
+      ? (currentLang === 'en' ? 'Route shown' : 'Route eingeblendet')
+      : (currentLang === 'en' ? 'Route hidden' : 'Route ausgeblendet'), 'info');
   }
 
   // Route-Nav-Button initial aktiv (Route ist standardmäßig sichtbar)

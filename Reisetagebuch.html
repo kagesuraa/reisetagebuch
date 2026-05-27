@@ -7456,6 +7456,9 @@
     renderTripCards();
     renderCountryStats();
     if (galleryEl.classList.contains('open')) renderGallery();
+    if (typeof renderTagPicker === 'function') renderTagPicker();
+    if (typeof renderTagFilterRow === 'function') renderTagFilterRow();
+    if (typeof showLbTags === 'function' && typeof lbActiveId !== 'undefined' && lbActiveId) showLbTags(lbActiveId);
   }
 
   function toggleLang() {
@@ -8182,20 +8185,34 @@
   // ══════════════════════════════════════════════════════════════════════════
   //  Tags
   // ══════════════════════════════════════════════════════════════════════════
-  const TAGS = [
-    { id:'strand',   label:'🏖 Strand'  },
-    { id:'berg',     label:'🏔 Berg'    },
-    { id:'stadt',    label:'🏙 Stadt'   },
-    { id:'essen',    label:'🍜 Essen'   },
-    { id:'kultur',   label:'🏛 Kultur'  },
-    { id:'event',    label:'🎉 Event'   },
-    { id:'roadtrip', label:'🚗 Road'    },
-    { id:'wasser',   label:'🌊 Wasser'  },
+  const BUILTIN_TAGS = [
+    { id:'strand',   de:'🏖 Strand',  en:'🏖 Beach'    },
+    { id:'berg',     de:'🏔 Berg',    en:'🏔 Mountain' },
+    { id:'stadt',    de:'🏙 Stadt',   en:'🏙 City'     },
+    { id:'essen',    de:'🍜 Essen',   en:'🍜 Food'     },
+    { id:'kultur',   de:'🏛 Kultur',  en:'🏛 Culture'  },
+    { id:'event',    de:'🎉 Event',   en:'🎉 Event'    },
+    { id:'roadtrip', de:'🚗 Road',    en:'🚗 Road'     },
+    { id:'wasser',   de:'🌊 Wasser',  en:'🌊 Water'    },
   ];
 
+  let customTags = JSON.parse(localStorage.getItem('reise_custom_tags') || '[]');
+  // { id: 'custom_xxx', label: '...', custom: true }
+
+  function allTags() { return [...BUILTIN_TAGS, ...customTags]; }
+
+  function tagLabel(t) {
+    if (t.custom) return t.label;
+    return t[currentLang] || t.de;
+  }
+
+  function saveCustomTags() {
+    localStorage.setItem('reise_custom_tags', JSON.stringify(customTags));
+  }
+
   let tagStore      = JSON.parse(localStorage.getItem('reise_tags') || '{}');
-  let pendingTags   = [];   // currently selected tags in the form
-  let filterTag     = null; // active tag filter
+  let pendingTags   = [];
+  let filterTag     = null;
 
   function saveTagStore() {
     localStorage.setItem('reise_tags', JSON.stringify(tagStore));
@@ -8204,10 +8221,67 @@
   function renderTagPicker() {
     const picker = document.getElementById('tag-picker');
     if (!picker) return;
-    picker.innerHTML = TAGS.map(t => `
-      <span class="tag-chip${pendingTags.includes(t.id) ? ' active' : ''}"
-            onclick="togglePendingTag('${t.id}')">${t.label}</span>
-    `).join('');
+    picker.innerHTML = allTags().map(t => {
+      const del = t.custom
+        ? `<span onclick="event.stopPropagation();deleteCustomTag('${t.id}')"
+               class="ml-1 opacity-60 hover:opacity-100 text-[10px]">✕</span>` : '';
+      return `<span class="tag-chip${pendingTags.includes(t.id) ? ' active' : ''}"
+                    onclick="togglePendingTag('${t.id}')">${tagLabel(t)}${del}</span>`;
+    }).join('') +
+    `<span class="tag-chip" style="border-style:dashed;opacity:.7"
+           onclick="openAddCustomTag()" id="add-tag-btn"
+           title="${currentLang === 'en' ? 'Add custom tag' : 'Eigenen Tag erstellen'}">＋</span>
+     <span id="add-tag-wrap" class="hidden items-center gap-1">
+       <input id="add-tag-input" type="text" maxlength="24"
+              placeholder="${currentLang === 'en' ? 'Tag name …' : 'Tag-Name …'}"
+              class="text-xs rounded-full border border-orange-300 px-3 py-1 w-28
+                     focus:outline-none focus:ring-1 focus:ring-orange-400"
+              onkeydown="if(event.key==='Enter')confirmAddCustomTag();if(event.key==='Escape')cancelAddCustomTag()">
+       <button onclick="confirmAddCustomTag()"
+               class="text-xs text-orange-500 font-bold px-1.5">✓</button>
+       <button onclick="cancelAddCustomTag()"
+               class="text-xs text-stone-400 px-1">✕</button>
+     </span>`;
+  }
+
+  function openAddCustomTag() {
+    renderTagPicker();
+    const wrap = document.getElementById('add-tag-wrap');
+    const btn  = document.getElementById('add-tag-btn');
+    if (!wrap || !btn) return;
+    wrap.classList.remove('hidden');
+    wrap.classList.add('flex');
+    btn.classList.add('hidden');
+    document.getElementById('add-tag-input')?.focus();
+  }
+
+  function cancelAddCustomTag() { renderTagPicker(); }
+
+  function confirmAddCustomTag() {
+    const input = document.getElementById('add-tag-input');
+    const label = input?.value.trim();
+    if (!label) { cancelAddCustomTag(); return; }
+    const id = 'custom_' + Date.now();
+    customTags.push({ id, label, custom: true });
+    saveCustomTags();
+    pendingTags.push(id);
+    renderTagPicker();
+  }
+
+  function deleteCustomTag(id) {
+    customTags = customTags.filter(t => t.id !== id);
+    saveCustomTags();
+    // Remove from all entries
+    for (const eid of Object.keys(tagStore)) {
+      tagStore[eid] = tagStore[eid].filter(tid => tid !== id);
+      if (!tagStore[eid].length) delete tagStore[eid];
+    }
+    saveTagStore();
+    pendingTags = pendingTags.filter(tid => tid !== id);
+    if (filterTag === id) filterTag = null;
+    renderTagPicker();
+    renderTagFilterRow();
+    renderList();
   }
 
   function togglePendingTag(id) {
@@ -8236,10 +8310,10 @@
     row.classList.remove('hidden');
     row.innerHTML = `<span class="text-xs text-stone-400 self-center mr-0.5">🏷</span>` +
       usedIds.map(id => {
-        const t = TAGS.find(x => x.id === id);
+        const t = allTags().find(x => x.id === id);
         if (!t) return '';
         return `<span class="tag-chip${filterTag === id ? ' active' : ''}"
-                     onclick="setTagFilter('${id}')">${t.label}</span>`;
+                     onclick="setTagFilter('${id}')">${tagLabel(t)}</span>`;
       }).join('') +
       (filterTag ? `<span class="tag-chip ml-1" onclick="setTagFilter(null)">✕ Reset</span>` : '');
   }
@@ -8271,8 +8345,8 @@
     if (!container) return;
     const tags = tagStore[id] || [];
     container.innerHTML = tags.map(tid => {
-      const t = TAGS.find(x => x.id === tid);
-      return t ? `<span class="tag-chip active">${t.label}</span>` : '';
+      const t = allTags().find(x => x.id === tid);
+      return t ? `<span class="tag-chip active">${tagLabel(t)}</span>` : '';
     }).join('');
   }
 

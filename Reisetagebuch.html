@@ -4570,12 +4570,18 @@
     // Autor anzeigen — nur wenn nicht eigener Eintrag (Gruppenbeitrag eines anderen)
     const authorRow = document.getElementById('lb-author');
     if (entry.userId && currentUser && entry.userId !== currentUser.id) {
-      const name  = displayNameFor(entry.userId);
-      const color = colorForUser(entry.userId);
-      document.getElementById('lb-author-name').textContent =
-        (currentLang === 'en' ? 'by ' : 'von ') + (name || '…');
-      document.getElementById('lb-author-name').style.color = color;
-      document.getElementById('lb-author-dot').style.background = color;
+      const setAuthor = () => {
+        const name  = displayNameFor(entry.userId);
+        const color = colorForUser(entry.userId);
+        document.getElementById('lb-author-name').textContent =
+          (currentLang === 'en' ? 'by ' : 'von ') + (name || '…');
+        document.getElementById('lb-author-name').style.color = color;
+        document.getElementById('lb-author-dot').style.background = color;
+      };
+      setAuthor();
+      if (!userInfoCache.has(entry.userId)) {
+        loadUserInfosForEntries([entry]).then(setAuthor);
+      }
       authorRow.classList.remove('hidden');
     } else {
       authorRow.classList.add('hidden');
@@ -8124,7 +8130,7 @@
   function renderDiscoverCard(e) {
     const src      = hasPhoto(e) ? getPhotoSrc(e, 400) : null;
     const isVid    = src && isVideoUrl(src);
-    const info     = userInfoMap[e.userId] || {};
+    const info     = userInfoCache.get(e.userId) || {};
     const name     = esc(info.username || 'Anonym');
     const color    = info.color || '#f97316';
     const initial  = name[0]?.toUpperCase() || '?';

@@ -4570,11 +4570,12 @@
     // Autor anzeigen — nur wenn nicht eigener Eintrag (Gruppenbeitrag eines anderen)
     const authorRow = document.getElementById('lb-author');
     if (entry.userId && currentUser && entry.userId !== currentUser.id) {
+      const anon = () => currentLang === 'en' ? 'Anonymous' : 'Anonym';
       const setAuthor = () => {
-        const name  = displayNameFor(entry.userId);
+        const name  = displayNameFor(entry.userId) || anon();
         const color = colorForUser(entry.userId);
         document.getElementById('lb-author-name').textContent =
-          (currentLang === 'en' ? 'by ' : 'von ') + (name || '…');
+          (currentLang === 'en' ? 'by ' : 'von ') + name;
         document.getElementById('lb-author-name').style.color = color;
         document.getElementById('lb-author-dot').style.background = color;
       };
